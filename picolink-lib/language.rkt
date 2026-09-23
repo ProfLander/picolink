@@ -35,11 +35,17 @@
    (define/generic call-collect-provide collect-provide)
    (define/generic call-compiler compiler)
 
+   (define (collect-require _language _stx)
+     #f)
+
    (define (collect-requires language)
      (for/hash ([stx (in-syntax (call-source language))]
                 #:do [(define req (call-collect-require language stx))]
                 #:when req)
        (values (car req) (cdr req))))
+
+   (define (collect-provide _language _stx)
+     #f)
 
    (define (collect-provides language)
      (for/fold ([acc (immutable-free-id-set)])

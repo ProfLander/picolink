@@ -81,7 +81,7 @@
                   lctx
                   req)))))
 
-         (let ([outputs
+         (let ([languages
                 (for/hash ([(path language) (in-hash languages)])
                   (values path
                           (language:compile
@@ -114,7 +114,7 @@
              (link-ctx
               (compile-ctx-root ctx)
               (compile-ctx-entry-point ctx)
-              outputs
+              languages
               requires
               provides)))))))])
 
