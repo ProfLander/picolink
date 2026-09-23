@@ -7,8 +7,8 @@
          syntax/id-table
 
          picolink/backend
-         (prefix-in output: picolink/output)
-         picolink/output/s-lua)
+         (prefix-in language: picolink/language)
+         picolink/s-lua)
 
 (provide (all-defined-out))
 
@@ -22,9 +22,9 @@
   (string->symbol
    (string-replace (symbol->string path) "/" "_")))
 
-(define (splice-requires+provides path output requires provides)
+(define (splice-requires+provides path language requires provides)
   (s-lua-map
-   output
+   language
 
    (λ (body)
 
@@ -70,9 +70,9 @@
               (list #'(#%return (#%table [prov prov] ...)))
               null)))))))
 
-(define (lift-package-preloader path output)
+(define (lift-package-preloader path language)
   (s-lua-map
-   output
+   language
 
    (λ (body)
 
@@ -92,30 +92,30 @@
 
 (define (lua-link self ctx)
   (let* ([entry-point (link-ctx-entry-point ctx)]
-         [outputs (link-ctx-outputs ctx)]
+         [languages (link-ctx-languages ctx)]
          [requires (link-ctx-requires ctx)]
          [provides (link-ctx-provides ctx)]
 
-         [outputs
-          (for/hash ([(path output) (in-hash outputs)])
+         [languages
+          (for/hash ([(path language) (in-hash languages)])
             (values path
                     (splice-requires+provides path
-                                              output
+                                              language
                                               requires
                                               provides)))]
 
          [dependencies
           (for/fold ([acc (s-lua null)])
-                    ([(path output) (in-hash outputs)]
+                    ([(path language) (in-hash languages)]
                      #:when (not (equal? path entry-point)))
 
-            (s-lua-append acc (lift-package-preloader path output)))]
+            (s-lua-append acc (lift-package-preloader path language)))]
 
-         [entry-point (hash-ref outputs entry-point)]
+         [entry-point (hash-ref languages entry-point)]
 
          [combined (s-lua-append dependencies entry-point)])
 
-    (output:compile combined)))
+    (language:compile combined 'lua)))
 
 (define (lua-run _self chunk)
   "Run CHUNK in the system Lua interpreter."

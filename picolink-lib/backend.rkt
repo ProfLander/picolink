@@ -3,20 +3,18 @@
 (require racket/generic
          racket/contract
          racket/hash
-         racket/path
 
          syntax/id-set
          syntax/id-table
 
          picolink/path
 
-         (prefix-in input: picolink/input)
-         (prefix-in output: picolink/output))
+         (prefix-in language: picolink/language))
 
 (provide (all-defined-out))
 
 (struct compile-ctx (root entry-point))
-(struct link-ctx (root entry-point outputs requires provides))
+(struct link-ctx (root entry-point languages requires provides))
 
 (define-generics backend
   (output-name backend)
@@ -31,38 +29,38 @@
    (define/generic call-run run)
 
    (define (compile backend ctx)
-     (define (collect-input inputs requires path)
+     (define (collect-language languages requires path)
 
        (let ([abs-path (build-path (compile-ctx-root ctx) path)])
-         (if (hash-has-key? inputs path)
+         (if (hash-has-key? languages path)
 
-             (values inputs requires)
+             (values languages requires)
 
-             (let* ([input (dynamic-require
-                            (module-path->file-path abs-path)
-                            'input)]
+             (let* ([language (dynamic-require
+                               (module-path->file-path abs-path)
+                               'language)]
                     [mod-reqs (hash path
-                                    (input:collect-requires input))])
+                                    (language:collect-requires language))])
 
-               (for*/fold ([inputs (hash-set inputs path input)]
+               (for*/fold ([languages (hash-set languages path language)]
                            [requires (hash-union requires mod-reqs)])
                           ([(_ reqs) (in-hash mod-reqs)]
                            [(_ reqs) (in-hash reqs)]
                            [(mod _) (in-free-id-table reqs)])
 
-                 (collect-input
-                  inputs requires
+                 (collect-language
+                  languages requires
                   (string->path
                    (symbol->string
                     (syntax-e mod)))))))))
 
-     (let-values ([(inputs requires)
-                   (collect-input (hash)
-                                  (hash)
-                                  (compile-ctx-entry-point ctx))])
+     (let-values ([(languages requires)
+                   (collect-language (hash)
+                                     (hash)
+                                     (compile-ctx-entry-point ctx))])
 
-       (let ([provides (for/hash ([(path input) (in-hash inputs)])
-                         (values path (input:collect-provides input)))])
+       (let ([provides (for/hash ([(path language) (in-hash languages)])
+                         (values path (language:collect-provides language)))])
 
          (for* ([(_ reqs) (in-hash requires)]
                 [(lctx reqs) (in-hash reqs)]
@@ -84,10 +82,10 @@
                   req)))))
 
          (let ([outputs
-                (for/hash ([(path input) (in-hash inputs)])
+                (for/hash ([(path language) (in-hash languages)])
                   (values path
-                          (input:compile
-                           input
+                          (language:compile
+                           language
                            (call-output-name backend))))]
 
                [requires

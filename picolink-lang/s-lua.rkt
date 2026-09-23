@@ -1,20 +1,22 @@
 #lang racket/base
 
 (require racket/contract
-         picolink/output
+         picolink/language
          (prefix-in picopass: picopass/lang/s-lua/to-source))
 
 (provide (all-defined-out))
 
 (struct s-lua (body)
   #:transparent
-  #:methods gen:output
+  #:methods gen:language
   [(define (source self)
      (with-syntax ([(body ...) (s-lua-body self)])
        #'(#%chunk (#%block body ...))))
 
-   (define (compile self)
-     (picopass:s-lua->lua (source self)))])
+   (define (compiler self name)
+     (case name
+       [(lua) picopass:s-lua->lua]
+       [else (error "unsupported target language" name)]))])
 
 (define/contract (make-s-lua body)
   (-> (listof syntax?) s-lua?)
