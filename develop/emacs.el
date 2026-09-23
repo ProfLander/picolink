@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t; -*-
 
 (evil-define-key 'normal racket-repl-mode-map
-  (kbd "<up>") #'racket-repl-next-input)
+  (kbd "<up>") #'racket-repl-previous-input)
 
 (evil-define-key 'normal racket-repl-mode-map
   (kbd "<down>") #'racket-repl-next-input)
