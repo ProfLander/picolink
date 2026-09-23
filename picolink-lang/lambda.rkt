@@ -12,8 +12,8 @@
 
          syntax-spec-v3
 
-         picolink/input
-         picolink/output/s-lua)
+         picolink/language
+         picolink/s-lua)
 
 (provide (all-defined-out)
          (for-space lambda (all-defined-out))
@@ -44,11 +44,11 @@
 (define (lambda-compiler self name)
   (case name
     [(s-lua) compile/s-lua]
-    [else (error "unsupported backend" name)]))
+    [else (error "unsupported target language" name)]))
 
 (struct lambda (source)
   #:transparent
-  #:methods gen:input
+  #:methods gen:language
 
   [(define (source self)
      (lambda-source self))

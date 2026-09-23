@@ -6,7 +6,7 @@
                      (except-in syntax/parse
                                 expr))
 
-         picolink/input
+         picolink/language
          picolink/lambda)
 
 (provide (all-from-out racket/base)
@@ -15,8 +15,8 @@
 
 (define-syntax #%module-begin
   (syntax-parser
-    [(head body ...)
-     (make-input-module
+    [(_ body ...)
+     (make-language-module
       this-syntax
       (with-syntax ([print (datum->syntax this-syntax 'print)])
         #'(make-lambda
