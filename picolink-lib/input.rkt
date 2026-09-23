@@ -1,6 +1,9 @@
 #lang racket/base
 
-(require racket/contract
+(require (for-syntax racket/base
+                     racket/contract)
+
+         racket/contract
          racket/generic
          racket/match
          racket/sequence
@@ -11,7 +14,8 @@
 
          (for-template racket/base))
 
-(provide (all-defined-out))
+(provide (all-defined-out)
+         (for-syntax (all-defined-out)))
 
 (define-generics input
   (source input)
@@ -51,40 +55,14 @@
    (define (compile input name)
      ((call-compiler input name) (call-source input)))])
 
-(define input-registry
-  (make-hash))
+(begin-for-syntax
+  (define/contract (make-input-module lctx input)
+    (-> syntax? syntax? syntax?)
 
-(define/contract (register-input name in)
-  (-> symbol?
-      (-> syntax?
-          (generic-instance/c
-           gen:input
+    (with-syntax ([input-id (syntax-local-identifier-as-binding
+                             (datum->syntax lctx 'input))]
+                  [input input])
 
-           [source (-> input? any/c)]
-
-           [collect-require
-            (-> input? syntax?
-                (or/c (cons/c syntax? immutable-free-id-table?) #f))]
-           [collect-requires (or/c (-> input?
-                                       (hash/c syntax?
-                                               immutable-free-id-table?))
-                                   #f)]
-
-           [collect-provide
-            (-> input? syntax? (or/c immutable-free-id-set? #f))]
-           [collect-provides (or/c (-> input? free-id-set?) #f)]
-
-           [compiler
-            (-> input? symbol? (-> syntax? any/c))]
-           [compile
-            (or/c (-> input? symbol? any/c) #f)]))
-      void)
-  (hash-set! input-registry name in))
-
-(define/contract (input name)
-  (-> symbol? (-> syntax? input?))
-  (hash-ref input-registry name))
-
-(define/contract (make-input name source)
-  (-> symbol? syntax? input?)
-  ((input name) source))
+      #'(#%plain-module-begin
+         (provide input-id)
+         (define input-id input)))))

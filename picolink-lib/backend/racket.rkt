@@ -5,21 +5,17 @@
 
 (provide (all-defined-out))
 
-(struct backend-racket ()
+(struct racket ()
   #:transparent
   #:methods gen:backend
 
   [(define (output-name self)
      'racket)
 
-   (define (link self output)
+   (define (link self ctx)
      (error "unimplemented:" 'link))
 
    (define (run self linked)
      (error "unimplemented:" 'run))])
 
-(define/contract (make-backend-racket)
-  (-> backend-racket?)
-  (backend-racket))
-
-(register-backend 'racket make-backend-racket)
+(define backend-inst (racket))

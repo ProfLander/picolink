@@ -3,10 +3,10 @@ SHELL=/usr/bin/env bash
 PACKAGE-NAME=picolink
 
 install:
-	raco pkg install --deps search-auto --link ${PWD}/${PACKAGE-NAME}-{lib,test,doc} $(PWD)/$(PACKAGE-NAME)
+	raco pkg install --deps search-auto --link ${PWD}/${PACKAGE-NAME}-{lib,lang,test,doc} $(PWD)/$(PACKAGE-NAME)
 
 uninstall:
-	raco pkg uninstall $(PACKAGE-NAME)-{lib,test,doc} $(PACKAGE-NAME)
+	raco pkg uninstall $(PACKAGE-NAME)-{lib,lang,test,doc} $(PACKAGE-NAME)
 
 build:
 	raco setup --no-docs --pkgs $(PACKAGE-NAME)-lib
@@ -20,13 +20,12 @@ build-standalone-docs:
 	--dest ./docs ./picolink-doc/scribblings/picolink.scrbl
 
 build-all:
-	raco setup $(DEPS-FLAGS) --pkgs $(PACKAGE-NAME)-{lib,test,doc} $(PACKAGE-NAME)
+	raco setup $(DEPS-FLAGS) --pkgs $(PACKAGE-NAME)-{lib,lang,test,doc} $(PACKAGE-NAME)
 
 clean:
-	raco setup --fast-clean --pkgs $(PACKAGE-NAME)-{lib,test,doc}
+	raco setup --fast-clean --pkgs $(PACKAGE-NAME)-{lib,lang,test,doc}
 
 test:
-	raco test -exp $(PACKAGE-NAME)-{lib,test,doc}
+	raco test -exp $(PACKAGE-NAME)-{lib,lang,test,doc}
 
 .PHONY: install remove
-

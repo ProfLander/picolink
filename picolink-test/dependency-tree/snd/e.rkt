@@ -1,5 +1,8 @@
-#lang picolink/input/lambda
+#lang picolink/lambda
 
 (provide e)
 
-(define e (λ (x) x))
+(define e
+  (λ (x)
+    (print "e")
+    x))

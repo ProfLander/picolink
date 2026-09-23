@@ -1,2 +1,2 @@
 #lang s-exp syntax/module-reader
-picolink/input/lambda/lang/impl
+picolink/lambda/lang

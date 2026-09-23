@@ -4,10 +4,12 @@
 
 (define deps '("base"
                "picolink-lib"
+               "picolink-lang"
                "picolink-doc"
                "picolink-test"))
 
 (define implies '("picolink-lib"
+                  "picolink-lang"
                   "picolink-doc"
                   "picolink-test"))
 

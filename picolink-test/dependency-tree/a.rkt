@@ -1,10 +1,14 @@
-#lang picolink/input/lambda
+#lang picolink/lambda
 
 (require (in fst/b
-             b)
-         (in fst/c
+             b))
+
+(require (in fst/c
              c))
 
-(define a (λ (x) (b (c x))))
+(define a
+  (λ (x)
+    (print "a")
+    (c (b x))))
 
-a
+(a #f)

@@ -1,8 +1,11 @@
-#lang picolink/input/lambda
+#lang picolink/lambda
 
 (require (in snd/e e)
          (in snd/f f))
 
 (provide c)
 
-(define c (λ (x) (e (f x))))
+(define c
+  (λ (x)
+    (print "c")
+    (f (e x))))
