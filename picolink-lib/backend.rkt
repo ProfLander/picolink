@@ -52,9 +52,12 @@
              (dynamic-require abs-path'language)
              acc))])))
 
-(define/contract (compile-ctx-with-path ctx path)
-  (-> compile-ctx? path? compile-ctx?)
-  (compile-ctx (compile-ctx-search-paths ctx)
+(define (compile-ctx-update ctx
+                            #:search-paths
+                            [search-paths (compile-ctx-search-paths ctx)]
+                            #:path
+                            [path (compile-ctx-path ctx)])
+  (compile-ctx search-paths
                path))
 
 (struct link-ctx (search-paths path modules requires provides))
@@ -125,11 +128,12 @@
                            [(mod _) (in-hash reqs)])
 
                  (collect-module
-                  (compile-ctx-with-path
+                  (compile-ctx-update
                    ctx
+                   #:path
                    (string->path
-                   (symbol->string
-                    (binding-symbol mod))))
+                    (symbol->string
+                     (binding-symbol mod))))
                   modules requires))))))
 
      (let-values ([(modules requires)
