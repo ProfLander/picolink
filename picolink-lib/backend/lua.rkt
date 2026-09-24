@@ -1,14 +1,18 @@
-#lang racket/base
+#lang errortrace racket/base
 
 (require racket/string
+         racket/function
          racket/port
+         racket/set
+         racket/hash
 
-         syntax/id-set
-         syntax/id-table
+         syntax/parse
 
          picolink/backend
-         (prefix-in language: picolink/language)
-         picolink/s-lua)
+         picolink/binding
+         picolink/s-lua
+         picolink/intrinsic
+         (prefix-in language: picolink/language))
 
 (provide (all-defined-out))
 
@@ -22,57 +26,148 @@
   (string->symbol
    (string-replace (symbol->string path) "/" "_")))
 
-(define (splice-requires+provides path language requires provides)
+(define (binding->module-path bind)
+  (string->path
+   (symbol->string
+    (binding-symbol bind))))
+
+(define (rewrite-intrinsics ctx)
+
+  (define (rewrite-body ctx body)
+
+    (let* ([path (link-ctx-path ctx)]
+           [requires (hash-ref (link-ctx-requires ctx) path)]
+           [rewrites
+            (for/fold ([acc (hash)])
+                      ([(bind reqs) (in-hash requires)]
+                       #:do [(define mod-path
+                               (binding->module-path bind))
+                             (define mod
+                               (hash-ref (link-ctx-modules ctx)
+                                         mod-path))]
+
+                       #:when (intrinsic? mod)
+
+                       #:do [(define mod-intpath (intrinsic-path mod))]
+
+                       #:when mod-intpath)
+
+              (hash-union
+               acc
+               (for/hash ([req (in-set reqs)])
+                 (values req
+                         (with-syntax ([mod-intpath mod-intpath]
+                                       [req (binding-ident req)])
+                           #'(#%member mod-intpath req))))))])
+
+      (define rewrite
+        (syntax-parser
+          [(expr ...)
+           (datum->syntax this-syntax (map rewrite (attribute expr)))]
+
+          [ident:id
+
+           #:do [(define rewrite
+                   (hash-ref rewrites
+                             (make-binding #'ident)
+                             #f))]
+
+           #:when rewrite
+
+           rewrite]
+
+          [_ this-syntax]))
+
+      (map rewrite body)))
+
+  (let ([mod (hash-ref (link-ctx-modules ctx)
+                       (link-ctx-path ctx))])
+    (s-lua-map mod (curry rewrite-body ctx))))
+
+(define (splice-requires+provides ctx)
+
+  (define (collect-requires ctx)
+
+    (let ([reqs (hash-ref (link-ctx-requires ctx)
+                          (link-ctx-path ctx))])
+
+      (for*/fold ([acc null])
+                 ([(bind reqs) (in-hash reqs)]
+
+                  #:do [(define mod-path
+                          (binding->module-path bind))
+
+                        (define mod
+                          (hash-ref (link-ctx-modules ctx)
+                                    mod-path #f))]
+
+                  #:when (s-lua? mod))
+
+        (append acc
+                (list (cons (binding-symbol bind)
+                            (set-map reqs binding-symbol)))))))
+
+  (define (collect-provides ctx)
+
+    (let ([provs (hash-ref (link-ctx-provides ctx)
+                           (link-ctx-path ctx))])
+
+      (set-map provs binding-symbol)))
+
+  (define (make-module-bindings reqs)
+    (with-syntax ([(req-mod-sym ...)
+                   (for/list ([pair (in-list reqs)])
+                     (module-ident->lua-ident (car pair)))]
+
+                  [(req-mod-str ...)
+                   (for/list ([pair (in-list reqs)])
+                     (module-string->lua-string
+                      (car pair)))])
+
+      #'(#%local [req-mod-sym ...]
+                 [(require req-mod-str) ...])))
+
+  (define (make-member-bindings reqs)
+    (with-syntax ([([req-bind-mod . req-bind-sym] ...)
+                   (for*/fold ([acc null])
+                              ([pair (in-list reqs)]
+                               [req (in-list (cdr pair))])
+                     (cons (cons (module-ident->lua-ident
+                                  (car pair))
+                                 req)
+                           acc))])
+      #'(#%local [req-bind-sym ...]
+                 [(#%member req-bind-mod
+                            req-bind-sym) ...])))
+
+  (define (make-provide-return provs)
+    (with-syntax ([(prov ...) provs])
+      #'(#%return (#%table [prov prov] ...))))
+
+  (define (splice-body ctx body)
+    (let* ([reqs (collect-requires ctx)]
+           [provs (collect-provides ctx)])
+
+      (append
+       (if (pair? reqs)
+           (list (make-module-bindings reqs)
+                 (make-member-bindings reqs))
+           null)
+
+       body
+
+       (if (pair? provs)
+           (list (make-provide-return provs))
+
+           null))))
+
+  (let ([mod (hash-ref (link-ctx-modules ctx)
+                       (link-ctx-path ctx))])
+    (s-lua-map mod (curry splice-body ctx))))
+
+(define (lift-package-preloader path module)
   (s-lua-map
-   language
-
-   (λ (body)
-
-     (let ([reqs (for*/fold ([acc null])
-                            ([(mod reqs) (in-free-id-table
-                                          (hash-ref requires path))])
-                   (append acc
-                           (list (cons (syntax-e mod)
-                                       (free-id-set->list reqs)))))]
-
-           [provs (free-id-set->list (hash-ref provides path))])
-
-       (with-syntax ([(req-mod-sym ...)
-                      (for/list ([pair (in-list reqs)])
-                        (module-ident->lua-ident (car pair)))]
-
-                     [(req-mod-str ...)
-                      (for/list ([pair (in-list reqs)])
-                        (module-string->lua-string (car pair)))]
-
-                     [([req-bind-mod . req-bind-sym] ...)
-                      (for*/fold ([acc null])
-                                 ([pair (in-list reqs)]
-                                  [req (in-list (cdr pair))])
-                        (cons (cons (module-ident->lua-ident (car pair))
-                                    req)
-                              acc))]
-
-                     [(prov ...) provs])
-
-         (append
-          (if (pair? reqs)
-              (list #'(#%local [req-mod-sym ...]
-                               [(require req-mod-str) ...])
-                    #'(#%local [req-bind-sym ...]
-                               [(#%member req-bind-mod
-                                          req-bind-sym) ...]))
-              null)
-
-          body
-
-          (if (pair? provs)
-              (list #'(#%return (#%table [prov prov] ...)))
-              null)))))))
-
-(define (lift-package-preloader path language)
-  (s-lua-map
-   language
+   module
 
    (λ (body)
 
@@ -87,31 +182,41 @@
                   (#%block
                    body ...))]))))))
 
-(define (lua-output-name _self)
+(define (lua-output-name)
   's-lua)
 
-(define (lua-link self ctx)
-  (let* ([entry-point (link-ctx-entry-point ctx)]
-         [languages (link-ctx-languages ctx)]
-         [requires (link-ctx-requires ctx)]
-         [provides (link-ctx-provides ctx)]
+(define (lua-search-paths)
+  (s-lua-search-paths))
 
-         [languages
-          (for/hash ([(path language) (in-hash languages)])
-            (values path
-                    (splice-requires+provides path
-                                              language
-                                              requires
-                                              provides)))]
+(define (lua-link self ctx)
+  (let* ([ctx
+          (link-ctx-with-modules
+           ctx
+           (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))]
+                      #:when (s-lua? mod))
+             (values path
+                     (rewrite-intrinsics
+                      (link-ctx-with-path ctx path)))))]
+
+         [ctx
+          (link-ctx-with-modules
+           ctx
+           (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))]
+                      #:when (s-lua? mod))
+             (values path
+                     (splice-requires+provides
+                      (link-ctx-with-path ctx path)))))]
+
+         [entry-point (link-ctx-path ctx)]
 
          [dependencies
           (for/fold ([acc (s-lua null)])
-                    ([(path language) (in-hash languages)]
+                    ([(path mod) (in-hash (link-ctx-modules ctx))]
                      #:when (not (equal? path entry-point)))
 
-            (s-lua-append acc (lift-package-preloader path language)))]
+            (s-lua-append acc (lift-package-preloader path mod)))]
 
-         [entry-point (hash-ref languages entry-point)]
+         [entry-point (hash-ref (link-ctx-modules ctx) entry-point)]
 
          [combined (s-lua-append dependencies entry-point)])
 
@@ -119,6 +224,8 @@
 
 (define (lua-run _self chunk)
   "Run CHUNK in the system Lua interpreter."
+
+  (displayln chunk)
 
   (define lua (find-executable-path "lua") )
 
@@ -143,7 +250,12 @@
   #:transparent
   #:methods gen:backend
 
-  [(define output-name lua-output-name)
+  [(define (output-name _self)
+     (lua-output-name))
+
+   (define (search-paths _self)
+     (lua-search-paths))
+
    (define link lua-link)
    (define run lua-run)])
 

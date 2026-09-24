@@ -12,4 +12,4 @@
   (current-backend (string->symbol output)))
 
 (define current-entry-point
-  (make-parameter (string->path "../picolink-test/dependency-tree/a")))
+  (make-parameter (string->path "../picolink-test/intrinsics/string")))

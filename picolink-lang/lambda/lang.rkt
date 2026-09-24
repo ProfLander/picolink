@@ -18,8 +18,6 @@
     [(_ body ...)
      (make-language-module
       this-syntax
-      (with-syntax ([print (datum->syntax this-syntax 'print)])
-        #'(make-lambda
-           (lambda/check-binds
-            (#%intrinsic print)
-            body ...))))]))
+      #'(make-lambda
+         (lambda/check-binds
+          body ...)))]))

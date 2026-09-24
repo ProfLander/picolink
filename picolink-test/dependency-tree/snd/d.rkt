@@ -1,5 +1,7 @@
 #lang picolink/lambda
 
+(require (in lua print))
+
 (provide d)
 
 (define d

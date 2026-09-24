@@ -3,14 +3,11 @@
 (require (for-syntax racket/base
                      racket/contract)
 
-         racket/contract
          racket/generic
-         racket/match
          racket/sequence
+         racket/set
 
          syntax/parse
-         syntax/id-set
-         syntax/id-table
 
          (for-template racket/base))
 
@@ -19,6 +16,7 @@
 
 (define-generics language
   (source language)
+  (search-paths language)
 
   (collect-require language stx)
   (collect-requires language)
@@ -35,6 +33,9 @@
    (define/generic call-collect-provide collect-provide)
    (define/generic call-compiler compiler)
 
+   (define (search-paths _language)
+     null)
+
    (define (collect-require _language _stx)
      #f)
 
@@ -48,13 +49,13 @@
      #f)
 
    (define (collect-provides language)
-     (for/fold ([acc (immutable-free-id-set)])
+     (for/fold ([acc (set)])
                ([stx (in-syntax (call-source language))])
        (syntax-parse stx
          [stx
           #:do [(define res (call-collect-provide language #'stx))]
           #:when res
-          (free-id-set-union acc res)]
+          (set-union acc res)]
          [_
           acc])))
 
