@@ -12,9 +12,12 @@
          [search-paths (append (backend:search-paths backend)
                                (list (path-only entry-point)))]
          [entry-point (file-name-from-path entry-point)]
-         [ctx (backend:make-compile-ctx search-paths entry-point)])
+         [compile-ctx (backend:make-compile-ctx search-paths
+                                                entry-point)]
+         [link-ctx (backend:compile backend compile-ctx)]
+         [linked (backend:link backend link-ctx)])
 
-    (backend:compile backend ctx)))
+    (backend:run backend linked)))
 
 ; REPL entrypoint
 (module+ run
