@@ -5,6 +5,7 @@
 
          racket/contract
          racket/list
+         racket/set
 
          syntax/parse
          syntax/id-table
@@ -13,6 +14,7 @@
          syntax-spec-v3
 
          picolink/language
+         picolink/binding
          picolink/s-lua)
 
 (provide (all-defined-out)
@@ -24,21 +26,21 @@
     #:datum-literals [#%require #%in]
     [(#%require (#%in mod:id req:id ...) ...)
      (cons this-syntax
-           (for/fold ([acc (make-immutable-free-id-table)])
-                     ([entry (in-list (syntax-e
-                                       #'((mod req ...) ...)))])
+           (for/fold ([acc (hash)])
+                     ([entry (in-list (syntax-e #'((mod req ...) ...)))])
              (syntax-parse entry
                [(mod:id req:id ...)
-                (free-id-table-set acc #'mod
-                                   (immutable-free-id-set
-                                    (syntax-e #'(req ...))))])))]
+                (hash-set acc (make-binding #'mod)
+                          (list->set
+                           (map make-binding
+                                (syntax-e #'(req ...)))))])))]
     [_ #f]))
 
 (define (lambda-collect-provide self stx)
   (syntax-parse stx
     #:datum-literals [#%provide]
     [(#%provide prov:id ...)
-     (immutable-free-id-set (attribute prov))]
+     (list->set (map make-binding (attribute prov)))]
     [_ #f]))
 
 (define (lambda-compiler self name)

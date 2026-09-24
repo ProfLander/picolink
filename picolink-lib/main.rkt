@@ -9,9 +9,10 @@
 (define (compile)
   (let* ([entry-point (current-entry-point)]
          [backend (backend:backend (current-backend))]
-         [root (path-only entry-point)]
+         [search-paths (append (backend:search-paths backend)
+                               (list (path-only entry-point)))]
          [entry-point (file-name-from-path entry-point)]
-         [ctx (backend:compile-ctx root entry-point)])
+         [ctx (backend:make-compile-ctx search-paths entry-point)])
 
     (backend:compile backend ctx)))
 

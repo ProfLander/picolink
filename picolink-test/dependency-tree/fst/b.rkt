@@ -1,6 +1,7 @@
 #lang picolink/lambda
 
-(require (in snd/d d)
+(require (in lua print)
+         (in snd/d d)
          (in snd/e e))
 
 (provide b)
