@@ -30,6 +30,9 @@
   (command-line
    #:program "picolink"
    #:once-each
+   [("-o" "--output") output
+                      "Set the build output directory"
+                      (set-current-build-directory output)]
    [("-b" "--backend") backend
                        "Set the language backend"
                        (set-current-backend backend)])

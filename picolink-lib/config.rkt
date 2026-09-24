@@ -7,9 +7,16 @@
 (define current-backend
   (make-parameter 'lua))
 
-(define/contract (set-current-backend output)
+(define/contract (set-current-backend backend)
   (-> string? void)
-  (current-backend (string->symbol output)))
+  (current-backend (string->symbol backend)))
+
+(define current-build-directory
+  (make-parameter (build-path "build")))
+
+(define/contract (set-current-build-directory build-directory)
+  (-> path? void)
+  (current-build-directory (string->path build-directory)))
 
 (define current-entry-point
-  (make-parameter (string->path "../picolink-test/intrinsics/string")))
+  (make-parameter (string->path "../picolink-test/dependency-tree/a")))
