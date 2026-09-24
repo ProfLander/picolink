@@ -187,15 +187,11 @@
                       req-set))
                    req-tbl))])
 
-           (call-run
-            backend
-            (call-link
-             backend
-             (make-link-ctx
-              ctx
-              modules
-              requires
-              provides)))))))])
+           (make-link-ctx
+            ctx
+            modules
+            requires
+            provides)))))])
 
 (define backend-registry
   (make-hash))
