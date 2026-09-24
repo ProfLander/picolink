@@ -197,26 +197,26 @@
 (define (lua-search-paths)
   (s-lua-search-paths))
 
-(define (lua-link self ctx)
+(define (lua-link self ctx #:mode [mode (current-mode)])
   (let* ([ctx
-          (link-ctx-with-modules
+          (link-ctx-update
            ctx
+           #:modules
            (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))]
                       #:when (s-lua? mod))
              (values path
                      (rewrite-intrinsics
-                      (link-ctx-with-path ctx path)))))]
+                      (link-ctx-update ctx #:path path)))))]
 
          [ctx
-          (link-ctx-with-modules
+          (link-ctx-update
            ctx
+           #:modules
            (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))]
                       #:when (s-lua? mod))
              (values path
                      (splice-requires+provides
-                      (link-ctx-with-path ctx path)))))]
-
-         [mode (current-mode)])
+                      (link-ctx-update ctx #:path path)))))])
 
     (case mode
       [(chunk) (lua-link/chunk ctx)]

@@ -72,23 +72,22 @@
             requires
             provides))
 
-(define/contract (link-ctx-with-path ctx path)
-  (-> link-ctx? path? link-ctx?)
-  (link-ctx (link-ctx-search-paths ctx)
+(define (link-ctx-update ctx
+                         #:search-paths
+                         [search-paths (link-ctx-search-paths ctx)]
+                         #:path
+                         [path         (link-ctx-path ctx)]
+                         #:modules
+                         [modules      (link-ctx-modules ctx)]
+                         #:requires
+                         [requires     (link-ctx-requires ctx)]
+                         #:provides
+                         [provides     (link-ctx-provides ctx)])
+  (link-ctx search-paths
             path
-            (link-ctx-modules ctx)
-            (link-ctx-requires ctx)
-            (link-ctx-provides ctx)))
-
-(define/contract (link-ctx-with-modules ctx modules)
-  (-> link-ctx?
-      (hash/c path? (generic-instance/c language:gen:language))
-      link-ctx?)
-  (link-ctx (link-ctx-search-paths ctx)
-            (link-ctx-path ctx)
             modules
-            (link-ctx-requires ctx)
-            (link-ctx-provides ctx)))
+            requires
+            provides))
 
 (define-generics backend
   (output-name backend)
