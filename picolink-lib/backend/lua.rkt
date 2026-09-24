@@ -25,6 +25,14 @@
   (parameter/c (or/c 'chunk 'library))
   (make-parameter 'library))
 
+(define/contract current-build-subdir
+  (parameter/c string?)
+  (make-parameter "lua"))
+
+(define/contract current-executable-name
+  (parameter/c string?)
+  (make-parameter "lua"))
+
 (define (module-path->lua-path path)
   (string-replace (path->string path) "/" "."))
 
@@ -247,7 +255,8 @@
   (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
                    (values (path-replace-extension path ".lua")
                            (language:compile mod 'lua)))]
-        [build-directory (build-path (current-build-directory) "lua")])
+        [build-directory (build-path (current-build-directory)
+                                     (current-build-subdir))])
 
     (delete-directory/files build-directory #:must-exist? #f)
     (make-directory* build-directory)
@@ -260,19 +269,18 @@
 
     (file-name-from-path (link-ctx-path ctx))))
 
-(define (lua-run _self input)
+(define (lua-run _self input #:mode [mode (current-mode)])
   "Run CHUNK in the system Lua interpreter."
 
-  (define lua (find-executable-path "lua") )
+  (define lua (find-executable-path (current-executable-name)) )
 
   (unless lua
     (error "unable to locate lua executable"))
 
   (define-values (sp out in err)
-    (let ([mode (current-mode)])
-      (case mode
-        [(chunk) (lua-run/chunk lua input)]
-        [(library) (lua-run/library lua input)])))
+    (case mode
+      [(chunk) (lua-run/chunk lua input)]
+      [(library) (lua-run/library lua input)]))
 
   (subprocess-wait sp)
 
@@ -292,7 +300,8 @@
   (subprocess #f #f #f lua
               "-e"
               (format "package.path = \"~a/\" .. package.path"
-                      (build-path (current-build-directory) "lua"))
+                      (build-path (current-build-directory)
+                                  (current-build-subdir)))
               "-l"
               library))
 
