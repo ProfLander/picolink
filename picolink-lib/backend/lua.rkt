@@ -1,13 +1,18 @@
 #lang errortrace racket/base
 
-(require racket/string
+(require racket/contract
+         racket/string
          racket/function
-         racket/port
          racket/set
          racket/hash
+         racket/path
+         racket/file
+         racket/port
+         racket/system
 
          syntax/parse
 
+         picolink/config
          picolink/backend
          picolink/binding
          picolink/s-lua
@@ -15,6 +20,10 @@
          (prefix-in language: picolink/language))
 
 (provide (all-defined-out))
+
+(define/contract current-mode
+  (parameter/c (or/c 'chunk 'library))
+  (make-parameter 'library))
 
 (define (module-path->lua-path path)
   (string-replace (path->string path) "/" "."))
@@ -207,7 +216,15 @@
                      (splice-requires+provides
                       (link-ctx-with-path ctx path)))))]
 
-         [entry-point (link-ctx-path ctx)]
+         [mode (current-mode)])
+
+    (case mode
+      [(chunk) (lua-link/chunk ctx)]
+      [(library) (lua-link/library ctx)]
+      [else (error "unsupported mode" mode)])))
+
+(define (lua-link/chunk ctx)
+  (let* ([entry-point (link-ctx-path ctx)]
 
          [dependencies
           (for/fold ([acc (s-lua null)])
@@ -222,10 +239,24 @@
 
     (language:compile combined 'lua)))
 
-(define (lua-run _self chunk)
-  "Run CHUNK in the system Lua interpreter."
+(define (lua-link/library ctx)
+  (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
+                   (values (path-replace-extension path ".lua")
+                           (language:compile mod 'lua)))]
+        [build-directory (build-path (current-build-directory) "lua")])
 
-  (displayln chunk)
+    (make-directory* build-directory)
+
+    (for ([(path mod) (in-hash modules)])
+      (let ([path (build-path build-directory path)])
+        (make-directory* (path-only path))
+        (display-to-file mod path #:exists 'replace)
+        (flush-output)))
+
+    (file-name-from-path (link-ctx-path ctx))))
+
+(define (lua-run _self input)
+  "Run CHUNK in the system Lua interpreter."
 
   (define lua (find-executable-path "lua") )
 
@@ -233,7 +264,10 @@
     (error "unable to locate lua executable"))
 
   (define-values (sp out in err)
-    (subprocess #f #f #f lua "-e" chunk))
+    (let ([mode (current-mode)])
+      (case mode
+        [(chunk) (lua-run/chunk lua input)]
+        [(library) (lua-run/library lua input)])))
 
   (subprocess-wait sp)
 
@@ -245,6 +279,17 @@
   (close-input-port out)
   (close-output-port in)
   (close-input-port err))
+
+(define (lua-run/chunk lua chunk)
+  (subprocess #f #f #f lua "-e" chunk))
+
+(define (lua-run/library lua library)
+  (subprocess #f #f #f lua
+              "-e"
+              (format "package.path = \"~a/\" .. package.path"
+                      (build-path (current-build-directory) "lua"))
+              "-l"
+              library))
 
 (struct lua ()
   #:transparent

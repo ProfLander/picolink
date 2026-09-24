@@ -2,3 +2,5 @@
 **/doc
 flake.lock
 todo
+build
+picolink-lib/build
