@@ -245,6 +245,7 @@
                            (language:compile mod 'lua)))]
         [build-directory (build-path (current-build-directory) "lua")])
 
+    (delete-directory/files build-directory #:must-exist? #f)
     (make-directory* build-directory)
 
     (for ([(path mod) (in-hash modules)])
