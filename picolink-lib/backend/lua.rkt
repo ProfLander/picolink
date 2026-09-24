@@ -65,7 +65,11 @@
                acc
                (for/hash ([req (in-set reqs)])
                  (values req
-                         (with-syntax ([mod-intpath mod-intpath]
+                         (with-syntax ([mod-intpath
+                                        (case mod-intpath
+                                          [(same) (string->symbol (module-path->lua-path
+                                                    mod-path))]
+                                          [else mod-intpath])]
                                        [req (binding-ident req)])
                            #'(#%member mod-intpath req))))))])
 
