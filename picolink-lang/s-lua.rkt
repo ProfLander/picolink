@@ -6,18 +6,12 @@
 
 (provide (all-defined-out))
 
-(define (s-lua-search-paths)
-  (list 'picolink/s-lua/modules))
-
 (struct s-lua (body)
   #:transparent
   #:methods gen:language
   [(define (source self)
      (with-syntax ([(body ...) (s-lua-body self)])
        #'(#%chunk (#%block body ...))))
-
-   (define (search-paths self)
-     (list 'picolink/s-lua/modules))
 
    (define (compiler self name)
      (case name

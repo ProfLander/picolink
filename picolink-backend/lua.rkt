@@ -207,7 +207,7 @@
   's-lua)
 
 (define (lua-search-paths)
-  (s-lua-search-paths))
+  (list 'picolink/lua/modules))
 
 (define (lua-link self ctx #:mode [mode (current-mode)])
   (let* ([ctx

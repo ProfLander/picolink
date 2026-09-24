@@ -16,7 +16,6 @@
 
 (define-generics language
   (source language)
-  (search-paths language)
 
   (collect-require language stx)
   (collect-requires language)
