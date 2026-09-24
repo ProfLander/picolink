@@ -3,6 +3,7 @@
 (require racket/path
 
          picolink/config
+         picolink/backend/compile-ctx
          (prefix-in backend: picolink/backend))
 
 ; Procedure entrypoint
@@ -12,8 +13,8 @@
          [search-paths (append (backend:search-paths backend)
                                (list (path-only entry-point)))]
          [entry-point (file-name-from-path entry-point)]
-         [compile-ctx (backend:make-compile-ctx search-paths
-                                                entry-point)]
+         [compile-ctx (make-compile-ctx search-paths
+                                        entry-point)]
          [link-ctx (backend:compile backend compile-ctx)]
          [linked (backend:link backend link-ctx)])
 
