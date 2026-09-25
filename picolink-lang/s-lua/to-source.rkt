@@ -1,0 +1,354 @@
+#lang picopass
+
+(require picolink/s-lua/grammar
+         picolink/s-lua/util)
+
+(provide (all-defined-out))
+
+(define (indent str)
+  (string-replace str "\n" "\n  "))
+
+(define (format-block block)
+  (if (string=? "" block)
+      block
+      (format "\n~a" block)))
+
+(define (format-body stmts ret
+                     #:leading-newline [leading-newline #t])
+  (string-join (append (if (and leading-newline
+                                (or (pair? stmts)
+                                    ret))
+                           (list "")
+                           null)
+                       (map syntax-e stmts)
+                       (if ret
+                           (list (syntax-e ret))
+                           null))
+               "\n"))
+
+[define-pass s-lua->lua
+ (-> s-lua string?)
+
+ (chunk
+   (-> chunk string?)
+
+   [(#%chunk ~cut (~rec block:block))
+    (syntax-e (attribute block))])
+
+ (block
+   (-> block string?)
+
+   [(#%block ~cut
+     (~rec stmt:statement) ...
+     (~maybe (~rec ret:return-statement)))
+    (format-body (attribute stmt)
+                 (attribute ret)
+                 #:leading-newline #f)])
+
+ (statement
+   (-> statement string?)
+
+   [(#%assign ~cut [(~rec var:var) ...] [(~rec exp:expr) ...])
+    (format "~a = ~a"
+            (string-join (map syntax-e (attribute var)) ", ")
+            (string-join (map syntax-e (attribute exp)) ", "))]
+
+   [(#%break)
+    "break"]
+
+   [(#%label ~cut name:name)
+    (format "::~a::" (syntax-e (rewrite-name #'name)))]
+
+   [(#%goto ~cut name:name)
+    (format "goto ~a" (syntax-e (rewrite-name #'name)))]
+
+   [(#%do ~cut (~rec b:block))
+    (format "do~a\nend"
+            (indent (syntax-e (attribute b))))]
+
+   [(#%while ~cut (~rec cond:expr)
+           (~rec b:block))
+    (format "while ~a do~a\nend"
+            (syntax-e (attribute cond))
+            (indent (format-block (syntax-e (attribute b)))))]
+
+   [(#%repeat ~cut
+            (~rec b:block)
+            (#%until ~cut (~rec cond:expr)))
+    (format "repeat~a\nuntil ~a"
+            (indent (format-block (syntax-e (attribute b))))
+            (syntax-e (attribute cond)))]
+
+   [(#%if ~cut (~rec cond:expr)
+          (~rec then:if/then)
+          (~rec elseif:if/elseif)
+          ...
+          (~maybe (~rec else:if/else)))
+    (format "if ~a ~a~a~a\nend"
+            (syntax-e (attribute cond))
+            (syntax-e (attribute then))
+            (string-join (append (if (pair? (attribute elseif))
+                                     (list "")
+                                     null)
+                                 (map syntax-e (attribute elseif)))
+                         "\n")
+            (if (attribute else)
+                (string-append "\n" (syntax-e (attribute else)))
+                ""))]
+
+   [(#%for (name:name (~rec from:expr)
+                    (~rec to:expr)
+                    (~maybe (~rec step:expr)))
+      (~rec b:block))
+    (format "for ~a = ~a, ~a~a do~a\nend"
+            (syntax-e (rewrite-name #'name))
+            (syntax-e (attribute from))
+            (syntax-e (attribute to))
+            (if (attribute step)
+                (string-append ", " (syntax-e (attribute step)))
+                "")
+            (indent (format-block (syntax-e (attribute b)))))]
+
+   [(#%for ([name:name (~rec exp:expr)] ...)
+      (~rec b:block))
+    (format "for ~a in ~a do~a\nend"
+            (string-join (map (compose symbol->string
+                                       syntax-e
+                                       rewrite-name)
+                              (attribute name))
+                         ", ")
+            (string-join (map syntax-e (attribute exp)) ", ")
+            (indent (format-block (syntax-e (attribute b)))))]
+
+   [(~rec stat:statement/function)
+    (syntax-e (attribute stat))]
+
+   [(#%local [(~rec var:var) ...+])
+    (format "local ~a"
+            (string-join (map syntax-e (attribute var)) ", "))]
+
+   [(#%local [(~rec var:var) ...+] [(~rec exp:expr) ...+])
+    (format "local ~a = ~a"
+            (string-join (map syntax-e (attribute var)) ", ")
+            (string-join (map syntax-e (attribute exp)) ", "))]
+
+   [(#%local (~rec func:statement/function))
+    (format "local ~a" (syntax-e (attribute func)))]
+
+   [(~rec call:function-call)
+    (syntax-e (attribute call))])
+
+ (if/then
+   (-> if/then string?)
+
+   [(#%then ~cut (~rec b:block))
+    (format "then~a"
+            (indent (format-block (syntax-e (attribute b)))))])
+
+ (if/elseif
+   (-> if/elseif string?)
+
+   [(#%elseif ~cut (~rec exp:expr) (~rec then:if/then))
+    (format "elseif ~a ~a"
+            (syntax-e (attribute exp))
+            (syntax-e (attribute then)))])
+
+ (if/else
+   (-> if/else string?)
+
+   [(#%else ~cut (~rec b:block))
+    (format "else~a"
+            (indent (format-block (syntax-e (attribute b)))))])
+
+ (statement/function
+   (-> statement/function string?)
+
+   [(#%function ~cut (name:function-name
+                      arg:name ...
+                      (~maybe vararg:vararg))
+              (~rec b:block))
+    (format "function ~a(~a)~a\nend"
+            (syntax-e (rewrite-name #'name #:omit '("." ":")))
+            (string-join (append (map (compose symbol->string syntax-e)
+                                      (attribute arg))
+                                 (if (attribute vararg)
+                                     (list "...")
+                                     null))
+                         ", ")
+            (indent (format-block (syntax-e (attribute b)))))])
+
+ (return-statement
+   (-> return-statement string?)
+
+   [(#%return ~cut (~rec exp:expr) ...)
+    (format "return~a~a"
+            (if (pair? (attribute exp))
+                " "
+                "")
+            (string-join (map syntax-e (attribute exp))
+                         ", "))])
+
+ (var
+   (-> var string?)
+
+   [name:name
+    (symbol->string (syntax-e (rewrite-name #'name)))]
+
+   [(#%member (~rec exp:prefix-expr) field:name)
+    (format "~a.~a" (syntax-e #'exp) (syntax-e (rewrite-name #'field)))]
+
+   [(#%member (~rec exp:prefix-expr) (~rec field:expr))
+    (format "~a[~a]" (syntax-e #'exp) (syntax-e #'field))])
+
+ (expr
+   (-> expr string?)
+
+   [#%nil
+    "nil"]
+
+   [b:boolean
+    (case (syntax-e #'b)
+      [(#t) "true"]
+      [(#f) "false"])]
+
+   [num:number
+    (number->string (syntax-e #'num))]
+
+   [str:string
+    (format "\"~a\"" (syntax-e #'str))]
+
+   [vararg:vararg
+    "..."]
+
+   [(~rec func:function-definition)
+    (syntax-e (attribute func))]
+
+   [(~rec tbl:table)
+    (syntax-e (attribute tbl))]
+
+   [((~rec unop:unary-op) (~rec exp:expr))
+    (let ([op-sym (syntax-e (attribute unop))])
+      (format "~a~a~a"
+              op-sym
+              (if (eq? "not" op-sym)
+                  " "
+                  "")
+              (syntax-e (attribute exp))))]
+
+   [((~rec binop:binary-op) (~rec a:expr) ~cut (~rec b:expr))
+    (format "~a ~a ~a"
+            (syntax-e (attribute a))
+            (syntax-e (attribute binop))
+            (syntax-e (attribute b)))]
+
+   [(~rec prefix:prefix-expr)
+    (syntax-e (attribute prefix))])
+
+ (prefix-expr
+   (-> prefix-expr string?)
+
+   [(~rec var:var)
+    (syntax-e (attribute var))]
+
+   [(quote (~rec exp:expr))
+    (format "(~a)" (syntax-e (attribute exp)))]
+
+   [(~rec call:function-call)
+    (syntax-e (attribute call))])
+
+ (function-call
+   (-> function-call string?)
+
+   [(#%call (~rec prefix:prefix-expr-or-method) str:string)
+    (format "~a \"~a\""
+            (syntax-e (attribute prefix))
+            (syntax-e (attribute str)))]
+
+   [(#%call (~rec prefix:prefix-expr-or-method) (~rec table:table))
+    (format "~a~a"
+            (syntax-e (attribute prefix))
+            (syntax-e (attribute table)))]
+
+   [(#%call (~rec prefix:prefix-expr-or-method) (~rec exp:expr) ...)
+    (format "~a(~a)"
+            (syntax-e (attribute prefix))
+            (string-join (map syntax-e (attribute exp))
+                         ", "))])
+
+ (prefix-expr-or-method
+  (-> prefix-expr-or-method string?)
+
+  [(#%method ~cut (~rec prefix:prefix-expr) name:name)
+   (format "~a:~a"
+           (syntax-e #'prefix)
+           (syntax-e (rewrite-name #'name)))]
+
+  [(~rec prefix:prefix-expr)
+   (syntax-e #'prefix)])
+
+ (function-definition
+   (-> function-definition string?)
+
+   [(#%function ~cut (arg:name ... (~maybe vararg:vararg))
+              (~rec b:block))
+    (format "function(~a)~a\nend"
+            (string-join (append (map (compose symbol->string
+                                               syntax-e
+                                               rewrite-name)
+                                      (attribute arg))
+                                 (if (attribute vararg)
+                                     (list "...")
+                                     null))
+                         ", ")
+            (indent
+              (format-block (syntax-e (attribute b)))))])
+
+ (table
+   (-> table string?)
+
+   [(#%table ~cut (~rec field:table-field) ...)
+    (format "{~a}" (string-join (map syntax-e (attribute field))
+                                ", "))])
+
+ (table-field
+   (-> table-field string?)
+
+   [[key:name (~rec exp:expr)]
+    (format "~a = ~a"
+            (syntax-e (rewrite-name #'key))
+            (syntax-e (attribute exp)))]
+
+   [[(~rec key:expr) (~rec exp:expr)]
+    (format "[~a] = ~a"
+            (syntax-e (attribute key))
+            (syntax-e (attribute exp)))]
+
+   [(~rec exp:expr)
+    (syntax-e (attribute exp))])
+
+ (binary-op
+   (-> binary-op string?)
+
+   [#%add "+"]
+   [#%sub "-"]
+   [#%mul "*"]
+   [#%div "/"]
+   [#%exp "^"]
+   [#%mod "%"]
+   [#%cat ".."]
+   [#%lt "<"]
+   [#%le "<="]
+   [#%gt ">"]
+   [#%ge ">="]
+   [#%eq "=="]
+   [#%ne "~="]
+   [#%and "and"]
+   [#%or "or"])
+
+ (unary-op
+   (-> unary-op string?)
+
+   [#%neg "-"]
+   [#%not "not"]
+   [#%length "#"])]
+
