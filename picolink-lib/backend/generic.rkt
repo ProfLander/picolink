@@ -72,13 +72,14 @@
 
              (for ([req (in-set reqs)])
 
-               (unless (set-member? provs req)
-                 (raise-syntax-error
-                  'require
-                  (format "~a does not provide ~a"
-                          target (binding-symbol req))
-                  lctx
-                  req)))))
+               (let ([from (car req)])
+                 (unless (set-member? provs from)
+                   (raise-syntax-error
+                    'require
+                    (format "~a does not provide ~a"
+                            target (binding-symbol from))
+                    lctx
+                    from))))))
 
          (let ([modules
                 (for/hash ([(path mod) (in-hash modules)]

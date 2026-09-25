@@ -8,7 +8,8 @@
 
 (provide (all-defined-out))
 
-(struct compile-ctx (search-paths path))
+(struct compile-ctx (search-paths path)
+  #:transparent)
 
 (define/contract (make-compile-ctx search-paths path)
   (-> (listof (or/c symbol? path?)) path? compile-ctx?)
@@ -22,28 +23,35 @@
 
 (define/contract (compile-ctx-load-module ctx)
   (-> compile-ctx? (generic-instance/c gen:language))
-  (for/fold ([acc #f])
-            ([search-path (compile-ctx-search-paths ctx)]
-             #:break acc)
 
-    (cond
-      [(symbol? search-path)
-       (let* ([abs-path (string->symbol
-                         (format "~a/~a" search-path
-                                 (compile-ctx-path ctx)))])
+  (define path (compile-ctx-path ctx))
 
-         (if (module-exists? abs-path)
-             (dynamic-require abs-path 'language)
-             acc))]
+  (define mod
+    (for/fold ([acc #f])
+              ([search-path (compile-ctx-search-paths ctx)]
+               #:break acc)
 
-      [(path? search-path)
-       (let* ([abs-path (module-path->file-path
-                         (build-path search-path
-                                     (compile-ctx-path ctx)))])
+      (cond
+        [(symbol? search-path)
+         (let* ([abs-path (string->symbol
+                           (format "~a/~a" search-path path))])
 
-         (if (file-exists? abs-path)
-             (dynamic-require abs-path'language)
-             acc))])))
+           (if (module-exists? abs-path)
+               (dynamic-require abs-path 'language)
+               acc))]
+
+        [(path? search-path)
+         (let* ([abs-path (module-path->file-path
+                           (build-path search-path path))])
+
+           (if (file-exists? abs-path)
+               (dynamic-require abs-path 'language)
+               acc))])))
+
+  (unless mod
+    (error (format "module not found: ~a" path)))
+
+  mod)
 
 (define (compile-ctx-update ctx
                             #:search-paths

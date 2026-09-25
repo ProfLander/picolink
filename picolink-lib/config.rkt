@@ -5,7 +5,7 @@
 (provide (all-defined-out))
 
 (define current-backend
-  (make-parameter 'lua))
+  (make-parameter 'love))
 
 (define/contract (set-current-backend backend)
   (-> string? void)
@@ -19,4 +19,5 @@
   (current-build-directory (string->path build-directory)))
 
 (define current-entry-point
-  (make-parameter (string->path "../picolink-test/dependency-tree/a")))
+  (make-parameter
+   (string->path "../picolink-test/love-api/graphics-print")))
