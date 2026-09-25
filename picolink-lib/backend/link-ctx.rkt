@@ -10,12 +10,13 @@
 
 (provide (all-defined-out))
 
-(struct link-ctx (search-paths path modules requires provides))
+(struct link-ctx (search-paths path modules requires provides)
+  #:transparent)
 
 (define/contract (make-link-ctx ctx modules requires provides)
   (-> compile-ctx?
       (hash/c path? (generic-instance/c gen:language))
-      (hash/c path? (hash/c binding? (set/c binding?)))
+      (hash/c path? (hash/c binding? (set/c (cons/c binding? binding?))))
       (hash/c path? (set/c binding?))
       link-ctx?)
 
