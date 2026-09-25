@@ -21,19 +21,28 @@
          (for-space lambda (all-defined-out))
          (for-syntax (all-defined-out)))
 
+(define-syntax-class require-spec
+  (pattern req:id
+           #:with from #'req
+           #:with to #'req)
+  (pattern [from:id to:id]))
+
 (define (lambda-collect-require self stx)
   (syntax-parse stx
     #:datum-literals [#%require #%in]
-    [(#%require (#%in mod:id req:id ...) ...)
+    [(#%require (#%in mod:id req:require-spec ...) ...)
      (cons this-syntax
            (for/fold ([acc (hash)])
                      ([entry (in-list (syntax-e #'((mod req ...) ...)))])
              (syntax-parse entry
-               [(mod:id req:id ...)
+               [(mod:id req:require-spec ...)
                 (hash-set acc (make-binding #'mod)
                           (list->set
-                           (map make-binding
-                                (syntax-e #'(req ...)))))])))]
+                           (for/list ([req (in-list (attribute req))])
+                             (syntax-parse req
+                               [req:require-spec
+                                (cons (binding #'req.from)
+                                      (binding #'req.to))]))))])))]
     [_ #f]))
 
 (define (lambda-collect-provide self stx)
@@ -72,11 +81,8 @@
    #:binding-space lambda
    #:allow-extension lambda-macro
 
-  (#%intrinsic name:var)
-  #:binding (export name)
-
-  (#%require ((~datum #%in) mod:id req:var ...) ...)
-  #:binding [(export req) ... ...]
+  (#%require ((~datum #%in) mod:id req:require-spec ...) ...)
+  #:binding [(re-export req) ... ...]
 
   (#%provide prov:var)
 
@@ -87,6 +93,13 @@
   #:binding [(re-export top) ...]
 
   e:expr)
+
+ (nonterminal/exporting require-spec
+   req:var
+   #:binding (export req)
+
+   [from:id to:var]
+   #:binding (export to))
 
  (nonterminal expr
    #:binding-space lambda
@@ -144,9 +157,8 @@
     (syntax-parser
       #:datum-literals [#%require #%in #%provide #%define #%begin]
 
-      [(#%intrinsic _:id) #f]
-      [(#%require (in _:id _:id ...) ...) #f]
-      [(#%provide _:id ...) #f]
+      [(#%require (in _ _ ...) ...) #f]
+      [(#%provide _ ...) #f]
 
       [(#%define name:id (~and %val:expr
                                (~parse val (parse-expr #'%val))))
@@ -157,7 +169,7 @@
 
       [(~and %e:expr
              (~parse e (parse-expr #'%e)))
-       #'(print e)]))
+       #'(#%call print e)]))
 
   (define parse-expr
     (syntax-parser
@@ -180,7 +192,7 @@
         (~and %arg:expr
               (~parse arg (parse-expr #'%arg)))
         ...)
-       #'(proc arg ...)]))
+       #'(#%call proc arg ...)]))
 
   (make-s-lua (parse-top-level stx)))
 

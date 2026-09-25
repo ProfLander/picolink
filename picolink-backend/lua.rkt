@@ -2,10 +2,11 @@
 
 (require racket/contract
          racket/string
-         racket/function
+         racket/path
+         racket/list
          racket/set
          racket/hash
-         racket/path
+         racket/function
          racket/file
          racket/port
          racket/system
@@ -72,14 +73,27 @@
               (hash-union
                acc
                (for/hash ([req (in-set reqs)])
-                 (values req
-                         (with-syntax ([mod-intpath
-                                        (case mod-intpath
-                                          [(same) (string->symbol (module-path->lua-path
-                                                    mod-path))]
-                                          [else mod-intpath])]
-                                       [req (binding-ident req)])
-                           #'(#%member mod-intpath req))))))])
+                 (let ([from (car req)]
+                       [to (cdr req)])
+                   (values
+                    to
+                    (with-syntax
+                      ([mod-intpath
+                        (case mod-intpath
+                          [(same)
+                           (let ([segs (map (compose string->symbol
+                                                     path->string)
+                                            (explode-path mod-path))])
+                             (for/fold ([acc (car segs)])
+                                       ([seg (in-list
+                                              (cdr segs))])
+                               #`(#%member #,acc #,seg)))]
+
+                          [else mod-intpath])]
+
+                       [from (binding-ident from)])
+
+                      #'(#%member mod-intpath from)))))))])
 
       (define rewrite
         (syntax-parser
@@ -126,7 +140,12 @@
 
         (append acc
                 (list (cons (binding-symbol bind)
-                            (set-map reqs binding-symbol)))))))
+                            (set-map
+                             reqs
+                             (λ (req)
+                               (cons
+                                (binding-symbol (car req))
+                                (binding-symbol (cdr req)))))))))))
 
   (define (collect-provides ctx)
 
@@ -146,20 +165,23 @@
                       (car pair)))])
 
       #'(#%local [req-mod-sym ...]
-                 [(require req-mod-str) ...])))
+                 [(#%call require req-mod-str) ...])))
 
   (define (make-member-bindings reqs)
-    (with-syntax ([([req-bind-mod . req-bind-sym] ...)
+    (with-syntax ([((req-bind-mod req-bind-from req-bind-to) ...)
                    (for*/fold ([acc null])
                               ([pair (in-list reqs)]
                                [req (in-list (cdr pair))])
-                     (cons (cons (module-ident->lua-ident
-                                  (car pair))
-                                 req)
-                           acc))])
-      #'(#%local [req-bind-sym ...]
+                     (let ([from (car req)]
+                           [to (cdr req)])
+                       (cons (list(module-ident->lua-ident
+                                   (car pair))
+                                  from
+                                  to)
+                             acc)))])
+      #'(#%local [req-bind-to ...]
                  [(#%member req-bind-mod
-                            req-bind-sym) ...])))
+                            req-bind-from) ...])))
 
   (define (make-provide-return provs)
     (with-syntax ([(prov ...) provs])
