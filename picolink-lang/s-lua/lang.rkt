@@ -20,4 +20,4 @@
      (make-language-module
       this-syntax
       #'(make-s-lua (list #'body ...)
-                    #:provides (set (binding #'prov) ...)))]))
+                    #:provides (list (binding #'prov) ...)))]))

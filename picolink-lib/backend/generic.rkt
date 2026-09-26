@@ -1,10 +1,11 @@
-#lang racket/base
+#lang errortrace racket/base
 
 (require racket/generic
          racket/hash
          racket/set
 
          (prefix-in language: picolink/language)
+         picolink/language
          picolink/binding
          picolink/backend/compile-ctx
          picolink/backend/link-ctx)
@@ -38,13 +39,12 @@
 
              (let* ([mod      (compile-ctx-load-module ctx)]
                     [mod-reqs (hash path
-                                    (language:collect-requires mod))])
+                                    (language:requires mod))])
 
                (for*/fold ([modules (hash-set modules path mod)]
                            [requires (hash-union requires mod-reqs)])
                           ([(_ reqs) (in-hash mod-reqs)]
-                           [(_ reqs) (in-hash reqs)]
-                           [(mod _) (in-hash reqs)])
+                           [(mod _) (in-module-requires reqs)])
 
                  (collect-module
                   (compile-ctx-update
@@ -59,11 +59,10 @@
                    (collect-module ctx (hash) (hash))])
 
        (let ([provides (for/hash ([(path mod) (in-hash modules)])
-                         (values path (language:collect-provides mod)))])
+                         (values path (language:provides mod)))])
 
          (for* ([(_ reqs) (in-hash requires)]
-                [(lctx reqs) (in-hash reqs)]
-                [(target reqs) (in-hash reqs)])
+                [(target reqs) (in-module-requires reqs)])
 
            (let* ([target (string->path
                            (symbol->string
@@ -72,13 +71,13 @@
 
              (for ([req (in-set reqs)])
 
-               (let ([from (car req)])
-                 (unless (set-member? provs from)
+               (let ([from (module-require-from req)])
+                 (unless (module-provides-member? provs from)
                    (raise-syntax-error
                     'require
                     (format "~a does not provide ~a"
                             target (binding-symbol from))
-                    lctx
+                    (module-require-lctx req)
                     from))))))
 
          (let ([modules
@@ -89,26 +88,7 @@
                                     (call-output-name backend)))]
                            #:when compiled)
 
-                  (values path compiled))]
-
-               [requires
-                (for*/fold ([acc
-                             (for/hash ([(path _) (in-hash requires)])
-                               (values
-                                path
-                                (hash)))])
-                           ([(path reqs) (in-hash requires)]
-                            [(_ req-tbl) (in-hash reqs)]
-                            [(mod req-set) (in-hash req-tbl)])
-                  (hash-update
-                   acc path
-                   (λ (tgt)
-                     (hash-update
-                      tgt mod
-                      (λ (tgt)
-                        (set-union tgt req-set))
-                      req-set))
-                   req-tbl))])
+                  (values path compiled))])
 
            (make-link-ctx
             ctx

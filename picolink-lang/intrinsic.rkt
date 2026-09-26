@@ -17,8 +17,8 @@
   [(define (source self)
      (intrinsic-source self))
 
-   (define (collect-provides self)
-     (list->set (map make-binding (syntax-e (source self)))))
+   (define (provides self)
+     (make-module-provides (map make-binding (syntax-e (source self)))))
 
    (define (compiler self _name)
      (const self))])

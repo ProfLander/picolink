@@ -40,3 +40,9 @@
 (define/contract (make-binding ident)
   (-> identifier? binding?)
   (binding ident))
+
+(define/contract (lift-binding ident-or-binding)
+  (-> (or/c identifier? binding?) binding?)
+  (cond
+    [(binding? ident-or-binding) ident-or-binding]
+    [(identifier? ident-or-binding) (binding ident-or-binding)]))

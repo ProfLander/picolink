@@ -7,6 +7,9 @@
 
          picolink/config
          picolink/backend
+         (only-in picolink/language
+                  make-module-requires
+                  make-module-provides)
          picolink/s-lua
          (prefix-in lua: picolink/lua))
 
@@ -56,10 +59,14 @@
                                            #,(path->string path))))))
                         
                         #:requires
-                        (hash-union requires (hash main (hash)))
+                        (hash-union
+                         requires
+                         (hash main (make-module-requires)))
 
                         #:provides
-                        (hash-union provides (hash main (set)))))])
+                        (hash-union
+                         provides
+                         (hash main (make-module-provides)))))])
 
     (parameterize ([lua:current-build-subdir (current-build-subdir)])
 
