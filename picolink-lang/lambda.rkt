@@ -66,13 +66,16 @@
 
   (#%provide prov:var)
 
+  (#%define-syntax name:lambda-macro e:expr)
+  #:binding (export-syntax name e)
+
   (#%define name:var val:expr)
   #:binding (export name)
 
   (#%begin top:top-level-form ...)
   #:binding [(re-export top) ...]
 
-  e:expr)
+  e:lambda-expr)
 
  (nonterminal/exporting require-spec
    req:var
@@ -81,7 +84,7 @@
    [from:id to:var]
    #:binding (export to))
 
- (nonterminal expr
+ (nonterminal lambda-expr
    #:binding-space lambda
    #:allow-extension lambda-macro
 
@@ -90,10 +93,12 @@
    s:string
    v:var
 
-   (#%lambda (arg:var ...) body:expr ...)
+   (#%set! ident:var expr:lambda-expr)
+
+   (#%lambda (arg:var ...) body:lambda-expr ...)
    #:binding (scope (bind arg) ... body ...)
 
-   (#%app proc:expr arg:expr ...)
+   (#%app proc:lambda-expr arg:lambda-expr ...)
 
    (~> (proc arg ...)
        #'(#%app proc arg ...))))
@@ -110,6 +115,9 @@
      #'(define-lambda-syntax name
          (syntax-parser body ...))]))
 
+(begin-for-syntax
+  (define local-expand-expr (nonterminal-expander lambda-expr)))
+
 (define-lambda-syntax-parser begin
   [(_ body ...)
    #'(#%begin body ...)])
@@ -123,9 +131,20 @@
   [(_ prov ...)
    #'(#%provide prov ...)])
 
+(define-lambda-syntax-parser define-syntax
+  [(_ ident clauses ...)
+   #'(#%define-syntax
+      ident
+      (syntax-parser clauses ...))])
+
 (define-lambda-syntax-parser define
   [(_ ident value)
-   #'(#%define ident value)])
+   (with-syntax ([value (local-expand-expr #'value)])
+     #'(#%define ident value))])
+
+(define-lambda-syntax-parser set!
+  [(_ ident expr)
+   #'(#%set! ident expr)])
 
 (define-lambda-syntax-parser λ
   [(_ (arg ...) body ...)
@@ -135,10 +154,17 @@
 
   (define parse-top-level
     (syntax-parser
-      #:datum-literals [#%require #%in #%provide #%define #%begin]
+      #:datum-literals [#%require
+                        #%in
+                        #%provide
+                        #%define-syntax
+                        #%define
+                        #%begin]
 
       [(#%require (in _ _ ...) ...) #f]
       [(#%provide _ ...) #f]
+
+      [(#%define-syntax name:id e:expr) #f]
 
       [(#%define name:id (~and %val:expr
                                (~parse val (parse-expr #'%val))))
@@ -147,18 +173,20 @@
       [(#%begin e:expr ...)
        (filter-map parse-top-level (syntax-e #'(e ...)))]
 
-      [(~and %e:expr
-             (~parse e (parse-expr #'%e)))
-       #'(#%call print e)]))
+      [e:expr (parse-expr #'e)]))
 
   (define parse-expr
     (syntax-parser
-      #:datum-literals [#%lambda #%app]
+      #:datum-literals [#%set! #%lambda #%app]
 
       [bool:boolean #'bool]
       [num:number #'num]
       [str:string #'str]
       [ident:id #'ident]
+
+      [(#%set! ident:id (~and %val:expr
+                              (~parse val (parse-expr #'%val))) )
+       #'(#%assign [ident] [val])]
 
       [(#%lambda (arg:id ...)
                  (~and %body:expr (~parse body (parse-expr #'%body))) ...
