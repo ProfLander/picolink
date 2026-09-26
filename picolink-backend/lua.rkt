@@ -14,11 +14,11 @@
          syntax/parse
 
          picolink/config
-         picolink/backend
+         (except-in picolink/backend compile)
          picolink/binding
          picolink/s-lua
          picolink/intrinsic
-         (prefix-in language: picolink/language))
+         picolink/language)
 
 (provide (all-defined-out))
 
@@ -57,7 +57,7 @@
            [requires (hash-ref (link-ctx-requires ctx) path)]
            [rewrites
             (for/fold ([acc (hash)])
-                      ([(bind reqs) (in-hash requires)]
+                      ([(bind reqs) (in-module-requires requires)]
                        #:do [(define mod-path
                                (binding->module-path bind))
                              (define mod
@@ -73,8 +73,8 @@
               (hash-union
                acc
                (for/hash ([req (in-set reqs)])
-                 (let ([from (car req)]
-                       [to (cdr req)])
+                 (let ([from (module-require-from req)]
+                       [to (module-require-to req)])
                    (values
                     to
                     (with-syntax
@@ -127,7 +127,7 @@
                           (link-ctx-path ctx))])
 
       (for*/fold ([acc null])
-                 ([(bind reqs) (in-hash reqs)]
+                 ([(bind reqs) (in-module-requires reqs)]
 
                   #:do [(define mod-path
                           (binding->module-path bind))
@@ -140,19 +140,21 @@
 
         (append acc
                 (list (cons (binding-symbol bind)
-                            (set-map
+                            (module-provides-map
                              reqs
                              (λ (req)
                                (cons
-                                (binding-symbol (car req))
-                                (binding-symbol (cdr req)))))))))))
+                                (binding-symbol
+                                 (module-require-from req))
+                                (binding-symbol
+                                 (module-require-to req)))))))))))
 
   (define (collect-provides ctx)
 
     (let ([provs (hash-ref (link-ctx-provides ctx)
                            (link-ctx-path ctx))])
 
-      (set-map provs binding-symbol)))
+      (module-provides-map provs binding-symbol)))
 
   (define (make-module-bindings reqs)
     (with-syntax ([(req-mod-sym ...)
@@ -271,12 +273,12 @@
 
          [combined (s-lua-append dependencies entry-point)])
 
-    (language:compile combined 'lua)))
+    (compile combined 'lua)))
 
 (define (lua-link/library ctx)
   (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
                    (values (path-replace-extension path ".lua")
-                           (language:compile mod 'lua)))]
+                           (compile mod 'lua)))]
         [build-directory (build-path (current-build-directory)
                                      (current-build-subdir))])
 

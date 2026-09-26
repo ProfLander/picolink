@@ -4,6 +4,7 @@
                      syntax/parse)
 
          racket/contract
+         racket/function
          racket/list
          racket/set
 
@@ -27,45 +28,24 @@
            #:with to #'req)
   (pattern [from:id to:id]))
 
-(define (lambda-collect-require self stx)
-  (syntax-parse stx
-    #:datum-literals [#%require #%in]
-    [(#%require (#%in mod:id req:require-spec ...) ...)
-     (cons this-syntax
-           (for/fold ([acc (hash)])
-                     ([entry (in-list (syntax-e #'((mod req ...) ...)))])
-             (syntax-parse entry
-               [(mod:id req:require-spec ...)
-                (hash-set acc (make-binding #'mod)
-                          (list->set
-                           (for/list ([req (in-list (attribute req))])
-                             (syntax-parse req
-                               [req:require-spec
-                                (cons (binding #'req.from)
-                                      (binding #'req.to))]))))])))]
-    [_ #f]))
-
-(define (lambda-collect-provide self stx)
-  (syntax-parse stx
-    #:datum-literals [#%provide]
-    [(#%provide prov:id ...)
-     (list->set (map make-binding (attribute prov)))]
-    [_ #f]))
-
 (define (lambda-compiler self name)
   (case name
     [(s-lua) compile/s-lua]
     [else (error "unsupported target language" name)]))
 
-(struct lambda (source)
+(struct lambda (requires provides source)
   #:transparent
   #:methods gen:language
 
-  [(define (source self)
+  [(define (requires self)
+     (lambda-requires self))
+
+   (define (provides self)
+     (lambda-provides self))
+
+   (define (source self)
      (lambda-source self))
 
-   (define collect-require lambda-collect-require)
-   (define collect-provide lambda-collect-provide)
    (define compiler lambda-compiler)])
 
 (syntax-spec
@@ -226,4 +206,47 @@
 
 (define/contract (make-lambda stx)
   (-> syntax? lambda?)
-  (lambda stx))
+
+  (define (collect-requires stx)
+    (define parse
+      (syntax-parser
+        #:datum-literals [#%begin #%require #%in]
+
+        [(#%begin form ...)
+         (apply append (filter-map parse (attribute form)))]
+
+        [(#%require (#%in mod:id req:require-spec ...) ...)
+         (let ([req-stx this-syntax])
+           (for/list ([entry (in-list (syntax-e #'((mod req ...) ...)))])
+             (syntax-parse entry
+               [(mod:id req:require-spec ...)
+                (cons #'mod
+                      (map (syntax-parser
+                             [req:require-spec
+                              (make-module-require req-stx
+                                                   #'req.from
+                                                   #'req.to)])
+                           (attribute req)))])))]
+
+        [_ #f]))
+
+    (make-module-requires (parse stx)))
+
+  (define (collect-provides stx)
+    (define parse
+      (syntax-parser
+        #:datum-literals [#%begin #%provide]
+
+        [(#%begin form ...)
+         (map set-union (filter-map parse (attribute form)))]
+
+        [(#%provide prov:id ...)
+         (list->set (map make-binding (attribute prov)))]
+
+        [_ #f]))
+
+    (make-module-provides (parse stx)))
+
+  (let ([requires (collect-requires stx)]
+        [provides (collect-provides stx)])
+    (lambda requires provides stx)))

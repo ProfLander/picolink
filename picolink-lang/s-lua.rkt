@@ -8,7 +8,7 @@
          picolink/language
          picolink/binding
 
-         (prefix-in picopass: picolink/s-lua/to-source))
+         picolink/s-lua/to-source)
 
 (provide (all-defined-out))
 
@@ -19,12 +19,12 @@
      (with-syntax ([(body ...) (s-lua-body self)])
        #'(#%chunk (#%block body ...))))
 
-   (define (collect-provides self)
+   (define (provides self)
      (s-lua-provides self))
 
    (define (compiler self name)
      (case name
-       [(lua) picopass:s-lua->lua]
+       [(lua) s-lua->lua]
        [(s-lua) (syntax-parser
                   #:datum-literals [#%chunk #%block]
                   [(#%chunk (#%block body ...))
@@ -32,12 +32,12 @@
                                #:provides (s-lua-provides self))])]
        [else (error "unsupported target language" name)]))])
 
-(define/contract (make-s-lua body #:provides [provides (set)])
+(define/contract (make-s-lua body #:provides [provides null])
   (->* [(listof syntax?)]
-       [#:provides (set/c binding?)]
+       [#:provides (listof binding?)]
        s-lua?)
 
-  (s-lua body provides))
+  (s-lua body (make-module-provides provides)))
 
 (define/contract (s-lua-prepend self other)
   (-> s-lua? s-lua? s-lua?)

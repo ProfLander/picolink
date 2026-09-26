@@ -16,8 +16,8 @@
 (define/contract (make-link-ctx ctx modules requires provides)
   (-> compile-ctx?
       (hash/c path? (generic-instance/c gen:language))
-      (hash/c path? (hash/c binding? (set/c (cons/c binding? binding?))))
-      (hash/c path? (set/c binding?))
+      (hash/c path? module-requires?)
+      (hash/c path? module-provides?)
       link-ctx?)
 
   (link-ctx (compile-ctx-search-paths ctx)
