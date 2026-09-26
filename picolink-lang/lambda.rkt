@@ -1,16 +1,12 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse)
+                     picopass/base)
 
          racket/contract
-         racket/function
          racket/list
-         racket/set
 
          syntax/parse
-         syntax/id-table
-         syntax/id-set
 
          syntax-spec-v3
 
@@ -48,14 +44,63 @@
 
    (define compiler lambda-compiler)])
 
+(define/contract (make-lambda stx)
+  (-> syntax? lambda?)
+
+  (define (collect-requires stx)
+    (define parse
+      (syntax-parser
+        #:datum-literals [#%begin #%require #%in]
+
+        [(#%begin form ...)
+         (apply append (filter-map parse (attribute form)))]
+
+        [(#%require (#%in mod:id req:require-spec ...) ...)
+         (let ([req-stx this-syntax])
+           (for/list ([entry (in-list (syntax-e #'((mod req ...) ...)))])
+             (syntax-parse entry
+               [(mod:id req:require-spec ...)
+                (cons #'mod
+                      (map (syntax-parser
+                             [req:require-spec
+                              (make-module-require req-stx
+                                                   #'req.from
+                                                   #'req.to)])
+                           (attribute req)))])))]
+
+        [_ #f]))
+
+    (let ([requires (parse stx)])
+      (make-module-requires requires)))
+
+  (define (collect-provides stx)
+    (define parse
+      (syntax-parser
+        #:datum-literals [#%begin #%provide]
+
+        [(#%begin form ...)
+         (apply append (filter-map parse (attribute form)))]
+
+        [(#%provide prov:id ...)
+         (map make-binding (attribute prov))]
+
+        [_ #f]))
+
+    (let ([provides (parse stx)])
+      (make-module-provides provides)))
+
+  (let ([requires (collect-requires stx)]
+        [provides (collect-provides stx)])
+    (lambda requires provides stx)))
+
 (syntax-spec
  (binding-class var #:binding-space lambda)
  (extension-class lambda-macro #:binding-space lambda)
 
  (host-interface/expression
-   (lambda/check-binds t:top-level-form ...)
-   #:binding (scope (import t) ...)
-   #'(quote-syntax (#%begin t ...)))
+   (#%lambda t:top-level-form)
+   #:binding (scope (import t))
+   #'(quote-syntax t))
 
  (nonterminal/exporting top-level-form
    #:binding-space lambda
@@ -95,7 +140,7 @@
 
    (#%set! ident:var expr:lambda-expr)
 
-   (#%lambda (arg:var ...) body:lambda-expr ...)
+   (#%abs (arg:var ...) body:lambda-expr ...)
    #:binding (scope (bind arg) ... body ...)
 
    (#%app proc:lambda-expr arg:lambda-expr ...)
@@ -103,52 +148,66 @@
    (~> (proc arg ...)
        #'(#%app proc arg ...))))
 
-(define-syntax define-lambda-syntax
-  (syntax-parser
-    [(_ name body ...)
-     #'(define-dsl-syntax name lambda-macro
-         body ...)]))
-
-(define-syntax define-lambda-syntax-parser
-  (syntax-parser
-    [(_ name body ...)
-     #'(define-lambda-syntax name
-         (syntax-parser body ...))]))
-
 (begin-for-syntax
-  (define local-expand-expr (nonterminal-expander lambda-expr)))
+  (define-language lambda-surface
+    #:entry-point top-level-form
+    #:terminals [id boolean number string [macro expr]]
 
-(define-lambda-syntax-parser begin
-  [(_ body ...)
-   #'(#%begin body ...)])
+    (top-level-form
+     #:datum-literals [begin require in provide define-syntax define]
+     (begin ~cut top-level-form ...)
+     (require ~cut (in id require-spec ...) ...)
+     (provide ~cut id ...)
+     (define-syntax ~cut id macro)
+     (define ~cut id expr)
+     expr)
 
-(define-lambda-syntax-parser require
-  #:datum-literals [in]
-  [(_ (in mod req ...) ...)
-   #'(#%require (#%in mod req ...) ...)])
+    (require-spec
+     [id id]
+     id)
 
-(define-lambda-syntax-parser provide
-  [(_ prov ...)
-   #'(#%provide prov ...)])
+    (expr
+     #:datum-literals [λ set!]
+     id
+     boolean
+     number
+     string
+     (set! ~cut id expr)
+     (λ ~cut (id ...) expr ...)
+     (expr expr ...)))
 
-(define-lambda-syntax-parser define-syntax
-  [(_ ident clauses ...)
-   #'(#%define-syntax
-      ident
-      (syntax-parser clauses ...))])
+  (define-pass lambda-surface->ir
+    (-> lambda-surface syntax?)
 
-(define-lambda-syntax-parser define
-  [(_ ident value)
-   (with-syntax ([value (local-expand-expr #'value)])
-     #'(#%define ident value))])
+    (top-level-form
+     (-> top-level-form syntax?)
 
-(define-lambda-syntax-parser set!
-  [(_ ident expr)
-   #'(#%set! ident expr)])
+     [(begin ~cut (~rec f:top-level-form) ...)
+      #'(#%begin f ...)]
 
-(define-lambda-syntax-parser λ
-  [(_ (arg ...) body ...)
-   #'(#%lambda (arg ...) body ...)])
+     [(require ~cut (in mod:id spec:require-spec ...) ...)
+      #'(#%require (#%in mod spec ...) ...)]
+
+     [(provide ~cut prov:id ...)
+      #'(#%provide prov ...)]
+
+     [(define-syntax ~cut name:id mac:macro)
+      #'(#%define-syntax name mac)]
+
+     [(define ~cut name:id (~rec val:expr))
+      #'(#%define name val)])
+
+    (expr
+     (-> expr syntax?)
+
+     [(set! ~cut name:id (~rec val:expr))
+      #'(#%set! name val)]
+
+     [(λ ~cut (arg:id ...) (~rec body:expr) ...)
+      #'(#%abs (arg ...) body ...)]
+
+     [((~rec proc:expr) (~rec arg:expr) ...)
+      #'(#%app proc arg ...)])))
 
 (define (compile/s-lua stx)
 
@@ -177,7 +236,7 @@
 
   (define parse-expr
     (syntax-parser
-      #:datum-literals [#%set! #%lambda #%app]
+      #:datum-literals [#%set! #%abs #%app]
 
       [bool:boolean #'bool]
       [num:number #'num]
@@ -188,7 +247,7 @@
                               (~parse val (parse-expr #'%val))) )
        #'(#%assign [ident] [val])]
 
-      [(#%lambda (arg:id ...)
+      [(#%abs (arg:id ...)
                  (~and %body:expr (~parse body (parse-expr #'%body))) ...
                  (~and %ret:expr (~parse ret (parse-expr #'%ret))))
        #'(#%function (arg ...)
@@ -203,50 +262,3 @@
        #'(#%call proc arg ...)]))
 
   (make-s-lua (parse-top-level stx)))
-
-(define/contract (make-lambda stx)
-  (-> syntax? lambda?)
-
-  (define (collect-requires stx)
-    (define parse
-      (syntax-parser
-        #:datum-literals [#%begin #%require #%in]
-
-        [(#%begin form ...)
-         (apply append (filter-map parse (attribute form)))]
-
-        [(#%require (#%in mod:id req:require-spec ...) ...)
-         (let ([req-stx this-syntax])
-           (for/list ([entry (in-list (syntax-e #'((mod req ...) ...)))])
-             (syntax-parse entry
-               [(mod:id req:require-spec ...)
-                (cons #'mod
-                      (map (syntax-parser
-                             [req:require-spec
-                              (make-module-require req-stx
-                                                   #'req.from
-                                                   #'req.to)])
-                           (attribute req)))])))]
-
-        [_ #f]))
-
-    (make-module-requires (parse stx)))
-
-  (define (collect-provides stx)
-    (define parse
-      (syntax-parser
-        #:datum-literals [#%begin #%provide]
-
-        [(#%begin form ...)
-         (map set-union (filter-map parse (attribute form)))]
-
-        [(#%provide prov:id ...)
-         (list->set (map make-binding (attribute prov)))]
-
-        [_ #f]))
-
-    (make-module-provides (parse stx)))
-
-  (let ([requires (collect-requires stx)]
-        [provides (collect-provides stx)])
-    (lambda requires provides stx)))
