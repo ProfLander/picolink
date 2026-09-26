@@ -140,7 +140,7 @@
 
         (append acc
                 (list (cons (binding-symbol bind)
-                            (module-provides-map
+                            (set-map
                              reqs
                              (λ (req)
                                (cons
