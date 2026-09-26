@@ -20,6 +20,5 @@
     [(_ body ...)
      (make-language-module
       this-syntax
-      #'(make-lambda
-         (lambda/check-binds
-          body ...)))]))
+      (with-syntax ([ir (lambda-surface->ir #'(begin body ...))])
+        #'(make-lambda (#%lambda ir))))]))
