@@ -55,7 +55,7 @@
  (host-interface/expression
    (lambda/check-binds t:top-level-form ...)
    #:binding (scope (import t) ...)
-   #'#'(#%begin t ...))
+   #'(quote-syntax (#%begin t ...)))
 
  (nonterminal/exporting top-level-form
    #:binding-space lambda
