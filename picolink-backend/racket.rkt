@@ -14,7 +14,7 @@
    (define (link self ctx)
      (error "unimplemented:" 'link))
 
-   (define (run self linked)
+   (define (run self ctx)
      (error "unimplemented:" 'run))])
 
 (define (make-racket)

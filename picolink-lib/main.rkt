@@ -1,8 +1,6 @@
 #lang racket/base
 
-(require racket/match
-
-         picolink/config
+(require picolink/config
          picolink/backend/compile-ctx
          (prefix-in backend: picolink/backend))
 
@@ -16,7 +14,9 @@
          [backend      (config-backend config)]
          [search-paths (append (backend:search-paths backend)
                                (list (config-root config)))]
-         [compile-ctx  (make-compile-ctx search-paths entry-point)])
+         [compile-ctx  (make-compile-ctx config
+                                         search-paths
+                                         entry-point)])
     (backend:compile backend compile-ctx)))
 
 (define (link config)

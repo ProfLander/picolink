@@ -18,7 +18,7 @@
 
   (compile backend ctx)
   (link backend ctx)
-  (run backend linked)
+  (run backend ctx)
 
   #:fallbacks
   [(define/generic call-output-name output-name)
