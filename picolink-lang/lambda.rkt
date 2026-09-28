@@ -1,28 +1,126 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     picopass/base)
+                     syntax/parse)
 
          racket/contract
+         racket/syntax
          racket/list
-
-         syntax/parse
+         racket/struct
+         racket/sequence
 
          syntax-spec-v3
 
+         picopass/base
+
          picolink/language
          picolink/binding
-         picolink/s-lua)
+         (except-in picolink/s-lua s-lua)
+         picolink/s-lua/grammar)
 
 (provide (all-defined-out)
          (for-space lambda (all-defined-out))
          (for-syntax (all-defined-out)))
 
-(define-syntax-class require-spec
-  (pattern req:id
-           #:with from #'req
-           #:with to #'req)
-  (pattern [from:id to:id]))
+; Surface syntax
+
+(define-language lambda-surface
+  #:entry-point top-level-form
+  #:terminals [id
+               [var id]
+               [lambda-macro id]
+               boolean
+               number
+               string
+               expr]
+
+  (top-level-form
+   #:datum-literals [begin require in provide define-syntax define]
+   (begin ~cut top-level-form ...)
+   (require ~cut (in id require-spec ...) ...)
+   (provide ~cut var ...)
+   (define-syntax ~cut lambda-macro macro-clause ...+)
+   (define ~cut var lambda-expr)
+   lambda-expr)
+
+  (macro-clause
+   #:datum-literals [syntax]
+   (expr
+    expr ...
+    top-level-form))
+
+  (require-spec
+   [id var]
+   id)
+
+  (lambda-expr
+   #:datum-literals [let set! λ]
+
+   var
+
+   boolean
+   number
+   string
+
+   (let ~cut ([id lambda-expr] ...)
+     lambda-expr ...)
+
+   (set! ~cut id lambda-expr)
+
+   (λ ~cut (var ...) lambda-expr ...)
+
+   (lambda-expr ...+)))
+
+(define-pass lambda-surface->ir
+  #;(-> lambda-surface #%lambda)
+  (-> lambda-surface syntax?)
+
+  (top-level-form
+   #;(-> top-level-form top-level-form)
+   (-> top-level-form syntax?)
+
+   [(begin ~cut (~rec f:top-level-form) ...)
+    #'(#%begin f ...)]
+
+   [(require ~cut (in mod:id spec:require-spec ...) ...)
+    #'(#%require (#%in mod spec ...) ...)]
+
+   [(provide ~cut prov:var ...)
+    #'(#%provide prov ...)]
+
+   [(define-syntax ~cut name:lambda-macro (~rec clause:macro-clause) ...+)
+    #'(#%define-syntax name (syntax-parser clause ...))]
+
+   [(define ~cut name:var (~rec val:lambda-expr))
+    #'(#%define name val)])
+
+  (macro-clause
+   (-> macro-clause syntax?)
+   [(pat:expr expr:expr ... (~rec form:top-level-form))
+    #'[pat
+       expr ...
+       (syntax form)]])
+
+  (lambda-expr
+   #;(-> lambda-expr lambda-expr)
+   (-> lambda-expr syntax?)
+
+   [(let ~cut ([name:id (~rec val:lambda-expr)] ...)
+      (~rec body:lambda-expr)
+      ...)
+    #'(#%let ([name val] ...)
+             body ...)]
+
+   [(set! ~cut name:id (~rec val:lambda-expr))
+    #'(#%set! name val)]
+
+   [(λ ~cut (arg:var ...) (~rec body:lambda-expr) ...)
+    #'(#%abs (arg ...) body ...)]
+
+   [((~rec expr:lambda-expr) ...+)
+    #'(expr ...)]))
+
+; IR
 
 (define (lambda-compiler self name)
   (case name
@@ -30,7 +128,16 @@
     [else (error "unsupported target language" name)]))
 
 (struct lambda (requires provides source)
-  #:transparent
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (self) 'lambda)
+      (λ (self) (list (cons 'requires (lambda-requires self))
+                      (cons 'provides (lambda-provides self))
+                      (list 'source
+                            (syntax->datum
+                             (lambda-source self)))))))]
+
   #:methods gen:language
 
   [(define (requires self)
@@ -46,6 +153,12 @@
 
 (define/contract (make-lambda stx)
   (-> syntax? lambda?)
+
+  (define-syntax-class require-spec
+    (pattern req:id
+             #:with from #'req
+             #:with to #'req)
+    (pattern [from:id to:id]))
 
   (define (collect-requires stx)
     (define parse
@@ -89,176 +202,329 @@
     (let ([provides (parse stx)])
       (make-module-provides provides)))
 
-  (let ([requires (collect-requires stx)]
-        [provides (collect-provides stx)])
+  (let* ([stx (lambda-surface->ir stx)]
+         [requires (collect-requires stx)]
+         [provides (collect-provides stx)])
     (lambda requires provides stx)))
 
-(syntax-spec
- (binding-class var #:binding-space lambda)
- (extension-class lambda-macro #:binding-space lambda)
+(derive-language #%lambda
+  #:entry-point top-level-form
 
- (host-interface/expression
-   (#%lambda t:top-level-form)
-   #:binding (scope (import t))
-   #'(quote-syntax t))
+  (syntax-spec
+   (binding-class var #:binding-space lambda)
+   (extension-class lambda-macro #:binding-space lambda)
 
- (nonterminal/exporting top-level-form
-   #:binding-space lambda
-   #:allow-extension lambda-macro
+   (host-interface/expression
+     (#%lambda-spec t:top-level-form)
+     #:binding (scope (import t))
+     #'(quote-syntax t))
 
-  (#%require ((~datum #%in) mod:id req:require-spec ...) ...)
-  #:binding [(re-export req) ... ...]
+   (nonterminal/exporting top-level-form
+     #:binding-space lambda
+     #:allow-extension lambda-macro
 
-  (#%provide prov:var)
+     (#%require ((~datum #%in) mod:id req:require-spec ...) ...)
+     #:binding [(re-export req) ... ...]
 
-  (#%define-syntax name:lambda-macro e:expr)
-  #:binding (export-syntax name e)
+     (#%provide prov:var ...)
 
-  (#%define name:var val:expr)
-  #:binding (export name)
+     (#%define-syntax name:lambda-macro e:expr)
+     #:binding (export-syntax name e)
 
-  (#%begin top:top-level-form ...)
-  #:binding [(re-export top) ...]
+     (#%define name:var val:lambda-expr)
+     #:binding (export name)
 
-  e:lambda-expr)
+     (#%begin top:top-level-form ...)
+     #:binding [(re-export top) ...]
 
- (nonterminal/exporting require-spec
-   req:var
-   #:binding (export req)
+     e:lambda-expr)
 
-   [from:id to:var]
-   #:binding (export to))
+   (nonterminal/exporting require-spec
+     req:var
+     #:binding (export req)
 
- (nonterminal lambda-expr
-   #:binding-space lambda
-   #:allow-extension lambda-macro
+     [from:id to:var]
+     #:binding (export to))
 
-   b:boolean
-   n:number
-   s:string
-   v:var
+   (nonterminal lambda-expr
+     #:binding-space lambda
+     #:allow-extension lambda-macro
 
-   (#%set! ident:var expr:lambda-expr)
+     b:boolean
+     n:number
+     s:string
+     v:var
 
-   (#%abs (arg:var ...) body:lambda-expr ...)
-   #:binding (scope (bind arg) ... body ...)
+     (#%let ([ident:var expr:lambda-expr] ...)
+            body:lambda-expr ...)
+     #:binding (scope (bind ident) ... body ...)
 
-   (#%app proc:lambda-expr arg:lambda-expr ...)
+     (#%set! ident:var expr:lambda-expr)
 
-   (~> (proc arg ...)
-       #'(#%app proc arg ...))))
+     (#%abs (arg:var ...) body:lambda-expr ...)
+     #:binding (scope (bind arg) ... body ...)
 
-(begin-for-syntax
-  (define-language lambda-surface
-    #:entry-point top-level-form
-    #:terminals [id boolean number string [macro expr]]
+     (#%app expr:lambda-expr ...+)
 
-    (top-level-form
-     #:datum-literals [begin require in provide define-syntax define]
-     (begin ~cut top-level-form ...)
-     (require ~cut (in id require-spec ...) ...)
-     (provide ~cut id ...)
-     (define-syntax ~cut id macro)
-     (define ~cut id expr)
-     expr)
+     (~> (arg ...+)
+         #'(#%app arg ...)))))
 
-    (require-spec
-     [id id]
-     id)
+; A-Normal Form
 
-    (expr
-     #:datum-literals [λ set!]
-     id
-     boolean
-     number
-     string
-     (set! ~cut id expr)
-     (λ ~cut (id ...) expr ...)
-     (expr expr ...)))
+(define-language #%lambda-anf
+  #:extends #%lambda
 
-  (define-pass lambda-surface->ir
-    (-> lambda-surface syntax?)
+  (lambda-expr
 
-    (top-level-form
-     (-> top-level-form syntax?)
+   (- var
 
-     [(begin ~cut (~rec f:top-level-form) ...)
-      #'(#%begin f ...)]
+      boolean
+      number
+      string
 
-     [(require ~cut (in mod:id spec:require-spec ...) ...)
-      #'(#%require (#%in mod spec ...) ...)]
+      (#%let ([var lambda-expr] ...) lambda-expr ...)
+      (#%abs (var ...) lambda-expr ...)
+      (#%app lambda-expr ...+))
 
-     [(provide ~cut prov:id ...)
-      #'(#%provide prov ...)]
+   (+ val
+      (#%let ([id lambda-expr] ...) lambda-expr ...)
+      (#%app val ...+)))
 
-     [(define-syntax ~cut name:id mac:macro)
-      #'(#%define-syntax name mac)]
+  (val
+   #:datum-literals+ [#%abs]
+   (+ var
 
-     [(define ~cut name:id (~rec val:expr))
-      #'(#%define name val)])
+      boolean
+      number
+      string
 
-    (expr
-     (-> expr syntax?)
+      (#%abs (var ...) lambda-expr ...))))
 
-     [(set! ~cut name:id (~rec val:expr))
-      #'(#%set! name val)]
+(define (#%lambda-exprs->binds+atom exprs)
+  (for/fold ([binds null]
+             [atoms null])
+            ([expr (in-list exprs)])
+    (let-values ([(binds* atom)
+                  (#%lambda->binds+atom expr)])
+      (values (append binds binds*)
+              (append atoms (list atom))))))
 
-     [(λ ~cut (arg:id ...) (~rec body:expr) ...)
-      #'(#%abs (arg ...) body ...)]
+; ANF Conversion
 
-     [((~rec proc:expr) (~rec arg:expr) ...)
-      #'(#%app proc arg ...)])))
+(define #%lambda->binds+atom
+  (syntax-parser
+    #:datum-literals [#%begin
+                      #%require
+                      #%provide
+                      #%define
+                      #%define-syntax
+                      #%let
+                      #%set!
+                      #%abs
+                      #%app]
+
+    [(~or _:id
+          _:boolean
+          _:string
+          _:number
+          (#%require _ ...)
+          (#%provide _ ...)
+          (#%define-syntax _ ...))
+     (values null this-syntax)]
+
+    [(#%begin expr ...)
+     (with-syntax ([(expr ...) (map #%lambda->#%lambda-anf
+                                     (attribute expr))])
+       (values null #'(#%begin expr ...)))]
+
+    [(#%define ident expr)
+     (with-syntax ([expr (#%lambda->#%lambda-anf #'expr)])
+       (values null #'(#%define ident expr)))]
+
+    [(#%let ([bind expr] ...)
+            body ...)
+
+     (define-values (expr-binds expr-atoms)
+       (#%lambda-exprs->binds+atom (attribute expr)))
+
+     (with-syntax ([(expr-atom ...) expr-atoms]
+                   [(body ...) (map #%lambda->#%lambda-anf
+                                    (attribute body))])
+       (values expr-binds
+               #'(#%let ([bind expr-atom] ...)
+                        body ...)))]
+
+    [(#%set! ident expr)
+     (with-syntax ([expr (#%lambda->#%lambda-anf #'expr)])
+       (values null #'(#%set! ident expr)))]
+
+    [(#%abs (arg ...) body ...)
+     (with-syntax ([(body ...) (map #%lambda->#%lambda-anf
+                                    (attribute body))])
+       (values null
+               #'(#%abs (arg ...)
+                        body ...)))]
+
+    [(#%app expr ...)
+
+     (define-values (expr-binds expr-atoms)
+       (#%lambda-exprs->binds+atom (attribute expr)))
+
+     (with-syntax ([atom (generate-temporary)]
+                   [(expr-atom ...) expr-atoms])
+       (values (append expr-binds
+                       (list (cons #'atom #'(#%app expr-atom ...))))
+               #'atom))]))
+
+(define (binds+atom->#%lambda-anf binds atom)
+  (if (pair? binds)
+      (let ([is-ident (identifier? atom)])
+        (let ([binds (if is-ident
+                         (drop-right binds 1)
+                         binds)]
+              [atom (if is-ident
+                        (cdr (last binds))
+                        atom)])
+          (for/foldr ([stx atom])
+                     ([pair (in-list binds)])
+            (with-syntax ([bind (car pair)]
+                          [val (cdr pair)])
+              #`(#%let ([bind val])
+                       #,stx)))))
+      atom))
+
+(define (#%lambda->#%lambda-anf stx)
+  (define-values (binds atom) (#%lambda->binds+atom stx))
+  (binds+atom->#%lambda-anf binds atom))
+
+; S-Lua Compiler
+
+(define (unimplemented)
+  (error "unimplemented"))
+
+(define (hoist-do stx)
+  (for/fold ([acc null])
+            ([body (in-syntax stx)])
+    (append acc
+            (syntax-parse body
+              #:datum-literals [#%do #%block]
+              [(#%do (#%block body ...))
+               (attribute body)]
+              [_ (list this-syntax)]))))
+
+(define-pass #%lambda-anf->s-lua
+  (-> #%lambda-anf s-lua)
+  
+  (top-level-form->block
+   (-> top-level-form block)
+   [(#%begin top:top-level-form ...)
+    (let ([tops
+           (filter-map
+            (syntax-parser
+              #:datum-literals [#%require
+                                #%provide
+                                #%define-syntax]
+              [((~or #%require
+                     #%provide
+                     #%define-syntax)
+                _ ...)
+               #f]
+              [_ (rec/top-level-form this-syntax)])
+            (syntax-e #'(top ...)))])
+      (syntax-parse tops
+        #:datum-literals [#%do #%block]
+        [[stmt ... (#%do (#%block body ...))]
+         #'(#%block stmt ... body ...)]
+        [(top ...)
+         #'(#%block top ...)]))])
+
+  (top-level-form->statement
+   (-> top-level-form statement)
+   [(#%define name:var (~rec val:lambda-expr))
+    #'(#%local [name] [val])]
+
+   [(~rec e:lambda-expr) #'e])
+
+  (top-level-form->*
+   #;(-> top-level-form *)
+   (-> top-level-form block)
+   [(#%require (#%in mod:id req:require-spec ...) ...)
+    (unimplemented)]
+
+   [(#%provide prov:var ...)
+    (unimplemented)]
+
+   [(#%define-syntax name:lambda-macro e:expr)
+    (unimplemented)])
+
+  (require-spec->*
+   #;(-> require-spec *)
+   (-> require-spec block)
+
+   [req:var
+    (unimplemented)]
+   [[from:id to:var]
+    (unimplemented)])
+
+  (lambda-expr->expr
+   (-> lambda-expr expr)
+
+   [(~rec v:val)
+    #'v]
+
+   [(#%app (~rec expr:val) ...+)
+    #'(#%call expr ...)])
+  
+  (lambda-expr->statement
+   (-> lambda-expr statement)
+
+   [(#%set! ident:var (~rec expr:lambda-expr))
+    #'(#%assign [ident] [expr])]
+
+   [(#%let ([name:id (~rec val:lambda-expr)] ...)
+           (~rec body:lambda-expr) ...)
+    (with-syntax ([(body ...) (hoist-do #'(body ...))])
+      #'(#%do
+         (#%block
+          (#%local [name ...] [val ...])
+          body ...)))])
+
+  (val
+   (-> val expr)
+
+   [v:var #'v]
+   [b:boolean #'b]
+   [n:number #'n]
+   [s:string #'s]
+
+   [(#%abs (arg:var ...)
+           (~rec body:lambda-expr) ...)
+    (let ([body (hoist-do #'(body ...))])
+      (with-syntax ([(body ...) (drop-right body 1)]
+                    [ret (last body)])
+        #''(#%function (arg ...)
+                       (#%block
+                        body ...
+                        (#%return ret)))))]))
+
+(define (expand-syntax-spec stx)
+  (parameterize ([current-namespace
+                  (variable-reference->namespace
+                   (#%variable-reference))])
+    (syntax-parse (expand-syntax stx)
+      #:datum-literals [begin
+                         define-values
+                         #%expression
+                         quote-syntax]
+      [(begin
+         (define-values _ ...)
+         (#%expression
+          (quote-syntax
+           stx)))
+       #'stx])))
 
 (define (compile/s-lua stx)
-
-  (define parse-top-level
-    (syntax-parser
-      #:datum-literals [#%require
-                        #%in
-                        #%provide
-                        #%define-syntax
-                        #%define
-                        #%begin]
-
-      [(#%require (in _ _ ...) ...) #f]
-      [(#%provide _ ...) #f]
-
-      [(#%define-syntax name:id e:expr) #f]
-
-      [(#%define name:id (~and %val:expr
-                               (~parse val (parse-expr #'%val))))
-       #'(#%local [name] [val])]
-
-      [(#%begin e:expr ...)
-       (filter-map parse-top-level (syntax-e #'(e ...)))]
-
-      [e:expr (parse-expr #'e)]))
-
-  (define parse-expr
-    (syntax-parser
-      #:datum-literals [#%set! #%abs #%app]
-
-      [bool:boolean #'bool]
-      [num:number #'num]
-      [str:string #'str]
-      [ident:id #'ident]
-
-      [(#%set! ident:id (~and %val:expr
-                              (~parse val (parse-expr #'%val))) )
-       #'(#%assign [ident] [val])]
-
-      [(#%abs (arg:id ...)
-                 (~and %body:expr (~parse body (parse-expr #'%body))) ...
-                 (~and %ret:expr (~parse ret (parse-expr #'%ret))))
-       #'(#%function (arg ...)
-                     (#%block body ... (#%return ret)))]
-
-      [(#%app
-        (~and %proc:expr
-              (~parse proc (parse-expr #'%proc)))
-        (~and %arg:expr
-              (~parse arg (parse-expr #'%arg)))
-        ...)
-       #'(#%call proc arg ...)]))
-
-  (make-s-lua (parse-top-level stx)))
+  (let* ([stx (expand-syntax-spec #`(#%lambda-spec #,stx))]
+         [stx (#%lambda->#%lambda-anf stx)]
+         [stx (#%lambda-anf->s-lua stx)])
+    (make-s-lua #`(#%chunk #,stx))))

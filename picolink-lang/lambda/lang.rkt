@@ -20,5 +20,4 @@
     [(_ body ...)
      (make-language-module
       this-syntax
-      (with-syntax ([ir (lambda-surface->ir #'(begin body ...))])
-        #'(make-lambda (#%lambda ir))))]))
+      #'(make-lambda (quote-syntax (begin body ...))))]))
