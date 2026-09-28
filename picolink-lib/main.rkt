@@ -1,41 +1,90 @@
 #lang racket/base
 
-(require racket/path
+(require racket/match
 
          picolink/config
          picolink/backend/compile-ctx
          (prefix-in backend: picolink/backend))
 
-; Procedure entrypoint
-(define (compile)
-  (let* ([entry-point (current-entry-point)]
-         [backend (backend:backend (current-backend))]
+(provide (all-defined-out)
+         (all-from-out picolink/config))
+
+; Procedure entrypoints
+
+(define (compile config)
+  (let* ([entry-point  (config-entry-point config)]
+         [backend      (config-backend config)]
          [search-paths (append (backend:search-paths backend)
-                               (list (path-only entry-point)))]
-         [entry-point (file-name-from-path entry-point)]
-         [compile-ctx (make-compile-ctx search-paths
-                                        entry-point)]
-         [link-ctx (backend:compile backend compile-ctx)]
-         [linked (backend:link backend link-ctx)])
+                               (list (config-root config)))]
+         [compile-ctx  (make-compile-ctx search-paths entry-point)])
+    (backend:compile backend compile-ctx)))
 
-    (backend:run backend linked)))
+(define (link config)
+  (backend:link (config-backend config)
+                (compile config)))
 
-; REPL entrypoint
-(module+ run
+(define (run config)
+  (backend:run (config-backend config)
+               (link config)))
+
+; REPL entrypoints
+
+(module+ compile
   (compile))
+
+(module+ link
+  (link))
+
+(module+ run
+  (run))
 
 ; CLI entrypoint
 (module+ main
   (require racket/cmdline)
 
-  (command-line
-   #:program "picolink"
-   #:once-each
-   [("-o" "--output") output
-                      "Set the build output directory"
-                      (set-current-build-directory output)]
-   [("-b" "--backend") backend
-                       "Set the language backend"
-                       (set-current-backend backend)])
+  (define-values (command config)
+    (command-line
+     #:program "picolink"
 
-  (require (submod ".." run)))
+     #:once-each
+     [("-e" "--entry-point")
+      entry-point
+      "Set the entry-point module"
+      (cons 'entry-point (string->path entry-point))]
+
+     [("-d" "--build-directory")
+      build-directory
+      "Set the build output directory"
+      (cons 'build-directory (string->path build-directory))]
+
+     #:handlers
+     (λ (flags command project-dir)
+
+       (let* ([command (case command
+                         [("compile") compile]
+                         [("link") link]
+                         [("run") run])]
+
+              [config (find-config (string->path project-dir))]
+
+              [flags (make-immutable-hash flags)]
+
+              [entry-point (hash-ref flags 'entry-point #f)]
+              [config (if entry-point
+                          (config-update
+                           config
+                           #:entry-point entry-point)
+                          config)]
+
+              [build-directory (hash-ref flags 'build-directory #f)]
+              [config (if build-directory
+                          (config-update
+                           config
+                           #:build-directory build-directory)
+                          config)])
+
+         (values command config)))
+
+     '("command" "project directory")))
+
+  (command config))

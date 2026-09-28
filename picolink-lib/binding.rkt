@@ -11,15 +11,10 @@
   #:methods gen:custom-write
   [(define/generic call-write-proc write-proc)
 
-   (define (write-proc self out _mode)
-     (define buf (open-output-string))
-     (write (binding-ident self) buf)
-     (define s (get-output-string buf))
-     (display
-      (if (string-prefix? s "#<syntax")
-          (string-append "#<binding" (substring s 8))
-          s)
-      out))]
+   (define (write-proc self out mode)
+     (call-write-proc (syntax-e (binding-ident self))
+                      out
+                      mode))]
   
   #:methods gen:equal+hash
   [(define (equal-proc a b recur)

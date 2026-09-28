@@ -1,38 +1,28 @@
-#lang errortrace racket/base
+#lang racket/base
 
 (require racket/contract
          racket/string
          racket/path
-         racket/list
          racket/set
          racket/hash
          racket/function
          racket/file
          racket/port
-         racket/system
 
          syntax/parse
 
-         picolink/config
-         (except-in picolink/backend compile)
+         picolink/parameters
+         picolink/backend/generic
+         picolink/backend/link-ctx
+         (only-in picolink/language
+                  [compile language:compile])
+         picolink/language/requires
+         picolink/language/provides
          picolink/binding
-         picolink/s-lua
          picolink/intrinsic
-         picolink/language)
+         picolink/s-lua)
 
 (provide (all-defined-out))
-
-(define/contract current-mode
-  (parameter/c (or/c 'chunk 'library))
-  (make-parameter 'library))
-
-(define/contract current-build-subdir
-  (parameter/c string?)
-  (make-parameter "lua"))
-
-(define/contract current-executable-name
-  (parameter/c string?)
-  (make-parameter "lua"))
 
 (define (module-path->lua-path path)
   (string-replace (path->string path) "/" "."))
@@ -233,7 +223,8 @@
 (define (lua-search-paths)
   (list 'picolink/lua/modules))
 
-(define (lua-link self ctx #:mode [mode (current-mode)])
+(define (lua-link self ctx)
+
   (let* ([ctx
           (link-ctx-update
            ctx
@@ -254,16 +245,17 @@
                      (splice-requires+provides
                       (link-ctx-update ctx #:path path)))))])
 
-    (case mode
-      [(chunk) (lua-link/chunk ctx)]
-      [(library) (lua-link/library ctx)]
-      [else (error "unsupported mode" mode)])))
+    (let ([mode (lua-mode self)])
+      (case mode
+        [(chunk) (lua-link/chunk self ctx)]
+        [(library) (lua-link/library self ctx)]
+        [else (error "unsupported mode" mode)]))))
 
-(define (lua-link/chunk ctx)
+(define (lua-link/chunk self ctx)
   (let* ([entry-point (link-ctx-path ctx)]
 
          [dependencies
-          (for/fold ([acc (s-lua null)])
+          (for/fold ([acc (s-lua #'(#%chunk (#%block)) null)])
                     ([(path mod) (in-hash (link-ctx-modules ctx))]
                      #:when (not (equal? path entry-point)))
 
@@ -273,14 +265,14 @@
 
          [combined (s-lua-append dependencies entry-point)])
 
-    (compile combined 'lua)))
+    (language:compile combined 'lua)))
 
-(define (lua-link/library ctx)
+(define (lua-link/library self ctx)
   (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
                    (values (path-replace-extension path ".lua")
-                           (compile mod 'lua)))]
+                           (language:compile mod 'lua)))]
         [build-directory (build-path (current-build-directory)
-                                     (current-build-subdir))])
+                                     (lua-build-subdir self))])
 
     (delete-directory/files build-directory #:must-exist? #f)
     (make-directory* build-directory)
@@ -293,18 +285,18 @@
 
     (file-name-from-path (link-ctx-path ctx))))
 
-(define (lua-run _self input #:mode [mode (current-mode)])
+(define (lua-run self input)
   "Run CHUNK in the system Lua interpreter."
 
-  (define lua (find-executable-path (current-executable-name)) )
+  (define exe (find-executable-path (lua-executable self)) )
 
-  (unless lua
+  (unless exe
     (error "unable to locate lua executable"))
 
   (define-values (sp out in err)
-    (case mode
-      [(chunk) (lua-run/chunk lua input)]
-      [(library) (lua-run/library lua input)]))
+    (case (lua-mode self)
+      [(chunk) (lua-run/chunk self exe input)]
+      [(library) (lua-run/library self exe input)]))
 
   (subprocess-wait sp)
 
@@ -317,19 +309,19 @@
   (close-output-port in)
   (close-input-port err))
 
-(define (lua-run/chunk lua chunk)
-  (subprocess #f #f #f lua "-e" chunk))
+(define (lua-run/chunk self exe chunk)
+  (subprocess #f #f #f exe "-e" chunk))
 
-(define (lua-run/library lua library)
-  (subprocess #f #f #f lua
+(define (lua-run/library self exe library)
+  (subprocess #f #f #f exe
               "-e"
               (format "package.path = \"~a/\" .. package.path"
                       (build-path (current-build-directory)
-                                  (current-build-subdir)))
+                                  (lua-build-subdir self)))
               "-l"
               library))
 
-(struct lua ()
+(struct lua (mode build-subdir executable)
   #:transparent
   #:methods gen:backend
 
@@ -342,4 +334,15 @@
    (define link lua-link)
    (define run lua-run)])
 
-(define backend-inst (lua))
+(define/contract (make-lua #:mode         [mode 'chunk]
+                           #:build-subdir [build-subdir "lua"]
+                           #:executable   [executable "lua"])
+  (->* []
+       [#:mode         (or/c 'chunk 'library)
+        #:build-subdir path-string?
+        #:executable   string?]
+       lua?)
+
+  (lua mode
+       build-subdir
+       executable))

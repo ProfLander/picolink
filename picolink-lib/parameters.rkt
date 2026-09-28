@@ -20,4 +20,11 @@
 
 (define current-entry-point
   (make-parameter
-   (string->path "../picolink-test/love-api/graphics-print")))
+   (string->path #;"../picolink-test/love-api/graphics-print"
+                 "../picolink-test/dependency-tree/a"
+                 #;"../picolink-test/lambda/lambda"
+                 #;"../picolink-test/intrinsics/intrinsic-string")))
+
+(define/contract (set-current-entry-point entry-point)
+  (-> path? void)
+  (current-entry-point entry-point))

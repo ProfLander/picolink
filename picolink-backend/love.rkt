@@ -1,32 +1,26 @@
 #lang racket/base
 
-(require racket/set
+(require racket/contract
          racket/hash
          racket/port
          racket/match
 
-         picolink/config
-         picolink/backend
-         (only-in picolink/language
-                  make-module-requires
-                  make-module-provides)
-         picolink/s-lua
-         (prefix-in lua: picolink/lua))
+         picolink/parameters
+         picolink/backend/generic
+         picolink/backend/link-ctx
+         picolink/language/requires
+         picolink/language/provides
+         picolink/lua
+         picolink/s-lua)
 
 (provide (all-defined-out))
 
-(define current-build-subdir
-  (make-parameter "love"))
-
-(define current-executable-name
-  (make-parameter "love"))
-
 (define (love-output-name)
-  (lua:lua-output-name))
+  (lua-output-name))
 
 (define (love-search-paths)
   (append (list 'picolink/love/modules)
-          (lua:lua-search-paths)))
+          (lua-search-paths)))
 
 (define (love-link self ctx)
 
@@ -34,7 +28,7 @@
          [modules  (link-ctx-modules ctx)]
          [requires (link-ctx-requires ctx)]
          [provides (link-ctx-provides ctx)]
-         [main (build-path "main")]
+         [main     (build-path "main")]
 
          [ctx      (if (hash-ref modules main #f)
 
@@ -48,15 +42,16 @@
                          modules
                          (hash main
                                (make-s-lua
-                                (list
-                                 #'(#%call (#%method (#%member io stdout)
-                                                     setvbuf)
-                                           "no")
-                                 #'(#%call (#%method (#%member io stderr)
-                                                     setvbuf)
-                                           "no")
-                                 #`(#%call require
-                                           #,(path->string path))))))
+                                #`(#%chunk
+                                   (#%block
+                                    (#%call (#%method (#%member io stdout)
+                                                      setvbuf)
+                                            "no")
+                                    (#%call (#%method (#%member io stderr)
+                                                      setvbuf)
+                                            "no")
+                                    (#%call require
+                                            #,(path->string path)))))))
                         
                         #:requires
                         (hash-union
@@ -68,13 +63,12 @@
                          provides
                          (hash main (make-module-provides)))))])
 
-    (parameterize ([lua:current-build-subdir (current-build-subdir)])
-
-      (lua:lua-link lua:backend-inst ctx
-                    #:mode 'library))
+    (lua-link (make-lua #:mode 'library
+                        #:build-subdir (love-build-subdir self))
+              ctx)
 
     (build-path (current-build-directory)
-                (current-build-subdir))))
+                (love-build-subdir self))))
 
 (define (love-run _self path)
   "Run PATH via the system Love executable."
@@ -110,7 +104,7 @@
   (close-output-port in)
   (close-input-port err))
 
-(struct love ()
+(struct love (build-subdir executable)
   #:transparent
   #:methods gen:backend
 
@@ -123,4 +117,10 @@
    (define link love-link)
    (define run love-run)])
 
-(define backend-inst (love))
+(define/contract (make-love #:build-subdir [build-subdir "love"]
+                            #:executable [executable "love"])
+  (->* []
+       [#:build-subdir path-string?
+        #:executable string?]
+       love?)
+  (love build-subdir executable))

@@ -1,13 +1,11 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     racket/contract)
+                     racket/contract
+                     syntax/modresolve)
 
          racket/generic
-         racket/sequence
-         racket/set
-
-         syntax/parse
+         racket/path
 
          (for-template racket/base)
 
@@ -50,9 +48,49 @@
     (-> syntax? syntax? syntax?)
 
     (with-syntax ([language-id (syntax-local-identifier-as-binding
-                             (datum->syntax lctx 'language))]
-                  [language language])
+                                (datum->syntax lctx 'language))]
+                  [language language]
+                  [config-id (syntax-local-identifier-as-binding
+                              (datum->syntax lctx 'config))]
+                  [compile-id (syntax-local-identifier-as-binding
+                               (datum->syntax lctx 'compile))]
+                  [link-id (syntax-local-identifier-as-binding
+                            (datum->syntax lctx 'link))]
+
+                  [run-id (syntax-local-identifier-as-binding
+                           (datum->syntax lctx 'run))])
 
       #'(#%plain-module-begin
-         (provide language-id)
-         (define language-id language)))))
+         (require picolink)
+
+         (provide language-id compile-id)
+
+         (define language-id language)
+
+         (define (config-id)
+           (define module-path
+             (path-replace-extension
+              (variable-reference->module-source (#%variable-reference))
+              ""))
+
+           (define config (find-config module-path))
+           (unless config
+             (error "failed to find config.rkt"))
+
+           (define entry-point
+             (find-relative-path (config-root config) module-path))
+
+           (config-update (find-config module-path)
+                          #:entry-point entry-point))
+
+         (define (compile-id)
+           (compile (config-id)))
+
+         (define (link-id)
+           (link (config-id)))
+
+         (define (run-id)
+           (run (config-id)))
+
+         (module+ main
+           (run-id))))))
