@@ -63,7 +63,7 @@
                          [("link") link]
                          [("run") run])]
 
-              [config (find-config (string->path project-dir))]
+              [config (get-config(string->path project-dir))]
 
               [flags (make-immutable-hash flags)]
 
