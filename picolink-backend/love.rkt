@@ -25,52 +25,52 @@
 
 (define (love-link self ctx)
 
-  (let* ([path     (link-ctx-path ctx)]
-         [modules  (link-ctx-modules ctx)]
-         [requires (link-ctx-requires ctx)]
-         [provides (link-ctx-provides ctx)]
-         [main     (build-path "main")]
+  (let* ([entry-point (link-ctx-entry-point ctx)]
+         [modules     (link-ctx-modules ctx)]
+         [requires    (link-ctx-requires ctx)]
+         [provides    (link-ctx-provides ctx)]
+         [main        (build-path "main")]
 
-         [ctx      (if (hash-ref modules main #f)
+         [ctx
+          (if (hash-ref modules main #f)
 
-                       ctx
+              ctx
 
-                       (link-ctx-update
-                        ctx
+              (link-ctx-update
+               ctx
 
-                        #:modules
-                        (hash-union
-                         modules
-                         (hash main
-                               (make-s-lua
-                                #`(#%chunk
-                                   (#%block
-                                    (#%call (#%method (#%member io stdout)
-                                                      setvbuf)
-                                            "no")
-                                    (#%call (#%method (#%member io stderr)
-                                                      setvbuf)
-                                            "no")
-                                    (#%call require
-                                            #,(path->string path)))))))
-                        
-                        #:requires
-                        (hash-union
-                         requires
-                         (hash main (make-module-requires)))
+               #:modules
+               (hash-union
+                modules
+                (hash main
+                      (make-s-lua
+                       #`(#%chunk
+                          (#%block
+                           (#%call (#%method (#%member io stdout)
+                                             setvbuf)
+                                   "no")
+                           (#%call (#%method (#%member io stderr)
+                                             setvbuf)
+                                   "no")
+                           (#%call require
+                                   #,(path->string entry-point)))))))
+               
+               #:requires
+               (hash-union
+                requires
+                (hash main (make-module-requires)))
 
-                        #:provides
-                        (hash-union
-                         provides
-                         (hash main (make-module-provides)))))])
+               #:provides
+               (hash-union
+                provides
+                (hash main (make-module-provides)))))])
 
     (lua-link (make-lua #:mode 'library
                         #:build-subdir (love-build-subdir self))
               ctx)
 
     (make-run-ctx ctx
-                  (build-path (config-build-directory
-                               (link-ctx-config ctx))
+                  (build-path (link-ctx-build-directory ctx)
                               (love-build-subdir self)))))
 
 (define (love-run _self ctx)

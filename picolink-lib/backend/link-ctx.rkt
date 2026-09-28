@@ -42,29 +42,50 @@
             provides
             modules))
 
-(define (link-ctx-config ctx)
-  (compile-ctx-config (link-ctx-compile-ctx ctx)))
+(define (link-ctx-project ctx)
+  (compile-ctx-project (link-ctx-compile-ctx ctx)))
+
+(define (link-ctx-root ctx)
+  (compile-ctx-root (link-ctx-compile-ctx ctx)))
+
+(define (link-ctx-entry-point ctx)
+  (compile-ctx-entry-point (link-ctx-compile-ctx ctx)))
+
+(define (link-ctx-backend ctx)
+  (compile-ctx-backend (link-ctx-compile-ctx ctx)))
+
+(define (link-ctx-build-directory ctx)
+  (compile-ctx-build-directory (link-ctx-compile-ctx ctx)))
 
 (define (link-ctx-search-paths ctx)
   (compile-ctx-search-paths (link-ctx-compile-ctx ctx)))
 
-(define (link-ctx-path ctx)
-  (compile-ctx-path (link-ctx-compile-ctx ctx)))
-
 (define (link-ctx-update ctx
+                         #:project
+                         [project         (link-ctx-project ctx)]
+                         #:root
+                         [root            (link-ctx-root ctx)]
+                         #:entry-point
+                         [entry-point     (link-ctx-entry-point ctx)]
+                         #:backend
+                         [backend         (link-ctx-backend ctx)]
+                         #:build-directory
+                         [build-directory (link-ctx-build-directory ctx)]
                          #:search-paths
-                         [search-paths (link-ctx-search-paths ctx)]
-                         #:path
-                         [path         (link-ctx-path ctx)]
-                         #:modules
-                         [modules      (link-ctx-modules ctx)]
+                         [search-paths    (link-ctx-search-paths ctx)]
                          #:requires
-                         [requires     (link-ctx-requires ctx)]
+                         [requires        (link-ctx-requires ctx)]
                          #:provides
-                         [provides     (link-ctx-provides ctx)])
+                         [provides        (link-ctx-provides ctx)]
+                         #:modules
+                         [modules         (link-ctx-modules ctx)])
   (link-ctx (compile-ctx-update (link-ctx-compile-ctx ctx)
-                                #:search-paths search-paths
-                                #:path path)
+                                #:project         project
+                                #:root            root
+                                #:entry-point     entry-point
+                                #:backend         backend
+                                #:build-directory build-directory
+                                #:search-paths    search-paths)
             requires
             provides
             modules))

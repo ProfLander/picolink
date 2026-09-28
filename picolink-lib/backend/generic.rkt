@@ -30,16 +30,15 @@
 
      (define (collect-module ctx modules requires)
 
-       (let ([path (compile-ctx-path ctx)])
-         (if (hash-has-key? modules path)
+       (let ([entry-point (compile-ctx-entry-point ctx)])
+         (if (hash-has-key? modules entry-point)
 
              (values modules requires)
 
              (let* ([mod      (compile-ctx-load-module ctx)]
-                    [mod-reqs (hash path
-                                    (language:requires mod))])
+                    [mod-reqs (hash entry-point (language:requires mod))])
 
-               (for*/fold ([modules (hash-set modules path mod)]
+               (for*/fold ([modules (hash-set modules entry-point mod)]
                            [requires (hash-union requires mod-reqs)])
                           ([(_ reqs) (in-hash mod-reqs)]
                            [(mod _) (in-module-requires reqs)])
@@ -47,7 +46,7 @@
                  (collect-module
                   (compile-ctx-update
                    ctx
-                   #:path
+                   #:entry-point
                    (string->path
                     (symbol->string
                      (binding-symbol mod))))

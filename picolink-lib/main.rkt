@@ -10,13 +10,11 @@
 ; Procedure entrypoints
 
 (define (compile config)
-  (let* ([entry-point  (config-entry-point config)]
-         [backend      (config-backend config)]
+  (let* ([backend      (config-backend config)]
          [search-paths (append (backend:search-paths backend)
                                (list (config-root config)))]
          [compile-ctx  (make-compile-ctx config
-                                         search-paths
-                                         entry-point)])
+                                         search-paths)])
     (backend:compile backend compile-ctx)))
 
 (define (link config)

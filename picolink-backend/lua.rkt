@@ -44,8 +44,8 @@
 
   (define (rewrite-body ctx body)
 
-    (let* ([path (link-ctx-path ctx)]
-           [requires (hash-ref (link-ctx-requires ctx) path)]
+    (let* ([entry-point (link-ctx-entry-point ctx)]
+           [requires (hash-ref (link-ctx-requires ctx) entry-point)]
            [rewrites
             (for/fold ([acc (hash)])
                       ([(bind reqs) (in-module-requires requires)]
@@ -107,7 +107,7 @@
       (map rewrite body)))
 
   (let ([mod (hash-ref (link-ctx-modules ctx)
-                       (link-ctx-path ctx))])
+                       (link-ctx-entry-point ctx))])
     (s-lua-map mod (curry rewrite-body ctx))))
 
 (define (splice-requires+provides ctx)
@@ -115,7 +115,7 @@
   (define (collect-requires ctx)
 
     (let ([reqs (hash-ref (link-ctx-requires ctx)
-                          (link-ctx-path ctx))])
+                          (link-ctx-entry-point ctx))])
 
       (for*/fold ([acc null])
                  ([(bind reqs) (in-module-requires reqs)]
@@ -143,7 +143,7 @@
   (define (collect-provides ctx)
 
     (let ([provs (hash-ref (link-ctx-provides ctx)
-                           (link-ctx-path ctx))])
+                           (link-ctx-entry-point ctx))])
 
       (module-provides-map provs binding-symbol)))
 
@@ -198,7 +198,7 @@
            null))))
 
   (let ([mod (hash-ref (link-ctx-modules ctx)
-                       (link-ctx-path ctx))])
+                       (link-ctx-entry-point ctx))])
     (s-lua-map mod (curry splice-body ctx))))
 
 (define (lift-package-preloader path module)
@@ -234,7 +234,7 @@
                       #:when (s-lua? mod))
              (values path
                      (rewrite-intrinsics
-                      (link-ctx-update ctx #:path path)))))]
+                      (link-ctx-update ctx #:entry-point path)))))]
 
          [ctx
           (link-ctx-update
@@ -244,7 +244,7 @@
                       #:when (s-lua? mod))
              (values path
                      (splice-requires+provides
-                      (link-ctx-update ctx #:path path)))))])
+                      (link-ctx-update ctx #:entry-point path)))))])
 
     (let ([mode (lua-mode self)])
       (case mode
@@ -253,7 +253,7 @@
         [else (error "unsupported mode" mode)]))))
 
 (define (lua-link/chunk self ctx)
-  (let* ([entry-point (link-ctx-path ctx)]
+  (let* ([entry-point (link-ctx-entry-point ctx)]
 
          [dependencies
           (for/fold ([acc (s-lua #'(#%chunk (#%block)) null)])
@@ -273,8 +273,7 @@
   (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
                    (values (path-replace-extension path ".lua")
                            (language:compile mod 'lua)))]
-        [build-directory (build-path (config-build-directory
-                                      (link-ctx-config ctx))
+        [build-directory (build-path (link-ctx-build-directory ctx)
                                      (lua-build-subdir self))])
 
     (delete-directory/files build-directory #:must-exist? #f)
@@ -287,7 +286,8 @@
         (flush-output)))
 
     (make-run-ctx ctx
-                  (file-name-from-path (link-ctx-path ctx)))))
+                  (file-name-from-path
+                   (link-ctx-entry-point ctx)))))
 
 (define (lua-run self ctx)
   "Run CHUNK in the system Lua interpreter."
@@ -320,8 +320,7 @@
   (subprocess #f #f #f exe
               "-e"
               (format "package.path = \"~a/\" .. package.path"
-                      (build-path (config-build-directory
-                                   (run-ctx-config ctx))
+                      (build-path (run-ctx-build-directory ctx)
                                   (lua-build-subdir self)))
               "-l"
               (run-ctx-artifact ctx)))

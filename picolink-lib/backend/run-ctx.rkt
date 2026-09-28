@@ -3,7 +3,6 @@
 (require racket/contract
          racket/struct
 
-         picolink/config
          picolink/backend/link-ctx)
 
 (provide (all-defined-out))
@@ -25,14 +24,23 @@
       run-ctx?)
   (run-ctx link-ctx artifact))
 
-(define (run-ctx-config ctx)
-  (link-ctx-config (run-ctx-link-ctx ctx)))
+(define (run-ctx-project ctx)
+  (link-ctx-project (run-ctx-link-ctx ctx)))
+
+(define (run-ctx-root ctx)
+  (link-ctx-root (run-ctx-link-ctx ctx)))
+
+(define (run-ctx-entry-point ctx)
+  (link-ctx-entry-point (run-ctx-link-ctx ctx)))
+
+(define (run-ctx-backend ctx)
+  (link-ctx-backend (run-ctx-link-ctx ctx)))
+
+(define (run-ctx-build-directory ctx)
+  (link-ctx-build-directory (run-ctx-link-ctx ctx)))
 
 (define (run-ctx-search-paths ctx)
   (link-ctx-search-paths (run-ctx-link-ctx ctx)))
-
-(define (run-ctx-path ctx)
-  (link-ctx-path (run-ctx-link-ctx ctx)))
 
 (define (run-ctx-requires ctx)
   (link-ctx-requires (run-ctx-link-ctx ctx)))
