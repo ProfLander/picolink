@@ -1,8 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     racket/contract
-                     syntax/modresolve)
+                     racket/contract)
 
          racket/generic
          racket/path
@@ -65,32 +64,36 @@
 
          (provide language-id compile-id)
 
+         (define module-path
+           (path-replace-extension
+            (variable-reference->module-source (#%variable-reference))
+            ""))
+
+         (define config-id
+           (let* ([config (find-config module-path)])
+             (and config
+                  (let ([entry-point
+                         (find-relative-path (config-root config)
+                                             module-path)])
+                    (config-update config
+                                   #:entry-point entry-point)))))
+
          (define language-id language)
 
-         (define (config-id)
-           (define module-path
-             (path-replace-extension
-              (variable-reference->module-source (#%variable-reference))
-              ""))
-
-           (define config (find-config module-path))
-           (unless config
-             (error "failed to find config.rkt"))
-
-           (define entry-point
-             (find-relative-path (config-root config) module-path))
-
-           (config-update (find-config module-path)
-                          #:entry-point entry-point))
-
          (define (compile-id)
-           (compile (config-id)))
+           (unless config-id
+             (error "failed to find config.rkt"))
+           (compile config-id))
 
          (define (link-id)
-           (link (config-id)))
+           (unless config
+             (error "failed to find config.rkt"))
+           (link config-id))
 
          (define (run-id)
-           (run (config-id)))
+           (unless config
+             (error "failed to find config.rkt"))
+           (run config-id))
 
          (module+ main
            (run-id))))))
