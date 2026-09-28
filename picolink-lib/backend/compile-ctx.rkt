@@ -2,18 +2,33 @@
 
 (require racket/contract
          racket/generic
+         racket/struct
          
          picolink/path
+         picolink/config
          picolink/language)
 
 (provide (all-defined-out))
 
-(struct compile-ctx (search-paths path)
-  #:transparent)
+(struct compile-ctx (config search-paths path)
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (self)
+        'compile-ctx)
+      (λ (self)
+        (list (compile-ctx-config self)
+              (cons 'search-paths
+                    (compile-ctx-search-paths self))
+              (cons 'path
+                    (compile-ctx-path self))))))])
 
-(define/contract (make-compile-ctx search-paths path)
-  (-> (listof (or/c symbol? path?)) path? compile-ctx?)
-  (compile-ctx search-paths path))
+(define/contract (make-compile-ctx config search-paths path)
+  (-> config?
+      (listof (or/c symbol? path?))
+      path?
+      compile-ctx?)
+  (compile-ctx config search-paths path))
 
 (define (module-exists? module-path)
   (with-handlers ([exn:fail:filesystem?
@@ -54,9 +69,12 @@
   mod)
 
 (define (compile-ctx-update ctx
+                            #:config
+                            [config (compile-ctx-config ctx)]
                             #:search-paths
                             [search-paths (compile-ctx-search-paths ctx)]
                             #:path
                             [path (compile-ctx-path ctx)])
-  (compile-ctx search-paths
+  (compile-ctx config
+               search-paths
                path))

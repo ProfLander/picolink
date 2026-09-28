@@ -7,16 +7,9 @@
          racket/contract
          racket/generic
          racket/path
-         racket/struct
+         racket/struct)
 
-         (only-in picolink/backend
-                  gen:backend
-                  [make-lua lua]
-                  [make-love love]
-                  [make-racket racket]))
-
-(provide (all-from-out picolink/backend)
-         (all-defined-out)
+(provide (all-defined-out)
          file-name-from-path)
 
 (struct config [project
@@ -48,7 +41,7 @@
   (-> symbol?
       path-string?
       path-string?
-      (generic-instance/c gen:backend)
+      any/c
       path-string?
       config?)
 
@@ -112,7 +105,7 @@
        [#:project         symbol?
         #:root            path-string?
         #:entry-point     path-string?
-        #:backend         (generic-instance/c gen:backend)
+        #:backend         any/c
         #:build-directory path-string?]
        config?)
 

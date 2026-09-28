@@ -5,9 +5,10 @@
          racket/port
          racket/match
 
-         picolink/parameters
+         picolink/config
          picolink/backend/generic
          picolink/backend/link-ctx
+         picolink/backend/run-ctx
          picolink/language/requires
          picolink/language/provides
          picolink/lua
@@ -67,10 +68,12 @@
                         #:build-subdir (love-build-subdir self))
               ctx)
 
-    (build-path (current-build-directory)
-                (love-build-subdir self))))
+    (make-run-ctx ctx
+                  (build-path (config-build-directory
+                               (link-ctx-config ctx))
+                              (love-build-subdir self)))))
 
-(define (love-run _self path)
+(define (love-run _self ctx)
   "Run PATH via the system Love executable."
 
   (define love (find-executable-path "love") )
@@ -79,7 +82,7 @@
     (error "unable to locate love executable"))
 
   (define-values (sp out in err)
-    (subprocess #f #f #f love path))
+    (subprocess #f #f #f love (run-ctx-artifact ctx)))
 
   (thread
    (lambda ()

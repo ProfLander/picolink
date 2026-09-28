@@ -11,9 +11,10 @@
 
          syntax/parse
 
-         picolink/parameters
+         picolink/config
          picolink/backend/generic
          picolink/backend/link-ctx
+         picolink/backend/run-ctx
          (only-in picolink/language
                   [compile language:compile])
          picolink/language/requires
@@ -265,13 +266,15 @@
 
          [combined (s-lua-append dependencies entry-point)])
 
-    (language:compile combined 'lua)))
+    (make-run-ctx ctx
+                  (language:compile combined 'lua))))
 
 (define (lua-link/library self ctx)
   (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
                    (values (path-replace-extension path ".lua")
                            (language:compile mod 'lua)))]
-        [build-directory (build-path (current-build-directory)
+        [build-directory (build-path (config-build-directory
+                                      (link-ctx-config ctx))
                                      (lua-build-subdir self))])
 
     (delete-directory/files build-directory #:must-exist? #f)
@@ -283,9 +286,10 @@
         (display-to-file mod path #:exists 'replace)
         (flush-output)))
 
-    (file-name-from-path (link-ctx-path ctx))))
+    (make-run-ctx ctx
+                  (file-name-from-path (link-ctx-path ctx)))))
 
-(define (lua-run self input)
+(define (lua-run self ctx)
   "Run CHUNK in the system Lua interpreter."
 
   (define exe (find-executable-path (lua-executable self)) )
@@ -295,8 +299,8 @@
 
   (define-values (sp out in err)
     (case (lua-mode self)
-      [(chunk) (lua-run/chunk self exe input)]
-      [(library) (lua-run/library self exe input)]))
+      [(chunk) (lua-run/chunk self exe ctx)]
+      [(library) (lua-run/library self exe ctx)]))
 
   (subprocess-wait sp)
 
@@ -309,17 +313,18 @@
   (close-output-port in)
   (close-input-port err))
 
-(define (lua-run/chunk self exe chunk)
-  (subprocess #f #f #f exe "-e" chunk))
+(define (lua-run/chunk self exe ctx)
+  (subprocess #f #f #f exe "-e" (run-ctx-artifact ctx)))
 
-(define (lua-run/library self exe library)
+(define (lua-run/library self exe ctx)
   (subprocess #f #f #f exe
               "-e"
               (format "package.path = \"~a/\" .. package.path"
-                      (build-path (current-build-directory)
+                      (build-path (config-build-directory
+                                   (run-ctx-config ctx))
                                   (lua-build-subdir self)))
               "-l"
-              library))
+              (run-ctx-artifact ctx)))
 
 (struct lua (mode build-subdir executable)
   #:transparent
