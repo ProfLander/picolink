@@ -1,7 +1,9 @@
 #lang picolink/lambda
 
-(require (in lua print)
-         (in love/graphics [print graphics-print])
+(require (in lua 
+             print)
+         (in love/graphics 
+             [print graphics-print])
          (in love
              draw
              update

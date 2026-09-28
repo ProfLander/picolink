@@ -2,16 +2,16 @@
 
 (require (in lua print))
 
-(define-syntax defun
-  [(_ name arg body ...)
-   #'(define name
-       (λ (arg)
-         body ...))])
+(define foo 1234)
 
-(defun id x
-  (print "id")
-  x)
+;; FIXME: Nested lets don't hoist
+#;(print
+   (let ([a (let ([b 2]
+                  [a 3])
+              b)])))
 
-(define id2 (λ (x) x))
-
-(((λ (x) x) (λ (y) y)) 1234)
+(let ([a (λ (x) x)]
+      [b (λ (x) (λ (x) x))]
+      [c (λ (x) (x))]
+      [d (λ (x) (λ () x))])
+  (print ((a (b 1)) (c (d 2)))))
