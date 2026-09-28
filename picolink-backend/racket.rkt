@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require racket/contract
-         picolink/backend)
+(require picolink/backend/generic)
 
 (provide (all-defined-out))
 
@@ -18,4 +17,5 @@
    (define (run self linked)
      (error "unimplemented:" 'run))])
 
-(define backend-inst (racket))
+(define (make-racket)
+  (racket))

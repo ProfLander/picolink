@@ -64,7 +64,7 @@
 
    [(#%do ~cut (~rec b:block))
     (format "do~a\nend"
-            (indent (syntax-e (attribute b))))]
+            (indent (format-block (syntax-e (attribute b)))))]
 
    [(#%while ~cut (~rec cond:expr)
            (~rec b:block))
@@ -230,7 +230,7 @@
     (let ([op-sym (syntax-e (attribute unop))])
       (format "~a~a~a"
               op-sym
-              (if (eq? "not" op-sym)
+              (if (equal? "not" op-sym)
                   " "
                   "")
               (syntax-e (attribute exp))))]

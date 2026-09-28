@@ -1,12 +1,10 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     syntax/parse)
-
-         racket/contract
+(require racket/contract
          racket/list
          racket/hash
          racket/set
+         racket/struct
          racket/sequence
 
          picolink/binding)
@@ -14,7 +12,16 @@
 (provide (all-defined-out))
 
 (struct module-require (lctx from to)
-  #:transparent
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (self) 'module-require)
+      (λ (self) (let ([from (module-require-from self)]
+                      [to (module-require-to self)])
+                  (if (equal? from to)
+                      (list from)
+                      (list from '-> to))))))]
+
   #:methods gen:equal+hash
   [(define (equal-proc a b recur)
      (and (module-require? b)
@@ -37,7 +44,13 @@
                   (lift-binding to)))
 
 (struct module-requires (inner)
-  #:transparent)
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (self) 'module-requires)
+      (λ (self) (hash-map (module-requires-inner self)
+                          (λ (k v)
+                            (cons k (set->list v)))))))])
 
 (define/contract (make-module-requires [requires null])
   (->* []

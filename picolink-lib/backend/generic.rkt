@@ -1,4 +1,4 @@
-#lang errortrace racket/base
+#lang racket/base
 
 (require racket/generic
          racket/hash
@@ -22,8 +22,6 @@
 
   #:fallbacks
   [(define/generic call-output-name output-name)
-   (define/generic call-link link)
-   (define/generic call-run run)
 
    (define (search-paths backend)
      null)
@@ -92,6 +90,6 @@
 
            (make-link-ctx
             ctx
-            modules
             requires
-            provides)))))])
+            provides
+            modules)))))])

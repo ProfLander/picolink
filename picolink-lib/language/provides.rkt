@@ -3,6 +3,7 @@
 (require racket/contract
          racket/list
          racket/set
+         racket/struct
          racket/sequence
 
          picolink/binding)
@@ -10,7 +11,11 @@
 (provide (all-defined-out))
 
 (struct module-provides (inner)
-  #:transparent)
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (self) 'module-provides)
+      (λ (self) (set->list (module-provides-inner self)))))])
 
 (define/contract (make-module-provides [provides null])
   (->* []

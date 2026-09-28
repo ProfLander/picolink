@@ -2,7 +2,7 @@
 
 (require racket/contract
          racket/function
-         racket/set
+         racket/struct
 
          syntax/parse
 
@@ -11,14 +11,20 @@
 
 (provide (all-defined-out))
 
-(struct intrinsic (path source)
-  #:transparent
+(struct intrinsic (path provides)
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (self) 'intrinsic)
+      (λ (self) (list (cons 'path (intrinsic-path self))
+                      (cons 'provides (intrinsic-provides self))))))]
+
   #:methods gen:language
   [(define (source self)
-     (intrinsic-source self))
+     #f)
 
    (define (provides self)
-     (make-module-provides (map make-binding (syntax-e (source self)))))
+     (intrinsic-provides self))
 
    (define (compiler self _name)
      (const self))])
@@ -27,7 +33,9 @@
   (-> syntax? syntax? intrinsic?)
   (let ([path (syntax-parse path
                 #:datum-literals [quote]
-                [(quote same) 'same]
+                ['(~datum same) 'same]
                 [_:id         this-syntax]
                 [#f           #f])])
-    (intrinsic path stx)))
+    (intrinsic path
+               (make-module-provides
+                (map make-binding (syntax-e stx))))))
