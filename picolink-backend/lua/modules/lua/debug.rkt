@@ -1,7 +1,5 @@
 #lang picolink/intrinsic
 
-#:module-path debug
-
 debug
 getfenv
 gethook

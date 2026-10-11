@@ -1,129 +1,133 @@
-#lang racket/base
+#lang picolink/backend
 
-(require racket/contract
-         racket/hash
-         racket/port
-         racket/match
+(require picolink/lua
+         picolink/module/compiled
+         (prefix-in s-lua: picolink/s-lua)
+         (for-template picolink/love/run
+                       picolink/s-lua/ir))
 
-         picolink/config
-         picolink/backend/generic
-         picolink/backend/link-ctx
-         picolink/backend/run-ctx
-         picolink/language/requires
-         picolink/language/provides
-         picolink/lua
-         picolink/s-lua)
+#:target    love-target
+#:modules   love-modules
+#:transform love-transform
+#:link      love-link
+#:run       love-run
+#:interact  love-interact
 
-(provide (all-defined-out))
+(define love-target    lua-target)
 
-(define (love-output-name)
-  (lua-output-name))
+(define love-modules   lua-modules)
 
-(define (love-search-paths)
-  (append (list 'picolink/love/modules)
-          (lua-search-paths)))
+(define (love-transform lctx prog)
+  (let ([prog (lua-transform lctx prog)])
+    (cons (make-repl-module) prog)))
 
-(define (love-link self ctx)
+(define (love-transform-module _lctx prog mod)
+  (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
+                                 'entry-point)]
+         [mod (rewrite-intrinsics prog mod)]
+         [mod (splice-requires+provides mod)]
+         [mod (if is-entry-point
+                  (splice-repl-thread
+                   (splice-unbuffered-stdio mod))
+                  mod)])
 
-  (let* ([entry-point (link-ctx-entry-point ctx)]
-         [modules     (link-ctx-modules ctx)]
-         [requires    (link-ctx-requires ctx)]
-         [provides    (link-ctx-provides ctx)]
-         [main        (build-path "main")]
+    mod))
 
-         [ctx
-          (if (hash-ref modules main #f)
+(define (make-repl-module)
+  (make-compiled-module
+   #'repl
+   #:language s-lua:#%language
+   #:require-scope
+   (syntax-local-make-definition-context)
+   #:module-scope
+   (syntax-local-make-definition-context)
+   #:provide-scope
+   (syntax-local-make-definition-context)
+   #:stx
+   stx-repl-module))
 
-              ctx
+(define (splice-repl-thread mod)
+  (compiled-module-update
+   mod
+   #:stx
+   (s-lua-append (compiled-module-stx mod)
+                 stx-repl-thread)))
 
-              (link-ctx-update
-               ctx
+(define stx-repl-thread
+  #'(#%chunk
+     (#%block
 
-               #:modules
-               (hash-union
-                modules
-                (hash main
-                      (make-s-lua
-                       #`(#%chunk
+      (#%local [repl-thread repl-channel])
+
+      (#%function (love.load)
+
+                  (#%block
+                   (#%assign [repl-thread]
+                             [(#%call
+                               (#%member (#%member love thread)
+                                         newThread)
+                               "repl.lua")])
+
+                   (#%assign [repl-channel]
+                             [(#%call
+                               (#%member (#%member love thread)
+                                         getChannel)
+                               "repl")])
+
+                   (#%call (#%method repl-thread start))))
+
+      (#%function (love.update dt)
+
+                  (#%block
+                   (#%local [input]
+                            [(#%call (#%method repl-channel
+                                               pop))])
+
+                   (#%if input
+                         (#%then
                           (#%block
-                           (#%call (#%method (#%member io stdout)
-                                             setvbuf)
-                                   "no")
-                           (#%call (#%method (#%member io stderr)
-                                             setvbuf)
-                                   "no")
-                           (#%call require
-                                   #,(path->string entry-point)))))))
-               
-               #:requires
-               (hash-union
-                requires
-                (hash main (make-module-requires)))
+                           (#%local [res err] [(#%call loadstring
+                                                       input
+                                                       "repl")])
 
-               #:provides
-               (hash-union
-                provides
-                (hash main (make-module-provides)))))])
+                           (#%if res
 
-    (lua-link (make-lua #:mode 'library
-                        #:build-subdir (love-build-subdir self))
-              ctx)
+                                 (#%then
+                                  (#%block
+                                   (#%call res)))
 
-    (make-run-ctx ctx
-                  (build-path (link-ctx-build-directory ctx)
-                              (love-build-subdir self)))))
+                                 (#%else
+                                  (#%block
+                                   (#%call
+                                    (#%method (#%member io stderr)
+                                              write)
+                                    err))))))))))))
 
-(define (love-run _self ctx)
-  "Run PATH via the system Love executable."
+(define stx-repl-module
+  #'(#%chunk
+     (#%block
 
-  (define love (find-executable-path "love") )
+      (#%local [channel] [(#%call (#%member (#%member love thread)
+                                            getChannel)
+                                  "repl")])
 
-  (unless love
-    (error "unable to locate love executable"))
+      (#%call print channel)
 
-  (define-values (sp out in err)
-    (subprocess #f #f #f love (run-ctx-artifact ctx)))
+      (#%while #t
 
-  (thread
-   (lambda ()
-     (let ([buffer (make-bytes 4096)])
-       (let loop ()
-         (let ([n (sync (choice-evt (read-bytes-avail!-evt buffer out)
-                                    (read-bytes-avail!-evt buffer err)))])
+               (#%block
+                (#%local [input] [(#%call (#%member io read))])
+                (#%call (#%method channel push) input))))))
 
-           (match n
-             [(? eof-object?) (void)]
+(define love-link      lua-link)
 
-             [n (when (positive? n)
-                  (write-bytes buffer (current-output-port) 0 n)
-                  (flush-output))])
+(define love-run       lua-run)
 
-           (when (eq? 'running (subprocess-status sp))
-             (loop)))))))
+(define love-interact  lua-interact)
 
-  (sync sp)
-
-  (close-input-port out)
-  (close-output-port in)
-  (close-input-port err))
-
-(struct love (build-subdir executable)
-  #:transparent
-  #:methods gen:backend
-
-  [(define (output-name _self)
-     (love-output-name))
-
-   (define (search-paths _self)
-     (love-search-paths))
-
-   (define link love-link)
-   (define run love-run)])
-
-(define/contract (make-love #:build-subdir [build-subdir "love"]
-                            #:executable [executable "love"])
-  (->* []
-       [#:build-subdir path-string?
-        #:executable string?]
-       love?)
-  (love build-subdir executable))
+(current-lua-executable "love")
+(current-lua-build-subdir "love")
+(current-lua-linker lua-link/collection)
+(current-lua-runner #'love-run)
+(current-lua-entry-point-name "main")
+(current-lua-transform-module love-transform-module)

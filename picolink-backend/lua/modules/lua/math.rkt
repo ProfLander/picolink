@@ -1,7 +1,5 @@
 #lang picolink/intrinsic
 
-#:module-path math
-
 abs
 acos
 asin

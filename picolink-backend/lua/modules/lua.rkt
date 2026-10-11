@@ -1,7 +1,5 @@
 #lang picolink/intrinsic
 
-#:module-path #f
-
 assert
 collectgarbage
 dofile
@@ -32,3 +30,12 @@ xpcall
 
 require
 module
+
+coroutine
+debug
+io
+math
+os
+package
+string
+table

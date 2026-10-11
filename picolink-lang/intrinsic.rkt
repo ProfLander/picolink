@@ -1,41 +1,33 @@
-#lang racket/base
+#lang picolink/language
 
-(require racket/contract
+(require racket/base
          racket/function
-         racket/struct
-
+         racket/syntax
+         
          syntax/parse
 
-         picolink/language
-         picolink/binding)
+         picolink/intrinsic/var)
 
 (provide (all-defined-out))
 
-(struct intrinsic (path provides)
-  #:methods gen:custom-write
-  [(define write-proc
-     (make-constructor-style-printer
-      (λ (self) 'intrinsic)
-      (λ (self) (list (cons 'path (intrinsic-path self))
-                      (cons 'provides (intrinsic-provides self))))))]
+#:extract  intrinsic-extract
+#:wrap     intrinsic-wrap
+#:parse    intrinsic-parse
+#:compiler intrinsic-compiler
 
-  #:methods gen:language
-  [(define (source self)
-     #f)
+(define intrinsic-extract (const null))
 
-   (define (provides self)
-     (intrinsic-provides self))
+(define intrinsic-wrap identity)
 
-   (define (compiler self _name)
-     (const self))])
+(define intrinsic-parse
+  (syntax-parser
+    [(prov:id
+      ...)
 
-(define/contract (make-intrinsic path stx)
-  (-> syntax? syntax? intrinsic?)
-  (let ([path (syntax-parse path
-                #:datum-literals [quote]
-                ['(~datum same) 'same]
-                [_:id         this-syntax]
-                [#f           #f])])
-    (intrinsic path
-               (make-module-provides
-                (map make-binding (syntax-e stx))))))
+     (for ([prov (in-list (attribute prov))])
+       (bind! prov (intrinsic-var))
+       (provide! prov prov))
+
+     #f]))
+
+(define intrinsic-compiler (const identity))

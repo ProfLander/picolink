@@ -1,25 +1,17 @@
-#lang racket/base
+#lang picolink/module-lang
+picolink/intrinsic
 
-(require (for-syntax racket/base
-                     syntax/parse)
+(require (except-in racket/base
+                    #%module-begin
+                    #%top-interaction)
 
-         picolink/language
-         picolink/intrinsic)
+         (for-syntax racket/base
+                     racket/syntax
+                     ee-lib
+                     picolink/parser))
 
 (provide (all-from-out racket/base)
-         (all-from-out picolink/intrinsic)
-         #%module-begin)
-
-(define-syntax #%module-begin
-  (syntax-parser
-    [(_ (~optional (~seq #:module-path (~or path:id
-                                            (~and #f(~parse path #'#f))))
-                   #:defaults ([path #''same]))
-        bind:id ...)
-     (make-language-module
-      this-syntax
-      (with-syntax ([(bind ...) (map syntax-local-identifier-as-binding
-                                     (syntax-e #'(bind ...)))])
-        #'(make-intrinsic
-           #'path
-           #'(bind ...))))]))
+         (for-syntax (all-from-out racket/base
+                                   racket/syntax
+                                   ee-lib
+                                   picolink/parser)))

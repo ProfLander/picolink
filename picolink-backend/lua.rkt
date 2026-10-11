@@ -1,280 +1,444 @@
-#lang racket/base
+#lang picolink/backend
 
-(require racket/contract
+(require racket/function
          racket/string
-         racket/path
-         racket/set
+         racket/list
          racket/hash
-         racket/function
+         racket/set
+         racket/path
          racket/file
-         racket/port
+         racket/syntax
 
-         syntax/parse
+         (except-in syntax/parse expr)
 
+         picolink/ee-lib
          picolink/config
-         picolink/backend/generic
-         picolink/backend/link-ctx
-         picolink/backend/run-ctx
-         (only-in picolink/language
-                  [compile language:compile])
-         picolink/language/requires
-         picolink/language/provides
-         picolink/binding
-         picolink/intrinsic
-         picolink/s-lua)
+         picolink/s-lua
+         picolink/s-lua/lua
+         picolink/module/compiled
+         picolink/module/import
 
-(provide (all-defined-out))
+         (for-template racket/base
+                       picolink/s-lua/ir
+                       picolink/lua/run))
 
-(define (module-path->lua-path path)
-  (string-replace (path->string path) "/" "."))
+(provide (all-defined-out)
+         (for-template (all-from-out picolink/lua/run)))
 
-(define (module-string->lua-string path)
-  (string-replace (symbol->string path) "/" "."))
+#:target    lua-target
+#:modules   lua-modules
+#:transform lua-transform
+#:link      lua-link
+#:run       lua-run
+#:interact  lua-interact
+
+(struct lua-module [name
+                    path
+                    ident-prefix
+                    implicit]
+  #:transparent)
+
+(define (make-lua-module name
+                         #:path path
+                         #:ident-prefix [ident-prefix ""]
+                         #:implicit [implicit #t])
+
+  (lua-module name path ident-prefix implicit))
+
+(define (lua-module-name=? self ident)
+  (equal? (syntax-e (lua-module-name self))
+          (syntax-e ident)))
+
+(define current-lua-modules
+  (make-parameter
+   (list (make-lua-module
+          #'lua
+          #:path #'picolink/lua/modules/lua)
+
+         (make-lua-module
+          #'lua/coroutine
+          #:path #'picolink/lua/modules/lua/coroutine
+          #:ident-prefix "coroutine")
+
+         (make-lua-module
+          #'lua/debug
+          #:path #'picolink/lua/modules/lua/debug
+          #:ident-prefix "debug")
+
+         (make-lua-module
+          #'lua/io
+          #:path #'picolink/lua/modules/lua/io
+          #:ident-prefix "io")
+
+         (make-lua-module
+          #'lua/math
+          #:path #'picolink/lua/modules/lua/math
+          #:ident-prefix "math")
+
+         (make-lua-module
+          #'lua/os
+          #:path #'picolink/lua/modules/lua/os
+          #:ident-prefix "os")
+
+         (make-lua-module
+          #'lua/package
+          #:path #'picolink/lua/modules/lua/package
+          #:ident-prefix "package")
+
+         (make-lua-module
+          #'lua/string
+          #:path #'picolink/lua/modules/lua/string
+          #:ident-prefix "string")
+
+         (make-lua-module
+          #'lua/table
+          #:path #'picolink/lua/modules/lua/table
+          #:ident-prefix "table"))))
+
+(define (subprocess-ident lctx)
+  (datum->syntax lctx '#%subprocess))
+
+(define (stdout-ident lctx)
+  (datum->syntax lctx '#%stdout))
+
+(define (stdin-ident lctx)
+  (datum->syntax lctx '#%stdin))
+
+(define (stderr-ident lctx)
+  (datum->syntax lctx '#%stderr))
+
+(define lua-target
+  (make-parameter 's-lua))
+
+(define (lua-modules)
+  (for/list ([lua-mod (in-list (current-lua-modules))])
+    (cons (lua-module-name lua-mod)
+          (lua-module-path lua-mod))))
+
+(define (lua-transform lctx prog)
+  (let ([transform-mod (current-lua-transform-module)])
+    (for/list ([mod (in-list prog)]
+               #:when (compiled-module-stx mod))
+
+      (transform-mod lctx prog mod))))
+
+(define (lua-transform-module _lctx prog mod)
+  (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
+                                 'entry-point)]
+         [mod (rewrite-intrinsics prog mod)]
+         [mod (splice-requires+provides mod)]
+         [mod (if is-entry-point
+                  (splice-unbuffered-stdio mod)
+                  mod)]
+         [mod (if is-entry-point
+                  (splice-repl mod)
+                  mod)])
+
+    mod))
+
+(define (lua-link lctx prog)
+
+  (define linker (current-lua-linker))
+
+  (unless linker
+    (error "no linker specified"))
+
+  (linker lctx prog))
+
+(define (dotted-path->member-access path)
+  (define segs (map string->symbol (string-split path ".")))
+
+  (for/foldr ([acc (last segs)])
+             ([seg (in-list (drop-right segs 1))])
+    (with-syntax ([acc acc]
+                  [seg seg])
+      #`(#%member seg acc))))
 
 (define (module-ident->lua-ident path)
   (string->symbol
-   (string-replace (symbol->string path) "/" "_")))
+   (string-replace
+    (rewrite-name path)
+    "/" "_")))
 
-(define (binding->module-path bind)
-  (string->path
-   (symbol->string
-    (binding-symbol bind))))
+(define (module-ident->lua-string path)
+  (string-replace
+   (symbol->string (syntax-e path)) "/" "."))
 
-(define (rewrite-intrinsics ctx)
+(define (splice-requires+provides mod)
 
-  (define (rewrite-body ctx body)
+  (define require-scope (compiled-module-require-scope mod))
 
-    (let* ([entry-point (link-ctx-entry-point ctx)]
-           [requires (hash-ref (link-ctx-requires ctx) entry-point)]
-           [rewrites
-            (for/fold ([acc (hash)])
-                      ([(bind reqs) (in-module-requires requires)]
-                       #:do [(define mod-path
-                               (binding->module-path bind))
-                             (define mod
-                               (hash-ref (link-ctx-modules ctx)
-                                         mod-path))]
+  (define reqs
+    (for/list ([req (in-scope require-scope)]
+               #:do [(define mod-path (import-src-mod-path req))
+                     (define lua-mods (current-lua-modules))
+                     (define lua-mod
+                       (findf (curryr lua-module-name=? mod-path)
+                              lua-mods))]
+               #:unless (and lua-mod
+                             (lua-module-implicit lua-mod)))
+      req))
 
-                       #:when (intrinsic? mod)
+  (define req-mods (map import-src-mod-path reqs))
 
-                       #:do [(define mod-intpath (intrinsic-path mod))]
+  (define req-mod-syms
+    (set-map req-mods module-ident->lua-ident))
 
-                       #:when mod-intpath)
+  (define req-mod-strs
+    (set-map req-mods module-ident->lua-string))
 
-              (hash-union
-               acc
-               (for/hash ([req (in-set reqs)])
-                 (let ([from (module-require-from req)]
-                       [to (module-require-to req)])
-                   (values
-                    to
-                    (with-syntax
-                      ([mod-intpath
-                        (case mod-intpath
-                          [(same)
-                           (let ([segs (map (compose string->symbol
-                                                     path->string)
-                                            (explode-path mod-path))])
-                             (for/fold ([acc (car segs)])
-                                       ([seg (in-list
-                                              (cdr segs))])
-                               #`(#%member #,acc #,seg)))]
-
-                          [else mod-intpath])]
-
-                       [from (binding-ident from)])
-
-                      #'(#%member mod-intpath from)))))))])
-
-      (define rewrite
-        (syntax-parser
-          [(expr ...)
-           (datum->syntax this-syntax (map rewrite (attribute expr)))]
-
-          [ident:id
-
-           #:do [(define rewrite
-                   (hash-ref rewrites
-                             (make-binding #'ident)
-                             #f))]
-
-           #:when rewrite
-
-           rewrite]
-
-          [_ this-syntax]))
-
-      (map rewrite body)))
-
-  (let ([mod (hash-ref (link-ctx-modules ctx)
-                       (link-ctx-entry-point ctx))])
-    (s-lua-map mod (curry rewrite-body ctx))))
-
-(define (splice-requires+provides ctx)
-
-  (define (collect-requires ctx)
-
-    (let ([reqs (hash-ref (link-ctx-requires ctx)
-                          (link-ctx-entry-point ctx))])
-
-      (for*/fold ([acc null])
-                 ([(bind reqs) (in-module-requires reqs)]
-
-                  #:do [(define mod-path
-                          (binding->module-path bind))
-
-                        (define mod
-                          (hash-ref (link-ctx-modules ctx)
-                                    mod-path #f))]
-
-                  #:when (s-lua? mod))
-
-        (append acc
-                (list (cons (binding-symbol bind)
-                            (set-map
-                             reqs
-                             (λ (req)
-                               (cons
-                                (binding-symbol
-                                 (module-require-from req))
-                                (binding-symbol
-                                 (module-require-to req)))))))))))
-
-  (define (collect-provides ctx)
-
-    (let ([provs (hash-ref (link-ctx-provides ctx)
-                           (link-ctx-entry-point ctx))])
-
-      (module-provides-map provs binding-symbol)))
-
-  (define (make-module-bindings reqs)
-    (with-syntax ([(req-mod-sym ...)
-                   (for/list ([pair (in-list reqs)])
-                     (module-ident->lua-ident (car pair)))]
-
-                  [(req-mod-str ...)
-                   (for/list ([pair (in-list reqs)])
-                     (module-string->lua-string
-                      (car pair)))])
+  (define module-bindings
+    (with-syntax ([(req-mod-sym ...) req-mod-syms]
+                  [(req-mod-str ...) req-mod-strs])
 
       #'(#%local [req-mod-sym ...]
                  [(#%call require req-mod-str) ...])))
 
-  (define (make-member-bindings reqs)
+  (define mod-req-binds
+    (for*/fold ([acc null])
+               ([req (in-list reqs)])
+      (let ([src-mod-path (import-src-mod-path req)]
+            [from (import-src-sym req)]
+            [to (import-local-id req)])
+        (cons (list (module-ident->lua-ident src-mod-path)
+                    from
+                    to)
+              acc))))
+
+  (define member-bindings
     (with-syntax ([((req-bind-mod req-bind-from req-bind-to) ...)
-                   (for*/fold ([acc null])
-                              ([pair (in-list reqs)]
-                               [req (in-list (cdr pair))])
-                     (let ([from (car req)]
-                           [to (cdr req)])
-                       (cons (list(module-ident->lua-ident
-                                   (car pair))
-                                  from
-                                  to)
-                             acc)))])
+                   mod-req-binds])
+
       #'(#%local [req-bind-to ...]
                  [(#%member req-bind-mod
                             req-bind-from) ...])))
 
-  (define (make-provide-return provs)
-    (with-syntax ([(prov ...) provs])
+  (define provide-scope
+    (compiled-module-provide-scope mod))
+
+  (define prov-idents
+    (scope-idents provide-scope))
+
+  (define provide-return
+    (with-syntax ([(prov ...) prov-idents])
       #'(#%return (#%table [prov prov] ...))))
 
-  (define (splice-body ctx body)
-    (let* ([reqs (collect-requires ctx)]
-           [provs (collect-provides ctx)])
+  (define stx
+    (syntax-parse (compiled-module-stx mod)
+      #:literal-sets [s-lua-ir-literals]
 
-      (append
-       (if (pair? reqs)
-           (list (make-module-bindings reqs)
-                 (make-member-bindings reqs))
-           null)
+      [(#%chunk (#%block body ...))
 
-       body
+       (with-syntax ([(body ...)
+                      (append
+                       (if (pair? reqs)
+                           (list module-bindings
+                                 member-bindings)
+                           null)
 
-       (if (pair? provs)
-           (list (make-provide-return provs))
+                       (attribute body)
 
-           null))))
+                       (if (pair? prov-idents)
+                           (list provide-return)
+                           null))])
 
-  (let ([mod (hash-ref (link-ctx-modules ctx)
-                       (link-ctx-entry-point ctx))])
-    (s-lua-map mod (curry splice-body ctx))))
+         #'(#%chunk (#%block body ...)))]))
 
-(define (lift-package-preloader path module)
-  (s-lua-map
-   module
+  (compiled-module-update mod #:stx stx))
 
-   (λ (body)
+(define (rewrite-intrinsics _prog mod)
 
-     (with-syntax ([(body ...) body]
-                   [path (module-path->lua-path path)])
+  (define require-scope (compiled-module-require-scope mod))
 
-       (list #'(#%assign
-                [(#%member (#%member package preload)
-                           path)]
-                [(#%function
-                  (#%vararg)
-                  (#%block
-                   body ...))]))))))
+  (define rewrites
+    (for/fold ([acc (hash)])
+              ([import (in-scope require-scope)]
+               #:do [(define mod-path (import-src-mod-path import))
+                     (define lua-mods (current-lua-modules))
+                     (define lua-mod
+                       (findf (curryr lua-module-name=? mod-path)
+                              lua-mods))]
+               #:when (and lua-mod
+                           (lua-module-implicit lua-mod)))
 
-(define (lua-output-name)
-  's-lua)
+      (define prefix (lua-module-ident-prefix lua-mod))
 
-(define (lua-search-paths)
-  (list 'picolink/lua/modules))
+      (define ident (import-local-id import))
 
-(define (lua-link self ctx)
+      (define sym (syntax-e ident))
 
-  (let* ([ctx
-          (link-ctx-update
-           ctx
-           #:modules
-           (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))]
-                      #:when (s-lua? mod))
-             (values path
-                     (rewrite-intrinsics
-                      (link-ctx-update ctx #:entry-point path)))))]
+      (define rewrite
+        (dotted-path->member-access
+         (string-append prefix "." (symbol->string sym))))
 
-         [ctx
-          (link-ctx-update
-           ctx
-           #:modules
-           (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))]
-                      #:when (s-lua? mod))
-             (values path
-                     (splice-requires+provides
-                      (link-ctx-update ctx #:entry-point path)))))])
+      (hash-set acc sym rewrite)))
 
-    (let ([mode (lua-mode self)])
-      (case mode
-        [(chunk) (lua-link/chunk self ctx)]
-        [(library) (lua-link/library self ctx)]
-        [else (error "unsupported mode" mode)]))))
+  (define rewrite
+    (syntax-parser
+      [(form ...)
+       (datum->syntax this-syntax (map rewrite (attribute form)))]
+      [ident:id
+       #:do [(define rewrite (hash-ref rewrites (syntax-e #'ident) #f))]
+       #:when rewrite
+       (datum->syntax this-syntax rewrite)]
+      [_ this-syntax]))
 
-(define (lua-link/chunk self ctx)
-  (let* ([entry-point (link-ctx-entry-point ctx)]
+  (let* ([stx (compiled-module-stx mod)]
+         [stx (rewrite stx)])
+    (compiled-module-update mod #:stx stx)))
 
+(define (lift-package-preloader path stx)
+  (syntax-parse stx
+    #:literal-sets [s-lua-ir-literals]
+
+    [(#%chunk (#%block body ...))
+     (with-syntax ([path (symbol->string (syntax-e path))])
+       #'(#%assign
+          [(#%member (#%member package preload)
+                     path)]
+          [(#%function
+            (#%vararg)
+            (#%block
+             body ...))]))]))
+
+(define (s-lua-append a b)
+  (syntax-parse a
+    #:datum-literals [#%chunk #%block #%return]
+    [(#%chunk (#%block (~and body-a (~not (#%return _))) ...
+                       (~optional (#%return ret-a))))
+
+     (syntax-parse b
+       #:datum-literals [#%chunk #%block #%return]
+       [(#%chunk (#%block (~and body-b (~not (#%return _))) ...
+                          (~optional (#%return ret-b))))
+        (when (and (attribute ret-a)
+                   (attribute ret-b))
+          (error "cannot append s-lua chunks with multiple returns"))
+
+        (with-syntax ([(ret ...) (cond
+                                   [(attribute ret-a)
+                                    (list #'(#%return ret-a))]
+                                   [(attribute ret-b)
+                                    (list #'(#%return ret-b))]
+                                   [else null])])
+          #'(#%chunk
+             (#%block
+              body-a ...
+              body-b ...
+              ret ...)))])]))
+
+(define stx-unbuffered-stdio
+  #'(#%chunk
+     (#%block
+
+      (#%call (#%method (#%member io stdout)
+                        setvbuf)
+              "no")
+
+      (#%call (#%method (#%member io stderr)
+                        setvbuf)
+              "no"))))
+
+(define (splice-unbuffered-stdio mod)
+  (compiled-module-update
+   mod
+   #:stx (s-lua-append (compiled-module-stx mod)
+                       stx-unbuffered-stdio)))
+
+(define stx-repl
+  #'(#%chunk
+     (#%block
+
+      (#%while #t
+
+               (#%block
+                (#%local [input] [(#%call (#%member io read))])
+                (#%local [res err] [(#%call loadstring
+                                            input
+                                            "repl")])
+                (#%if res
+
+                      (#%then
+                       (#%block
+                        (#%call res)))
+
+                      (#%else
+                       (#%block
+                        (#%call
+                         (#%method (#%member io stderr)
+                                   write)
+                         err)))))))))
+
+(define (splice-repl mod)
+  (compiled-module-update
+   mod
+   #:stx
+   (s-lua-append (compiled-module-stx mod) stx-repl)))
+
+(define (program-entry-point prog)
+  (findf (λ (mod)
+           (equal? 'entry-point
+                   (syntax-e
+                    (compiled-module-ident mod))))
+         prog))
+
+(define (lua-link/chunk _lctx prog)
+
+  (let* ([entry-point (program-entry-point prog)]
+         
          [dependencies
-          (for/fold ([acc (s-lua #'(#%chunk (#%block)) null)])
-                    ([(path mod) (in-hash (link-ctx-modules ctx))]
-                     #:when (not (equal? path entry-point)))
+          (for/list ([mod (in-list prog)]
+                     #:when (not (eq? mod entry-point)))
 
-            (s-lua-append acc (lift-package-preloader path mod)))]
+            (lift-package-preloader (compiled-module-ident mod)
+                                    (compiled-module-stx mod)))]
 
-         [entry-point (hash-ref (link-ctx-modules ctx) entry-point)]
+         [stx
+          (with-syntax ([(dependency ...) dependencies]
+                        [(entry-point-body ...)
+                         (syntax-parse (compiled-module-stx
+                                        entry-point)
+                           #:literal-sets [s-lua-ir-literals]
+                           [(#%chunk (#%block body ...))
+                            (attribute body)])])
+            #'(#%chunk
+               (#%block
+                dependency ...
+                entry-point-body ...)))]
 
-         [combined (s-lua-append dependencies entry-point)])
+         [_ (println stx)]
 
-    (make-run-ctx ctx
-                  (language:compile combined 'lua))))
+         [compile (s-lua-compiler 'lua)]
+         [compiled (compile stx)])
 
-(define (lua-link/library self ctx)
-  (let ([modules (for/hash ([(path mod) (in-hash (link-ctx-modules ctx))])
-                   (values (path-replace-extension path ".lua")
-                           (language:compile mod 'lua)))]
-        [build-directory (build-path (link-ctx-build-directory ctx)
-                                     (lua-build-subdir self))])
+    (displayln "lua:")
+    (displayln compiled)
+    (displayln "")
+
+    compiled))
+
+(define (lua-link/collection lctx prog)
+
+  (define config (syntax-local-config lctx))
+
+  (define compile (s-lua-compiler 'lua))
+
+  (let ([modules (for/hash ([mod (in-list prog)])
+
+                   (let* ([name (symbol->string
+                                 (syntax-e
+                                  (compiled-module-ident mod)))]
+                          [rename (current-lua-entry-point-name)]
+                          [name (if (and rename
+                                         (equal? name "entry-point"))
+                                    rename
+                                    name)]
+                          [path (string->path name)])
+                     (values (path-replace-extension path ".lua")
+                             (compile (compiled-module-stx mod)))))]
+
+        [build-directory (build-path (config-build-directory config)
+                                     (current-lua-build-subdir))])
 
     (delete-directory/files build-directory #:must-exist? #f)
     (make-directory* build-directory)
@@ -285,68 +449,85 @@
         (display-to-file mod path #:exists 'replace)
         (flush-output)))
 
-    (make-run-ctx ctx
-                  (file-name-from-path
-                   (link-ctx-entry-point ctx)))))
+    (symbol->string
+     (syntax-e
+      (compiled-module-ident
+       (program-entry-point prog))))))
 
-(define (lua-run self ctx)
-  "Run CHUNK in the system Lua interpreter."
+(define (lua-run lctx prog)
 
-  (define exe (find-executable-path (lua-executable self)) )
+  (define exe-name (current-lua-executable))
+
+  (define exe (find-executable-path exe-name) )
 
   (unless exe
-    (error "unable to locate lua executable"))
+    (error (format "unable to locate ~a executable" exe-name)))
 
-  (define-values (sp out in err)
-    (case (lua-mode self)
-      [(chunk) (lua-run/chunk self exe ctx)]
-      [(library) (lua-run/library self exe ctx)]))
+  (with-syntax* ([#%subprocess (subprocess-ident lctx)]
+                 [#%stdout (stdout-ident lctx)]
+                 [#%stdin (stdin-ident lctx)]
+                 [#%stderr (stderr-ident lctx)]
+                 [exe-name exe-name]
+                 [exe exe]
+                 [prog prog]
+                 [do-run
+                  (let ([config (syntax-local-config lctx)])
+                    (with-syntax ([runner (current-lua-runner)]
+                                  [build-directory
+                                   (build-path
+                                    (config-build-directory config)
+                                    (current-lua-build-subdir))])
+                      #'(runner exe build-directory prog)))])
+    #'(begin
+        (define-values (#%subprocess #%stdout #%stdin #%stderr)
+          do-run)
 
-  (subprocess-wait sp)
+        (lua-listen exe-name #%subprocess #%stdout #%stdin #%stderr))))
 
-  (case (subprocess-status sp)
-    [(0) (display (port->string out))]
-    [else (displayln (port->string out))
-          (display (port->string err))])
+(define (lua-interact lctx stx)
 
-  (close-input-port out)
-  (close-output-port in)
-  (close-input-port err))
+  (define compiler (s-lua-compiler 'lua))
 
-(define (lua-run/chunk self exe ctx)
-  (subprocess #f #f #f exe "-e" (run-ctx-artifact ctx)))
+  (let ([interaction (parameterize ([current-separator "; "])
+                       (compiler stx))])
 
-(define (lua-run/library self exe ctx)
-  (subprocess #f #f #f exe
-              "-e"
-              (format "package.path = \"~a/\" .. package.path"
-                      (build-path (run-ctx-build-directory ctx)
-                                  (lua-build-subdir self)))
-              "-l"
-              (run-ctx-artifact ctx)))
+    (with-syntax ([#%stdin (stdin-ident lctx)]
+                  [interaction interaction])
 
-(struct lua (mode build-subdir executable)
-  #:transparent
-  #:methods gen:backend
+      #'(begin
+         (when (port-closed? #%stdin)
+           (raise-user-error
+            (format "lua port is closed\n  port: ~a" #%stdin)))
 
-  [(define (output-name _self)
-     (lua-output-name))
+         (displayln interaction #%stdin)
+         (flush-output #%stdin)))))
 
-   (define (search-paths _self)
-     (lua-search-paths))
+; Parameters
 
-   (define link lua-link)
-   (define run lua-run)])
+(define current-lua-executable
+  (make-parameter "lua"))
 
-(define/contract (make-lua #:mode         [mode 'chunk]
-                           #:build-subdir [build-subdir "lua"]
-                           #:executable   [executable "lua"])
-  (->* []
-       [#:mode         (or/c 'chunk 'library)
-        #:build-subdir path-string?
-        #:executable   string?]
-       lua?)
+(define current-lua-build-subdir
+  (make-parameter "lua"))
 
-  (lua mode
-       build-subdir
-       executable))
+(define current-lua-linker
+  (make-parameter #f))
+
+(define current-lua-runner
+  (make-parameter #f))
+
+(define current-lua-entry-point-name
+  (make-parameter #f))
+
+(define current-lua-transform-module
+  (make-parameter lua-transform-module))
+
+(define (lua-chunk-mode)
+  (current-lua-linker lua-link/chunk)
+  (current-lua-runner #'lua-run/chunk))
+
+(define (lua-collection-mode)
+  (current-lua-linker lua-link/collection)
+  (current-lua-runner #'lua-run/collection))
+
+(lua-chunk-mode)

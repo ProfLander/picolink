@@ -1,7 +1,5 @@
 #lang picolink/intrinsic
 
-#:module-path io
-
 close
 flush
 input
@@ -13,6 +11,10 @@ read
 tmpfile
 type
 write
+
+stdin
+stdout
+stderr
 
 ;file:close
 ;file:flush

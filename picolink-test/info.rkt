@@ -5,4 +5,4 @@
 (define build-deps '("rackunit-lib"))
 (define clean '("compiled" "tests/compiled"))
 (define compile-omit-paths
-  '(#rx"^.+/"))
+  '(#rx".+/.+"))

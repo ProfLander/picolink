@@ -1,7 +1,5 @@
 #lang picolink/intrinsic
 
-#:module-path os
-
 clock
 date
 difftime
