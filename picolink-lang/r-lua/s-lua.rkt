@@ -56,9 +56,11 @@
 
      (syntax-parse tops
        #:datum-literals [#%do #%block]
-       [[stmt ... (#%do (#%block body ...))]
-        (syntax/loc lctx
-          (#%chunk (#%block stmt ... body ...)))]
+       ; TODO: Reinstate tail-do elision in a way that is friendly
+       ;       to backend s-lua splicing
+       #;[[stmt ... (#%do (#%block body ...))]
+          (syntax/loc lctx
+            (#%chunk (#%block stmt ... body ...)))]
        [(top ...)
         (syntax/loc lctx
           (#%chunk (#%block top ...)))]))])
