@@ -6,6 +6,17 @@
 
 (provide (all-defined-out))
 
+(struct let-bind [ident expr]
+  #:transparent)
+
+(struct set-bind [ident expr]
+  #:transparent)
+
+(define (bind-expr bind)
+  (cond
+    [(let-bind? bind) (let-bind-expr bind)]
+    [(set-bind? bind) (set-bind-expr bind)]))
+
 (define r-lua->r-lua-anf
   (syntax-parser
     [mod:module-level
@@ -77,40 +88,45 @@
   (pattern (#%begin body:expr ...)
 
            #:attr binds
-           (append
-            (apply append (attribute body.binds))
-            (for/list ([form (in-list (attribute body.atom))])
-              (cons (generate-temporary) form)))
-
-           #:attr atom (car (last (attribute binds)))
+           (apply append
+                  (for/list ([binds (attribute body.binds)]
+                             [atom (attribute body.atom)])
+                    (append binds
+                            (list (let-bind (generate-temporary) atom)))))
+           
+           #:attr atom (let-bind-ident (last (attribute binds)))
 
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%let ([bind expr:expr] ...)
+  (pattern (#%let ([ident:id expr:expr] ...)
                   body:expr)
 
            #:attr binds
            (append (apply append (attribute expr.binds))
 
                    (apply append
-                          (list (map syntax-e
+                          (list (map (syntax-parser
+                                       [(ident atom)
+                                        (let-bind #'ident #'atom)])
                                      (syntax-e
-                                      #'([bind . expr.atom] ...)))))
+                                      #'([ident expr.atom] ...)))))
 
                    (attribute body.binds))
 
            #:attr atom (syntax/loc this-syntax body.atom)
+
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
   (pattern (#%set! ident expr:expr)
 
-           #:attr binds (attribute expr.binds)
+           #:attr binds (append (attribute expr.binds)
+                                (list (set-bind #'ident #'expr.atom)))
 
            #:attr atom
            (syntax/loc this-syntax
-             (#%set! ident expr.atom))
+             #%void)
 
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
@@ -158,12 +174,20 @@
                          (drop-right binds 1)
                          binds)]
               [atom (if is-ident
-                        (cdr (last binds))
+                        (bind-expr (last binds))
                         atom)])
           (for/foldr ([stx atom])
-                     ([pair (in-list binds)])
-            (with-syntax ([bind (car pair)]
-                          [val (cdr pair)])
-              #`(#%let ([bind val])
-                       #,stx)))))
+                     ([bind (in-list binds)])
+            (cond
+              [(let-bind? bind)
+               (with-syntax ([ident (let-bind-ident bind)]
+                             [expr  (let-bind-expr bind)])
+                 #`(#%let ([ident expr])
+                          #,stx))]
+              [(set-bind? bind)
+               (with-syntax ([ident (set-bind-ident bind)]
+                             [expr  (set-bind-expr bind)])
+                 #`(#%begin
+                    (#%set! ident expr)
+                    #,stx))]))))
       atom))
