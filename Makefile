@@ -28,4 +28,4 @@ clean:
 test:
 	raco test -exp $(PACKAGE-NAME)-{lib,lang,backend,test,doc}
 
-.PHONY: install remove
+.PHONY: install uninstall build build-docs build-standalone-docs build-all clean test
