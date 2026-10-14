@@ -1,3 +1,7 @@
 #lang picolink/r-lua
 
-1234
+(require (in lua error))
+
+(define n 1234)
+
+n

@@ -126,7 +126,9 @@
   (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
                                  'entry-point)]
          [mod (rewrite-intrinsics prog mod)]
-         [mod (splice-requires+provides mod)]
+         [mod (splice-requires mod)]
+         [mod (splice-lctx mod)]
+         [mod (splice-provides mod)]
          [mod (if is-entry-point
                   (splice-unbuffered-stdio mod)
                   mod)]
@@ -164,7 +166,7 @@
   (string-replace
    (symbol->string (syntax-e path)) "/" "."))
 
-(define (splice-requires+provides mod)
+(define (splice-requires mod)
 
   (define require-scope (compiled-module-require-scope mod))
 
@@ -213,38 +215,76 @@
                  [(#%member req-bind-mod
                             req-bind-from) ...])))
 
+  (if (pair? reqs)
+
+      (let ([stx (compiled-module-stx mod)])
+
+        (compiled-module-update
+         mod
+         #:stx (s-lua-append
+                (with-syntax ([module-bindings module-bindings]
+                              [member-bindings member-bindings])
+                  #'(#%chunk
+                     (#%block
+                      module-bindings
+                      member-bindings)))
+                stx)))
+
+      mod))
+
+(define (splice-lctx mod)
+
+  (define module-scope
+    (compiled-module-module-scope mod))
+
+  (define definitions
+    (scope-idents module-scope))
+
+  (let ([stx (compiled-module-stx mod)])
+
+    (compiled-module-update
+     mod
+     #:stx (s-lua-append
+            stx
+            (with-syntax ([module-name (symbol->string
+                                        (syntax-e
+                                         (compiled-module-ident mod)))]
+                          [(def ...) definitions])
+              #'(#%chunk
+                 (#%block
+
+                  (#%if (#%not lctx)
+                        (#%then
+                         (#%block
+                          (#%assign [lctx] [(#%table)]))))
+
+                  (#%assign [(#%member lctx module-name)]
+                            [(#%call setmetatable
+                                     (#%table [def def] ...)
+                                     (#%table [__index _G]))]))))))))
+
+(define (splice-provides mod)
+
   (define provide-scope
     (compiled-module-provide-scope mod))
 
   (define prov-idents
     (scope-idents provide-scope))
 
-  (define provide-return
-    (with-syntax ([(prov ...) prov-idents])
-      #'(#%return (#%table [prov prov] ...))))
+  (if (pair? prov-idents)
 
-  (define stx
-    (syntax-parse (compiled-module-stx mod)
-      #:literal-sets [s-lua-ir-literals]
+      (let ([stx (compiled-module-stx mod)])
 
-      [(#%chunk (#%block body ...))
+        (compiled-module-update
+         mod
+         #:stx (s-lua-append
+                stx
+                (with-syntax ([(prov ...) prov-idents])
+                  #'(#%chunk
+                     (#%block
+                      (#%return (#%table [prov prov] ...))))))))
 
-       (with-syntax ([(body ...)
-                      (append
-                       (if (pair? reqs)
-                           (list module-bindings
-                                 member-bindings)
-                           null)
-
-                       (attribute body)
-
-                       (if (pair? prov-idents)
-                           (list provide-return)
-                           null))])
-
-         #'(#%chunk (#%block body ...)))]))
-
-  (compiled-module-update mod #:stx stx))
+      mod))
 
 (define (rewrite-intrinsics _prog mod)
 
@@ -345,35 +385,44 @@
    #:stx (s-lua-append (compiled-module-stx mod)
                        stx-unbuffered-stdio)))
 
-(define stx-repl
-  #'(#%chunk
-     (#%block
+(define (make-repl-stx mod)
+  (with-syntax ([module-name (symbol->string
+                              (syntax-e
+                               (compiled-module-ident mod)))])
+    #'(#%chunk
+       (#%block
 
-      (#%while #t
+        (#%local [repl-scope] [module-name])
 
-               (#%block
-                (#%local [input] [(#%call (#%member io read))])
-                (#%local [res err] [(#%call loadstring
-                                            input
-                                            "repl")])
-                (#%if res
+        (#%while
+         #t
+         (#%block
+          (#%local [input]   [(#%call (#%member io read))])
+          (#%local [res err] [(#%call loadstring
+                                      input
+                                      "repl")])
+          (#%if res
 
-                      (#%then
-                       (#%block
-                        (#%call res)))
+                (#%then
+                 (#%block
+                  (#%call
+                   (#%call setfenv res
+                           (#%member lctx
+                                     'repl-scope)))))
 
-                      (#%else
-                       (#%block
-                        (#%call
-                         (#%method (#%member io stderr)
-                                   write)
-                         err)))))))))
+                (#%else
+                 (#%block
+                  (#%call
+                   (#%method (#%member io stderr)
+                             write)
+                   err))))))))))
 
 (define (splice-repl mod)
   (compiled-module-update
    mod
    #:stx
-   (s-lua-append (compiled-module-stx mod) stx-repl)))
+   (s-lua-append (compiled-module-stx mod)
+                 (make-repl-stx mod))))
 
 (define (program-entry-point prog)
   (findf (λ (mod)
@@ -444,7 +493,13 @@
     (make-directory* build-directory)
 
     (for ([(path mod) (in-hash modules)])
+
+      (printf "~a:\n" path)
+      (displayln mod)
+      (displayln "")
+
       (let ([path (build-path build-directory path)])
+
         (make-directory* (path-only path))
         (display-to-file mod path #:exists 'replace)
         (flush-output)))
