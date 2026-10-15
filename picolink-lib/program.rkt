@@ -1,9 +1,10 @@
 #lang racket/base
 
 (require racket/function
-         racket/sequence
+         racket/match
          syntax/strip-context
-         picolink/module)
+         picolink/module
+         picolink/output)
 
 (require picolink/ee-lib)
 
@@ -42,18 +43,56 @@
 
 (define (parallel-compile-program program backend)
 
-  (let* ([mod-ids (program-module-identifiers program)]
-         [pool    (make-parallel-thread-pool)]
+  (let* ([mod-ids
+          (program-module-identifiers program)]
+
+         [pool
+          (make-parallel-thread-pool)]
 
          [threads
           (for/list ([mod-id (in-list mod-ids)])
+            (define mod
+              (program-module program mod-id))
 
-            (define mod (program-module program mod-id))
+            (define-values (out-port get-out-events)
+              (make-deferred-output-port))
 
-            (thread (thunk (compile-parsed-module mod-id
-                                                  backend
-                                                  mod))
-                    #:pool pool
-                    #:keep 'results))])
+            (define-values (err-port get-err-events)
+              (make-deferred-output-port))
 
-    (map thread-wait threads)))
+            (parameterize ([current-output-port out-port]
+                           [current-error-port err-port])
+              (list mod-id
+                    get-out-events
+                    get-err-events
+                    (thread
+                     (thunk
+                      (compile-parsed-module mod-id
+                                              backend
+                                              mod))
+                     #:pool pool
+                     #:keep 'results))))])
+
+    (for/list ([parts (in-list threads)])
+      (match parts
+        [(list mod-id get-out-events get-err-events thrd)
+         (define result
+           (thread-wait thrd))
+
+         (define out-events
+           (get-out-events))
+
+         (define err-events
+           (get-err-events))
+
+         (when (or (pair? out-events)
+                   (pair? err-events))
+
+           (printf "~a:\n" (syntax-e mod-id))
+
+           (replay-deferred-output out-events)
+           (replay-deferred-output err-events)
+
+           (displayln ""))
+
+         result]))))
