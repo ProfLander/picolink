@@ -1,11 +1,15 @@
 #lang racket/base
 
-(require ee-lib/define)
+(require (for-syntax racket/base
+                     ee-lib)
 
-(provide (all-defined-out)
+         ee-lib/define)
+
+(provide (for-space s-lua (all-defined-out))
          (for-syntax (all-defined-out)))
 
 (define-literal-forms s-lua-ir-literals
+  #:binding-space s-lua
   "cannot use outside of s-lua"
   [#%chunk
    #%block
@@ -49,3 +53,5 @@
    #%neg
    #%not
    #%length])
+
+(define-for-syntax in-s-lua (in-space 's-lua))

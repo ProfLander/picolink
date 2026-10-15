@@ -3,7 +3,6 @@
 (require racket/function
          racket/string
          racket/list
-         racket/hash
          racket/set
          racket/path
          racket/file
@@ -222,12 +221,13 @@
         (compiled-module-update
          mod
          #:stx (s-lua-append
-                (with-syntax ([module-bindings module-bindings]
-                              [member-bindings member-bindings])
-                  #'(#%chunk
-                     (#%block
-                      module-bindings
-                      member-bindings)))
+                (in-s-lua
+                 (with-syntax ([module-bindings module-bindings]
+                               [member-bindings member-bindings])
+                   #'(#%chunk
+                      (#%block
+                       module-bindings
+                       member-bindings))))
                 stx)))
 
       mod))
@@ -246,22 +246,23 @@
      mod
      #:stx (s-lua-append
             stx
-            (with-syntax ([module-name (symbol->string
-                                        (syntax-e
-                                         (compiled-module-ident mod)))]
-                          [(def ...) definitions])
-              #'(#%chunk
-                 (#%block
+            (in-s-lua
+             (with-syntax ([module-name (symbol->string
+                                         (syntax-e
+                                          (compiled-module-ident mod)))]
+                           [(def ...) definitions])
+               #'(#%chunk
+                  (#%block
 
-                  (#%if (#%not lctx)
-                        (#%then
-                         (#%block
-                          (#%assign [lctx] [(#%table)]))))
+                   (#%if (#%not lctx)
+                         (#%then
+                          (#%block
+                           (#%assign [lctx] [(#%table)]))))
 
-                  (#%assign [(#%member lctx module-name)]
-                            [(#%call setmetatable
-                                     (#%table [def def] ...)
-                                     (#%table [__index _G]))]))))))))
+                   (#%assign [(#%member lctx module-name)]
+                             [(#%call setmetatable
+                                      (#%table [def def] ...)
+                                      (#%table [__index _G]))])))))))))
 
 (define (splice-provides mod)
 
@@ -279,10 +280,11 @@
          mod
          #:stx (s-lua-append
                 stx
-                (with-syntax ([(prov ...) prov-idents])
-                  #'(#%chunk
-                     (#%block
-                      (#%return (#%table [prov prov] ...))))))))
+                (in-s-lua
+                 (with-syntax ([(prov ...) prov-idents])
+                   #'(#%chunk
+                      (#%block
+                       (#%return (#%table [prov prov] ...)))))))))
 
       mod))
 
@@ -343,41 +345,43 @@
 
 (define (s-lua-append a b)
   (syntax-parse a
-    #:datum-literals [#%chunk #%block #%return]
+    #:literal-sets [s-lua-ir-literals]
     [(#%chunk (#%block (~and body-a (~not (#%return _))) ...
                        (~optional (#%return ret-a))))
 
      (syntax-parse b
-       #:datum-literals [#%chunk #%block #%return]
+       #:literal-sets [s-lua-ir-literals]
        [(#%chunk (#%block (~and body-b (~not (#%return _))) ...
                           (~optional (#%return ret-b))))
         (when (and (attribute ret-a)
                    (attribute ret-b))
           (error "cannot append s-lua chunks with multiple returns"))
 
-        (with-syntax ([(ret ...) (cond
-                                   [(attribute ret-a)
-                                    (list #'(#%return ret-a))]
-                                   [(attribute ret-b)
-                                    (list #'(#%return ret-b))]
-                                   [else null])])
-          #'(#%chunk
-             (#%block
-              body-a ...
-              body-b ...
-              ret ...)))])]))
+        (in-s-lua
+         (with-syntax ([(ret ...) (cond
+                                    [(attribute ret-a)
+                                     (list #'(#%return ret-a))]
+                                    [(attribute ret-b)
+                                     (list #'(#%return ret-b))]
+                                    [else null])])
+           #'(#%chunk
+              (#%block
+               body-a ...
+               body-b ...
+               ret ...))))])]))
 
 (define stx-unbuffered-stdio
-  #'(#%chunk
-     (#%block
+  (in-s-lua
+   #'(#%chunk
+      (#%block
 
-      (#%call (#%method (#%member io stdout)
-                        setvbuf)
-              "no")
+       (#%call (#%method (#%member io stdout)
+                         setvbuf)
+               "no")
 
-      (#%call (#%method (#%member io stderr)
-                        setvbuf)
-              "no"))))
+       (#%call (#%method (#%member io stderr)
+                         setvbuf)
+               "no")))))
 
 (define (splice-unbuffered-stdio mod)
   (compiled-module-update
@@ -389,33 +393,34 @@
   (with-syntax ([module-name (symbol->string
                               (syntax-e
                                (compiled-module-ident mod)))])
-    #'(#%chunk
-       (#%block
+    (in-s-lua
+     #'(#%chunk
+        (#%block
 
-        (#%local [repl-scope] [module-name])
+         (#%local [repl-scope] [module-name])
 
-        (#%while
-         #t
-         (#%block
-          (#%local [input]   [(#%call (#%member io read))])
-          (#%local [res err] [(#%call loadstring
-                                      input
-                                      "repl")])
-          (#%if res
+         (#%while
+          #t
+          (#%block
+           (#%local [input]   [(#%call (#%member io read))])
+           (#%local [res err] [(#%call loadstring
+                                       input
+                                       "repl")])
+           (#%if res
 
-                (#%then
-                 (#%block
-                  (#%call
-                   (#%call setfenv res
-                           (#%member lctx
-                                     'repl-scope)))))
+                 (#%then
+                  (#%block
+                   (#%call
+                    (#%call setfenv res
+                            (#%member lctx
+                                      'repl-scope)))))
 
-                (#%else
-                 (#%block
-                  (#%call
-                   (#%method (#%member io stderr)
-                             write)
-                   err))))))))))
+                 (#%else
+                  (#%block
+                   (#%call
+                    (#%method (#%member io stderr)
+                              write)
+                    err)))))))))))
 
 (define (splice-repl mod)
   (compiled-module-update
@@ -443,19 +448,20 @@
                                     (compiled-module-stx mod)))]
 
          [stx
-          (with-syntax ([(dependency ...) dependencies]
-                        [(entry-point-body ...)
-                         (syntax-parse (compiled-module-stx
-                                        entry-point)
-                           #:literal-sets [s-lua-ir-literals]
-                           [(#%chunk (#%block body ...))
-                            (attribute body)])])
-            #'(#%chunk
-               (#%block
-                dependency ...
-                entry-point-body ...)))]
+          (in-s-lua
+           (with-syntax ([(dependency ...) dependencies]
+                         [(entry-point-body ...)
+                          (syntax-parse (compiled-module-stx
+                                         entry-point)
+                            #:literal-sets [s-lua-ir-literals]
+                            [(#%chunk (#%block body ...))
+                             (attribute body)])])
+             #'(#%chunk
+                (#%block
+                 dependency ...
+                 entry-point-body ...))))]
 
-         [compile (s-lua-compiler 'lua)]
+         [compile  (s-lua-compiler 'lua)]
          [compiled (compile stx)])
 
     (displayln "lua:")

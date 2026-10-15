@@ -1,8 +1,6 @@
 #lang picolink/r-lua
 
-(require (in lua print)
-         (in function identity)
-         (in tests/begin)
+(require (in tests/begin)
          (in tests/let)
          (in tests/let-nested)
          (in tests/let-nested-bind)

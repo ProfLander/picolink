@@ -1,7 +1,6 @@
 #lang picolink/language
 
 (require (for-syntax racket/base
-                     racket/syntax
                      syntax/parse)
 
          racket/match
@@ -9,6 +8,8 @@
          syntax/parse
          picolink/syntax
          picolink/dsl/racket
+
+         picolink/dsl/surface
 
          (for-template picolink/dsl/ir))
 
@@ -19,16 +20,6 @@
 #:wrap     wrap-begin
 #:parse    dsl/top-level
 #:compiler dsl-compiler
-
-(define-literal-set dsl-surface-literals
-  #:datum-literals [begin
-                     require
-                     in
-                     provide
-                     define
-                     define-macro
-                     let]
-  [])
 
 (struct/cross-phase dsl-var [])
 (struct/cross-phase dsl-syntax [trx])

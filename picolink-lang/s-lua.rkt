@@ -17,7 +17,9 @@
 (define s-lua-extract (const null))
 
 (define (s-lua-wrap stx)
-  #`(#%chunk (#%block #,@stx)))
+  (in-s-lua
+   (with-syntax ([(body ...) stx])
+     #'(#%chunk (#%block body ...)))))
 
 (define s-lua-parse identity)
 

@@ -13,6 +13,7 @@
                   r-lua->r-lua-anf)
 
          (for-template racket/base
+                       picolink/r-lua/ir
                        picolink/s-lua/ir))
 
 (provide (all-defined-out))
@@ -20,12 +21,14 @@
 (define (r-lua->s-lua stx)
 
   (let* ([anf   (r-lua->r-lua-anf stx)]
-         [s-lua (r-lua-anf->s-lua anf)])
+         [_ (println anf)]
+         [s-lua (r-lua-anf->s-lua anf)]
+         [_ (println s-lua)])
     s-lua))
 
 (define (hoist-do stx)
   (syntax-parse stx
-    #:datum-literals [#%do #%block]
+    #:literal-sets [s-lua-ir-literals]
     [(#%do (#%block body ...))
      (apply append (map hoist-do (attribute body)))]
     [_ (list this-syntax)]))
@@ -40,41 +43,40 @@
          body ...)]))
 
 (define-s-lua-syntax-class module-level
-  #:datum-literals [#%begin]
+  #:literal-sets [r-lua-ir-literals]
 
   [(#%begin top ...)
    (let ([lctx this-syntax]
          [tops
           (filter-map
            (syntax-parser
-             #:datum-literals [#%define-syntax]
-             [(#%define-syntax _ ...)
+             #:literal-sets [r-lua-ir-literals]
+             [(#%define-macro _ ...)
               #f]
              [top:top-level
               (attribute top.s-lua)])
            (syntax-e #'(top ...)))])
 
-     (syntax-parse tops
-       #:datum-literals [#%do #%block]
-       ; TODO: Reinstate tail-do elision in a way that is friendly
-       ;       to backend s-lua splicing
-       #;[[stmt ... (#%do (#%block body ...))]
-          (syntax/loc lctx
-            (#%chunk (#%block stmt ... body ...)))]
-       [(top ...)
-        (syntax/loc lctx
-          (#%chunk (#%block top ...)))]))])
+     (in-s-lua
+      (syntax-parse tops
+        #:literal-sets [s-lua-ir-literals]
+        ; TODO: Reinstate tail-do elision in a way that is friendly
+        ;       to backend s-lua splicing
+        #;[[stmt ... (#%do (#%block body ...))]
+           (syntax/loc lctx
+             (#%chunk (#%block stmt ... body ...)))]
+        [(top ...)
+         (syntax/loc lctx
+           (#%chunk (#%block top ...)))])))])
 
 (define-s-lua-syntax-class top-level
-  #:datum-literals [#%define
-                    #%define-syntax
-                    #%app]
+  #:literal-sets [r-lua-ir-literals]
 
   [(#%define name val:expr)
    (syntax/loc this-syntax
      (#%local [name] [val.s-lua]))]
 
-  [(#%define-syntax _ ...)
+  [(#%define-macro _ ...)
    (unimplemented)]
 
   [e:expr
@@ -82,13 +84,7 @@
      e.s-lua)])
 
 (define-s-lua-syntax-class expr
-  #:datum-literals [#%let
-                    #%letrec
-                    #%declare
-                    #%begin
-                    #%set!
-                    #%app
-                    #%if]
+  #:literal-sets [r-lua-ir-literals]
 
   [(#%set! ident expr:expr)
    (syntax/loc this-syntax
@@ -139,13 +135,16 @@
            (#%then (#%block then.s-lua))
            (#%else (#%block else.s-lua))))]
 
+  [(#%intrinsic form)
+   (syntax/loc this-syntax
+     form)]
+
   [v:val
    (syntax/loc this-syntax
      v.s-lua)])
 
 (define-s-lua-syntax-class val
-  #:datum-literals [#%void
-                    #%abs]
+  #:literal-sets [r-lua-ir-literals]
 
   [#%void (syntax/loc this-syntax #%nil)]
   [b:boolean (syntax/loc this-syntax b)]

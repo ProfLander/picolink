@@ -56,90 +56,92 @@
                  (make-repl-thread-stx mod))))
 
 (define (make-repl-thread-stx mod)
-  (with-syntax ([module-name (symbol->string
-                              (syntax-e
-                               (compiled-module-ident mod)))])
-    #'(#%chunk
-       (#%block
+  (in-s-lua
+   (with-syntax ([module-name (symbol->string
+                               (syntax-e
+                                (compiled-module-ident mod)))])
+     #'(#%chunk
+        (#%block
 
-        (#%local [repl-thread repl-channel])
+         (#%local [repl-thread repl-channel])
 
-        (#%local [repl-scope] [module-name])
+         (#%local [repl-scope] [module-name])
 
-        (#%function
-         (love.load)
+         (#%function
+          (love.load)
 
-         (#%block
-          (#%assign [repl-thread]
-                    [(#%call
-                      (#%member (#%member love thread)
-                                newThread)
-                      "repl.lua")])
+          (#%block
+           (#%assign [repl-thread]
+                     [(#%call
+                       (#%member (#%member love thread)
+                                 newThread)
+                       "repl.lua")])
 
-          (#%assign [repl-channel]
-                    [(#%call
-                      (#%member (#%member love thread)
-                                getChannel)
-                      "repl")])
+           (#%assign [repl-channel]
+                     [(#%call
+                       (#%member (#%member love thread)
+                                 getChannel)
+                       "repl")])
 
-          (#%call (#%method repl-thread start))))
+           (#%call (#%method repl-thread start))))
 
-        (#%function
-         (love.update dt)
+         (#%function
+          (love.update dt)
 
-         (#%block
-          (#%local [input]
-                   [(#%call (#%method repl-channel
-                                      pop))])
+          (#%block
+           (#%local [input]
+                    [(#%call (#%method repl-channel
+                                       pop))])
 
-          (#%if input
-                (#%then
-                 (#%block
-                  (#%local [res err] [(#%call loadstring
-                                              input
-                                              "repl")])
+           (#%if input
+                 (#%then
+                  (#%block
+                   (#%local [res err] [(#%call loadstring
+                                               input
+                                               "repl")])
 
-                  (#%if res
+                   (#%if res
 
-                        (#%then
-                         (#%block
-                          (#%call
-                           (#%call setfenv res
-                                   (#%member lctx
-                                             #;'repl-scope
-                                             module-name)))))
+                         (#%then
+                          (#%block
+                           (#%call
+                            (#%call setfenv res
+                                    (#%member lctx
+                                              #;'repl-scope
+                                              module-name)))))
 
-                        (#%else
-                         (#%block
-                          (#%call
-                           (#%method (#%member io stderr)
-                                     write)
-                           err)))))))))
+                         (#%else
+                          (#%block
+                           (#%call
+                            (#%method (#%member io stderr)
+                                      write)
+                            err)))))))))
 
-        (#%function
-         (love.errorhandler msg)
-         (#%block
-          (#%call (#%method (#%member io stderr) write)
-                  (#%call (#%member debug traceback)
-                          (#%call tostring msg)
-                          2)
-                  "\\n")
+         (#%function
+          (love.errorhandler msg)
+          (#%block
+           (#%call (#%method (#%member io stderr) write)
+                   (#%call (#%member debug traceback)
+                           (#%call tostring msg)
+                           2)
+                   "\\n")
 
-          (#%return #%nil)))))))
+           (#%return #%nil))))))))
 
 (define stx-repl-module
-  #'(#%chunk
-     (#%block
+  (in-s-lua
+   #'(#%chunk
+      (#%block
 
-      (#%local [channel] [(#%call (#%member (#%member love thread)
-                                            getChannel)
-                                  "repl")])
+       (#%local [channel] [(#%call (#%member (#%member love thread)
+                                             getChannel)
+                                   "repl")])
 
-      (#%while #t
+       (#%while #t
 
-               (#%block
-                (#%local [input] [(#%call (#%member io read))])
-                (#%call (#%method channel push) input))))))
+                (#%block
+                 (#%local [input] [(#%call (#%member io read))])
+                 (#%call (#%method channel push) input)))))))
 
 (define love-link      lua-link)
 

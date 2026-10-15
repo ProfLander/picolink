@@ -90,8 +90,8 @@
 
            (printf "~a:\n" (syntax-e mod-id))
 
-           (replay-deferred-output out-events)
-           (replay-deferred-output err-events)
+           (replay-deferred-output out-events (current-output-port))
+           (replay-deferred-output err-events (current-error-port))
 
            (displayln ""))
 

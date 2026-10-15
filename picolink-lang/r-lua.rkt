@@ -19,12 +19,12 @@
 
 (define r-lua-extract
   (syntax-parser
-    #:datum-literals [begin]
+    #:literal-sets [r-lua-surface-literals]
     [(begin body ...)
      (for/fold ([acc null])
                ([body (in-syntax #'(body ...))])
        (syntax-parse body
-         #:datum-literals [require in]
+         #:literal-sets [r-lua-surface-literals]
 
          [(require (in mod _ ...) ...)
           (append acc (attribute mod))]

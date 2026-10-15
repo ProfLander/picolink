@@ -1,19 +1,31 @@
 #lang racket/base
 
-(require ee-lib/define)
+(require (for-syntax racket/base
+                     ee-lib)
 
-(provide (all-defined-out))
+         (for-meta 2
+                   racket/base
+                   racket/function
+                   syntax/parse)
+
+         ee-lib/define)
+
+(provide (for-space r-lua (all-defined-out))
+         (for-syntax (all-defined-out)))
 
 (define-literal-forms r-lua-ir-literals
+  #:binding-space r-lua
   "cannot use outside of r-lua"
   [#%begin
    #%define
-   #%define-syntax
+   #%define-macro
    #%let
    #%letrec
    #%declare
    #%set!
    #%abs
    #%app
-   #%if])
+   #%if
+   #%void])
 
+(define-for-syntax in-r-lua (in-space 'r-lua))
