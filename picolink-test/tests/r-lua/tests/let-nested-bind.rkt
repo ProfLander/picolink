@@ -7,4 +7,4 @@
       [y (let ([x 3])
            (identity x))])
   (print x)
-  (print y))
+  y)

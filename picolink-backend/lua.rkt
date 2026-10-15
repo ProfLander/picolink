@@ -455,8 +455,6 @@
                 dependency ...
                 entry-point-body ...)))]
 
-         [_ (println stx)]
-
          [compile (s-lua-compiler 'lua)]
          [compiled (compile stx)])
 

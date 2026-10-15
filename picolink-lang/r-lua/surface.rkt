@@ -18,6 +18,7 @@
                      define
                      define-macro
                      let
+                     letrec
                      set!
                      λ
                      if
@@ -156,6 +157,21 @@
          (syntax/loc this-syntax
            (#%let ([name val] ...)
                   (#%begin body ...))))])]
+
+    [(letrec _ ...)
+     (syntax-parser/scope
+      scope
+      [(_ ([name val] ...)
+          body ...)
+
+       (for ([name (in-list (attribute name))])
+         (bind! name (r-lua-var)))
+
+       (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
+                     [(body ...) (map r-lua/expr (attribute body))])
+         (syntax/loc this-syntax
+           (#%letrec ([name val] ...)
+                     (#%begin body ...))))])]
 
     [(set! (~cata name check-var)
            (~cata val r-lua/expr))

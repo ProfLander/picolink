@@ -17,3 +17,9 @@ thing
   (print thing)
   (set! thing "let-set")
   thing)
+
+(define thing3 "tail-thing")
+thing3
+(begin
+  (set! thing3 "tail-set"))
+thing3

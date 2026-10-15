@@ -83,6 +83,8 @@
 
 (define-s-lua-syntax-class expr
   #:datum-literals [#%let
+                    #%letrec
+                    #%declare
                     #%begin
                     #%set!
                     #%app
@@ -101,6 +103,25 @@
          (#%local [name ...] [val.s-lua ...])
          body ...))))]
 
+  [(#%letrec ([name val:expr] ...)
+             body:expr)
+   (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
+     (syntax/loc this-syntax
+       (#%do
+        (#%block
+         (#%local [name ...])
+         (#%assign [name ...] [val.s-lua ...])
+         body ...))))]
+
+  [(#%declare (name ...)
+              body:expr)
+   (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
+     (syntax/loc this-syntax
+       (#%do
+        (#%block
+         (#%local [name ...])
+         body ...))))]
+
   [(#%begin body:expr ...)
    (with-syntax ([(body ...)
                   (apply append (map hoist-do (attribute body.s-lua)))])
@@ -115,8 +136,8 @@
   [(#%if cond:expr then:expr else:expr)
    (syntax/loc this-syntax
      (#%if cond
-           (#%then then)
-           (#%else else)))]
+           (#%then (#%block then.s-lua))
+           (#%else (#%block else.s-lua))))]
 
   [v:val
    (syntax/loc this-syntax

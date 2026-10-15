@@ -10,6 +10,8 @@
    #%define
    #%define-syntax
    #%let
+   #%letrec
+   #%declare
    #%set!
    #%abs
    #%app
