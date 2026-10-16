@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     ee-lib)
+                     ee-lib
+                     picolink/syntax)
 
          (for-meta 2
                    racket/base
@@ -30,3 +31,4 @@
    #%void])
 
 (define-for-syntax in-r-lua (in-space 'r-lua))
+(define-for-syntax not-in-r-lua (not-in-space 'r-lua))

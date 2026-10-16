@@ -150,8 +150,9 @@
 
   [(#%intrinsic ~! form)
    (in-s-lua
-    (syntax/loc this-syntax
-      form))]
+    (not-in-r-lua
+     (syntax/loc this-syntax
+       form)))]
 
   [v:val
    (in-s-lua

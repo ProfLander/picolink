@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     ee-lib)
+                     ee-lib
+                     picolink/syntax)
 
          ee-lib/define)
 
@@ -52,6 +53,8 @@
    #%or
    #%neg
    #%not
-   #%length])
+   #%length
+   quote])
 
 (define-for-syntax in-s-lua (in-space 's-lua))
+(define-for-syntax not-in-s-lua (not-in-space 's-lua))

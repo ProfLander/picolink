@@ -225,3 +225,9 @@
              (define name %name)
              (define name? %name?)
              (define name-field %name-field) ...)))]))
+
+(define (not-in-space binding-space)
+  (lambda (stx)
+    (if binding-space
+        ((make-interned-syntax-introducer binding-space) stx 'remove)
+        stx)))

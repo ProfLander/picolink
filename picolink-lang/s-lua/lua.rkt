@@ -16,50 +16,10 @@
 
 (define current-separator (make-parameter "\n"))
 
-(define reserved-symbols
-  (list '=
-        '::
-        '+
-        '-
-        '*
-        '/
-        '^
-        '%
-        '|.|
-        '..
-        '<
-        '<=
-        '>
-        '>=
-        '==
-        '~=))
-
-(define reserved-names
+(define internal-names
   (list '#%return
         '#%vararg
-        '#%method
-
-        'break
-        'goto
-        'do
-        'while
-        'repeat
-        'until
-        'if
-        'for
-        'function
-        'local
-        'then
-        'elseif
-        'else
-        'return
-        'nil
-        'false
-        'true
-        'and
-        'or
-        'not
-        'length))
+        '#%method))
 
 (define-syntax-class name
   (pattern ident:id
@@ -67,8 +27,7 @@
            #:attr string (symbol->string (attribute symbol))
 
            #:do [(define reserved-name
-                   (or (member (attribute symbol) reserved-names)
-                       (member (attribute symbol) reserved-symbols)))]
+                   (member (attribute symbol) internal-names))]
 
            #:fail-when reserved-name
            (format "reserved name: ~a" (car reserved-name))))
@@ -101,11 +60,32 @@
    ">"  "__gt__"
    ">=" "__ge__"
    "==" "__2eq__"
-   "~=" "__ne__"))
+   "~=" "__ne__"
+   "?"  "__question__"))
 
 (define reserved-identifier->lua-name
   (hash
-   "function" "__function__"))
+   "break"    "__break__"
+   "goto"     "__goto__"
+   "do"       "__do__"
+   "while"    "__while__"
+   "repeat"   "__repeat__"
+   "until"    "__until__"
+   "if"       "__if__"
+   "for"      "__for__"
+   "function" "__function__"
+   "local"    "__local__"
+   "then"     "__then__"
+   "elseif"   "__elseif__"
+   "else"     "__else__"
+   "return"   "__return__"
+   "nil"      "__nil__"
+   "false"    "__false__"
+   "true"     "__true__"
+   "and"      "__and__"
+   "or"       "__or__"
+   "not"      "__not__"
+   "length"   "__length__"))
 
 (define (rewrite-name ident #:omit [omit null])
   (syntax-parse ident
@@ -383,7 +363,6 @@
 
 (define-lua-syntax-class prefix-expr
   #:literal-sets [s-lua-ir-literals]
-  #:literals [quote]
 
   [var:var
    (attribute var.lua)]
