@@ -101,18 +101,31 @@
    ">"  "__gt__"
    ">=" "__ge__"
    "==" "__2eq__"
-   "~=" "__ne__"
+   "~=" "__ne__"))
+
+(define reserved-identifier->lua-name
+  (hash
    "function" "__function__"))
 
 (define (rewrite-name ident #:omit [omit null])
   (syntax-parse ident
-    (ident:id
-     (for/fold ([acc (symbol->string (syntax-e #'ident))])
-               ([(from to) (in-hash
-                            reserved-symbol->lua-name)])
-       (if (member from omit)
-           acc
-           (string-replace acc from to))))))
+    [ident:id
+     (let* ([id (symbol->string (syntax-e #'ident))]
+
+            [id (for/fold ([acc id])
+                          ([(from to) (in-hash
+                                       reserved-symbol->lua-name)])
+                  (if (member from omit)
+                      acc
+                      (string-replace acc from to)))]
+            
+            [id (for/fold ([acc id])
+                          ([(from to) (in-hash
+                                       reserved-identifier->lua-name)])
+                  (if (equal? acc from)
+                      to
+                      acc))])
+       id)]))
 
 (define (indent str)
   (string-replace str "\n" "\n  "))
