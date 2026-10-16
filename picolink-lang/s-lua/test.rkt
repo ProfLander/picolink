@@ -1,11 +1,10 @@
 #lang racket/base
 
-; FIXME: Tests no longer pass with binding spaces
-
 (module+ test
   (require racket/string
            rackunit
            picolink/s-lua/lua
+           picolink/s-lua/ir
            (for-template picolink/s-lua/ir))
 
   (test-equal? "assignment"
