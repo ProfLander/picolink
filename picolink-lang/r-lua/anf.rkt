@@ -1,11 +1,15 @@
 #lang racket/base
 
 (require racket/list
+         racket/match
          racket/syntax
          syntax/parse
          (for-template picolink/r-lua/ir))
 
 (provide (all-defined-out))
+
+(define current-debug
+  (make-parameter #f))
 
 (struct let-bind [ident expr]
   #:transparent)
@@ -30,6 +34,10 @@
     [(statement? bind)    (statement-expr bind)]))
 
 (define (r-lua->r-lua-anf stx)
+
+  (when (current-debug)
+    (displayln "r-lua->r-lua-anf:")
+    (println stx))
 
   (syntax-parse stx
     [mod:module-level
@@ -242,100 +250,98 @@
 
 (define (binds+atom->r-lua-anf binds atom)
 
+  (when (current-debug)
+    (displayln "binds+atom->r-lua-anf:")
+    (displayln "binds:")
+    (println binds)
+    (displayln "atom:")
+    (println atom))
+
   (if (pair? binds)
 
-      (let ([is-ident (identifier? atom)])
+      (for/foldr ([stx atom]
+                  [open #t]
+                  #:result stx)
+                 ([bind (in-list binds)])
+        (cond
+          [(let-bind? bind)
+           (with-syntax ([ident (let-bind-ident bind)]
+                         [expr  (let-bind-expr bind)])
+             (syntax-parse stx
+               #:literal-sets [r-lua-ir-literals]
+               [(#%let ([stx-ident stx-expr] ...)
+                       body)
+                #:when open
+                #:cut
+                (values (in-r-lua
+                         (syntax/loc this-syntax
+                           (#%let ([ident expr]
+                                   [stx-ident stx-expr]
+                                   ...)
+                                  body)))
+                        open)]
+               [stx
+                (values (in-r-lua
+                         (syntax/loc this-syntax
+                           (#%let ([ident expr])
+                                  stx)))
+                        #t)]))]
 
-        (let ([binds (if is-ident
-                         (drop-right binds 1)
-                         binds)]
-              [atom (if is-ident
-                        (bind-expr (last binds))
-                        atom)])
+          [(letrec-bind? bind)
+           (with-syntax ([ident    (letrec-bind-ident bind)]
+                         [expr     (letrec-bind-expr bind)])
+             (syntax-parse stx
+               #:literal-sets [r-lua-ir-literals]
+               [(#%letrec ([stx-ident stx-expr] ...)
+                          body)
+                #:when open
+                #:cut
+                (values (in-r-lua
+                         (syntax/loc this-syntax
+                           (#%letrec ([ident expr]
+                                      [stx-ident stx-expr]
+                                      ...)
+                                     body)))
+                        open)]
+               [stx
+                (values (in-r-lua
+                         (syntax/loc this-syntax
+                           (#%letrec ([ident expr])
+                                     stx)))
+                        #t)]))]
 
-          (for/foldr ([stx atom]
-                      [open #t]
-                      #:result stx)
-                     ([bind (in-list binds)])
-            (cond
-              [(let-bind? bind)
-               (with-syntax ([ident (let-bind-ident bind)]
-                             [expr  (let-bind-expr bind)])
-                 (syntax-parse stx
-                   #:literal-sets [r-lua-ir-literals]
-                   [(#%let ([stx-ident stx-expr] ...)
+          [(declaration? bind)
+           (with-syntax ([ident (declaration-ident bind)])
+             (syntax-parse stx
+               #:literal-sets [r-lua-ir-literals]
+               [(#%declare (stx-ident ...)
                            body)
-                    #:when open
-                    #:cut
-                    (values (in-r-lua
-                             (syntax/loc this-syntax
-                               (#%let ([ident expr]
-                                       [stx-ident stx-expr]
-                                       ...)
+                #:when open
+                #:cut
+                (values (in-r-lua
+                         (syntax/loc this-syntax
+                           (#%declare (ident stx-ident ...)
                                       body)))
-                            open)]
-                   [stx
-                    (values (in-r-lua
-                             (syntax/loc this-syntax
-                               (#%let ([ident expr])
+                        open)]
+               [stx
+                (values (in-r-lua
+                         (syntax/loc this-syntax
+                           (#%declare (ident)
                                       stx)))
-                            #t)]))]
+                        #t)]))]
 
-              [(letrec-bind? bind)
-               (with-syntax ([ident    (letrec-bind-ident bind)]
-                             [expr     (letrec-bind-expr bind)])
-                 (syntax-parse stx
-                   #:literal-sets [r-lua-ir-literals]
-                   [(#%letrec ([stx-ident stx-expr] ...)
-                              body)
-                    #:when open
-                    #:cut
-                    (values (in-r-lua
-                             (syntax/loc this-syntax
-                               (#%letrec ([ident expr]
-                                          [stx-ident stx-expr]
-                                          ...)
-                                         body)))
-                            open)]
-                   [stx
-                    (values (in-r-lua
-                             (syntax/loc this-syntax
-                               (#%letrec ([ident expr])
-                                         stx)))
-                            #t)]))]
+          [(statement? bind)
+           (with-syntax ([stmt (statement-expr bind)]
+                         [stx stx])
 
-              [(declaration? bind)
-               (with-syntax ([ident (declaration-ident bind)])
-                 (syntax-parse stx
-                   #:literal-sets [r-lua-ir-literals]
-                   [(#%declare (stx-ident ...)
-                               body)
-                    #:when open
-                    #:cut
-                    (values (in-r-lua
-                             (syntax/loc this-syntax
-                               (#%declare (ident stx-ident ...)
-                                          body)))
-                            open)]
-                   [stx
-                    (values (in-r-lua
-                             (syntax/loc this-syntax
-                               (#%declare (ident)
-                                          stx)))
-                            #t)]))]
+             (values (in-r-lua
+                      (syntax/loc #'stmt
+                        (#%begin
+                         stmt
+                         stx)))
+                     #f))]
 
-              [(statement? bind)
-               (with-syntax ([stmt (statement-expr bind)]
-                             [stx stx])
-
-                 (values (in-r-lua
-                          (syntax/loc #'stmt
-                            (#%begin
-                             stmt
-                             stx)))
-                         #f))]
-
-              [(close-bind? bind)
-               (values stx #f)]))))
+          [(close-bind? bind)
+           (values stx #f)]))
 
       atom))

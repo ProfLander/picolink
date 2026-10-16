@@ -31,6 +31,9 @@
 #:run       lua-run
 #:interact  lua-interact
 
+(define current-debug
+  (make-parameter #t))
+
 (struct lua-module [name
                     path
                     ident-prefix
@@ -464,9 +467,10 @@
          [compile  (s-lua-compiler 'lua)]
          [compiled (compile stx)])
 
-    (displayln "lua:")
-    (displayln compiled)
-    (displayln "")
+    (when (current-debug)
+      (displayln "lua:")
+      (displayln compiled)
+      (displayln ""))
 
     compiled))
 
@@ -496,9 +500,10 @@
 
     (for ([(path mod) (in-hash modules)])
 
-      (printf "~a:\n" path)
-      (displayln mod)
-      (displayln "")
+      (when (current-debug)
+        (displayln "~a:\n" path)
+        (displayln mod)
+        (displayln ""))
 
       (let ([path (build-path build-directory path)])
 

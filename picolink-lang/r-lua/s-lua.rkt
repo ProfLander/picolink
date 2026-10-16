@@ -18,15 +18,32 @@
 
 (provide (all-defined-out))
 
+(define (current-debug) #f)
+
 (define (r-lua->s-lua stx)
 
-  (let* ([anf   (r-lua->r-lua-anf stx)]
-         [_ (println anf)]
-         [s-lua (r-lua-anf->s-lua anf)]
-         [_ (println s-lua)])
+  (let ([debug (current-debug)])
+
+    (define anf (r-lua->r-lua-anf stx))
+
+    (when debug
+      (displayln "anf:")
+      (println anf))
+
+    (define s-lua (r-lua-anf->s-lua anf))
+
+    (when debug
+      (displayln "s-lua:")
+      (println s-lua))
+
     s-lua))
 
 (define (hoist-do stx)
+
+  (when (current-debug)
+    (displayln "hoist-do:")
+    (println stx))
+
   (syntax-parse stx
     #:literal-sets [s-lua-ir-literals]
     [(#%do ~! (#%block body ...))
