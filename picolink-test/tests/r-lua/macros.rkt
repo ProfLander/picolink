@@ -2,7 +2,19 @@
 
 (provide let*
          when
-         unless)
+         unless
+         void)
+
+(define %void
+  "#<void>")
+
+(define-macro void
+  [(_ body ...)
+   #'(begin
+       body ...
+       %void)])
+
+(void 1234)
 
 (define-macro let*
   [(_ (bind ...) body ...)
