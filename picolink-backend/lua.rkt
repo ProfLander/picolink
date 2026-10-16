@@ -11,7 +11,7 @@
          (except-in syntax/parse expr)
 
          picolink/ee-lib
-         picolink/config
+         picolink/config/parameters
          picolink/s-lua
          picolink/s-lua/lua
          picolink/module/compiled
@@ -472,8 +472,6 @@
 
 (define (lua-link/collection lctx prog)
 
-  (define config (syntax-local-config lctx))
-
   (define compile (s-lua-compiler 'lua))
 
   (let ([modules (for/hash ([mod (in-list prog)])
@@ -490,7 +488,7 @@
                      (values (path-replace-extension path ".lua")
                              (compile (compiled-module-stx mod)))))]
 
-        [build-directory (build-path (config-build-directory config)
+        [build-directory (build-path (current-build-directory)
                                      (current-lua-build-subdir))])
 
     (delete-directory/files build-directory #:must-exist? #f)
@@ -530,13 +528,12 @@
                  [exe exe]
                  [prog prog]
                  [do-run
-                  (let ([config (syntax-local-config lctx)])
-                    (with-syntax ([runner (current-lua-runner)]
-                                  [build-directory
-                                   (build-path
-                                    (config-build-directory config)
-                                    (current-lua-build-subdir))])
-                      #'(runner exe build-directory prog)))])
+                  (with-syntax ([runner (current-lua-runner)]
+                                [build-directory
+                                 (build-path
+                                  (current-build-directory)
+                                  (current-lua-build-subdir))])
+                    #'(runner exe build-directory prog))])
     #'(begin
         (define-values (#%subprocess #%stdout #%stdin #%stderr)
           do-run)

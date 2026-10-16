@@ -41,6 +41,19 @@
 
     program))
 
+(define (compile-program program backend)
+
+  (let* ([mod-ids
+          (program-module-identifiers program)])
+
+    (for/list ([mod-id (in-list mod-ids)])
+      (define mod
+        (program-module program mod-id))
+
+      (compile-parsed-module mod-id
+                             backend
+                             mod))))
+
 (define (parallel-compile-program program backend)
 
   (let* ([mod-ids

@@ -2,11 +2,7 @@
 
 (#%declare #:cross-phase-persistent)
 
-(#%provide current-is-entry-point
-           current-backend)
+(#%provide current-is-entry-point)
 
 (define-values (current-is-entry-point)
   (make-parameter #t))
-
-(define-values (current-backend)
-  (make-parameter 'picolink/racket))

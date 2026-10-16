@@ -1,3 +1,3 @@
 #lang picolink/config
 
-#:backend picolink/lua
+(current-backend 'picolink/lua)

@@ -7,6 +7,7 @@
 
                      picolink/syntax
                      picolink/config
+                     picolink/config/parameters
                      picolink/backend
                      picolink/language
                      picolink/module
@@ -37,7 +38,6 @@
                                    (path->string source-path)))))
 
     (with-syntax* ([config-path (path->string config-path)]
-                   [#%config (config-ident lctx)]
 
                    [language-path language-path]
                    [#%language (language-ident lctx)]
@@ -49,7 +49,7 @@
        (syntax-local-introduce
         #'(for-syntax racket/base
                       (rename language-path #%language #%language)
-                      (rename (file config-path) #%config #%config)))
+                      (file config-path)))
 
        (forward-macro
         lctx
@@ -62,11 +62,8 @@
   (syntax-parser
     [(_ body ...)
 
-     (define config
-       (syntax-local-config this-syntax))
-
      (define backend-path
-       (config-backend config))
+       (current-backend))
 
      (with-syntax* ([backend-path backend-path]
                     [#%backend (backend-ident this-syntax)])
@@ -128,11 +125,8 @@
      (define dependency-modules
        (map module-ident dependencies))
 
-     (define config
-       (syntax-local-config this-syntax))
-
      (define paths
-       (let ([config-root (config-root config)])
+       (let ([config-root (current-root)])
          (for/list ([dependency (in-list dependencies)])
            (let* ([dep-path (symbol->string (syntax-e dependency))]
                   [abs-path (build-path config-root dep-path)]
@@ -200,7 +194,9 @@
 
      (define backend     (syntax-local-backend this-syntax))
      (define program     (parse-program (attribute mod)))
-     (define compiled    (parallel-compile-program program backend))
+     (define compiled    (if (current-parallel)
+                             (parallel-compile-program program backend)
+                             (compile-program program backend)))
      (define transformed (backend-transform backend this-syntax compiled))
      (define linked      (backend-link backend this-syntax transformed))
      (define runner      (backend-run backend this-syntax linked))

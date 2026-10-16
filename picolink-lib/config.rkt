@@ -1,23 +1,9 @@
 #lang racket/base
 
-(require racket/path
-         racket/syntax)
+(require racket/path)
 
 (provide (all-defined-out)
          file-name-from-path)
-
-(struct config [root
-                backend
-                build-directory]
-  #:transparent)
-
-(define (make-config #:root            root
-                     #:backend         backend
-                     #:build-directory [build-directory
-                                        (build-path "build")])
-  (config root
-          backend
-          build-directory))
 
 (define config-name "config.rkt")
 
@@ -34,9 +20,3 @@
                (let-values ([(base _name _must-be-dir?)
                              (split-path path)])
                  (loop base)))))))
-
-(define (config-ident lctx)
-  (datum->syntax lctx '#%config))
-
-(define (syntax-local-config lctx)
-  (syntax-local-eval (config-ident lctx)))

@@ -1,3 +1,3 @@
 #lang picolink/config
 
-#:backend picolink/debug
+(current-backend 'picolink/debug)
