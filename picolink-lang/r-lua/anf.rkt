@@ -38,7 +38,7 @@
 (define-syntax-class module-level
   #:literal-sets [r-lua-ir-literals]
 
-  (pattern (#%begin top:top-level ...)
+  (pattern (#%begin ~! top:top-level ...)
 
            #:attr binds null
 
@@ -53,13 +53,13 @@
 (define-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
 
-  (pattern (#%define-macro _ ...)
+  (pattern (#%define-macro ~! _ ...)
            #:attr binds null
            #:attr atom this-syntax
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%define ident expr:expr)
+  (pattern (#%define ~! ident expr:expr)
 
            #:attr binds null
 
@@ -76,6 +76,8 @@
                          (in-r-lua
                            #'(#%app print temp))))
 
+           #:cut
+
            #:attr binds (attribute expr.binds)
            #:attr atom (attribute expr.atom)
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
@@ -90,12 +92,15 @@
                 _:string
                 _:number
                 #%void)
+
+           #:cut
+
            #:attr binds null
            #:attr atom this-syntax
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%begin body:expr ...)
+  (pattern (#%begin ~! body:expr ...)
 
            #:do [(define %binds
                    (apply append
@@ -112,28 +117,40 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%if cond:expr then:expr else:expr)
+  (pattern (#%if ~! cond:expr then:expr else:expr)
 
-           #:do [(define atom (generate-temporary))]
+           #:do [(define atom (generate-temporary))
+
+                 (define then-anf
+                   (binds+atom->r-lua-anf
+                    (attribute then.binds)
+                    (in-r-lua
+                     (with-syntax ([atom atom])
+                       #'(#%set! atom then.atom)))))
+
+                 (define else-anf
+                   (binds+atom->r-lua-anf
+                    (attribute else.binds)
+                    (in-r-lua
+                     (with-syntax ([atom atom])
+                       #'(#%set! atom else.atom)))))]
 
            #:attr binds
            (append (attribute cond.binds)
-                   (attribute then.binds)
-                   (attribute else.binds)
                    (list
                     (declaration atom)
                     (statement
                      (in-r-lua
                       #`(#%if cond
-                              (#%set! #,atom then)
-                              (#%set! #,atom else))))))
+                              #,then-anf
+                              #,else-anf)))))
 
            #:attr atom atom
 
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%let ([ident:id expr:expr] ...)
+  (pattern (#%let ~! ([ident:id expr:expr] ...)
                   body:expr)
 
            #:attr binds
@@ -155,7 +172,7 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%letrec ([ident:id expr:expr] ...)
+  (pattern (#%letrec ~! ([ident:id expr:expr] ...)
                      body:expr)
 
            #:attr binds
@@ -177,7 +194,7 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%set! ident expr:expr)
+  (pattern (#%set! ~! ident expr:expr)
 
            #:attr binds (append (attribute expr.binds)
                                 (list (statement this-syntax)))
@@ -190,7 +207,7 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%abs (arg ...) body:expr ...)
+  (pattern (#%abs ~! (arg ...) body:expr ...)
 
            #:attr binds null
            
@@ -203,7 +220,7 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%app expr:expr ...)
+  (pattern (#%app ~! expr:expr ...)
 
            #:attr binds
            (apply append (attribute expr.binds))
@@ -215,7 +232,7 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%intrinsic form)
+  (pattern (#%intrinsic ~! form)
 
            #:attr binds null
            
@@ -249,6 +266,7 @@
                    [(#%let ([stx-ident stx-expr] ...)
                            body)
                     #:when open
+                    #:cut
                     (values (in-r-lua
                              (syntax/loc this-syntax
                                (#%let ([ident expr]
@@ -271,6 +289,7 @@
                    [(#%letrec ([stx-ident stx-expr] ...)
                               body)
                     #:when open
+                    #:cut
                     (values (in-r-lua
                              (syntax/loc this-syntax
                                (#%letrec ([ident expr]
@@ -292,6 +311,7 @@
                    [(#%declare (stx-ident ...)
                                body)
                     #:when open
+                    #:cut
                     (values (in-r-lua
                              (syntax/loc this-syntax
                                (#%declare (ident stx-ident ...)

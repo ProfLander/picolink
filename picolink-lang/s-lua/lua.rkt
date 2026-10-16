@@ -149,13 +149,13 @@
 (define-lua-syntax-class chunk
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%chunk block:block)
+  [(#%chunk ~! block:block)
    (attribute block.lua)])
 
 (define-lua-syntax-class block
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%block stmt:statement ...
+  [(#%block ~! stmt:statement ...
             (~optional ret:return-statement))
    (format-body (attribute stmt.lua)
                 (attribute ret.lua)
@@ -164,8 +164,7 @@
 (define-lua-syntax-class statement
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%assign [var:var ...]
-             [exp:expr ...])
+  [(#%assign ~! [var:var ...] [exp:expr ...])
    (format "~a = ~a"
            (string-join (attribute var.lua) ", ")
            (string-join (attribute exp.lua) ", "))]
@@ -173,32 +172,32 @@
   [(#%break)
    "break"]
 
-  [(#%label name:name)
+  [(#%label ~! name:name)
    (format "::~a::" (rewrite-name #'name))]
 
-  [(#%goto name:name)
+  [(#%goto ~! name:name)
    (format "goto ~a" (rewrite-name #'name))]
 
-  [(#%do b:block)
+  [(#%do ~! b:block)
    (format "do~a~aend"
            (indent (format-block (attribute b.lua)))
            (current-separator))]
 
-  [(#%while cond:expr
+  [(#%while ~! cond:expr
             b:block)
    (format "while ~a do~a~aend"
            (attribute cond.lua)
            (indent (format-block (attribute b.lua)))
            (current-separator))]
 
-  [(#%repeat b:block
+  [(#%repeat ~! b:block
              (#%until cond:expr))
    (format "repeat~a~auntil ~a"
            (indent (format-block (attribute b.lua)))
            (current-separator)
            (attribute cond.lua))]
 
-  [(#%if cond:expr
+  [(#%if ~! cond:expr
          then:if/then
          elseif:if/elseif
          ...
@@ -220,6 +219,7 @@
   [(#%for (name:name from:expr
                      to:expr
                      (~optional step:expr))
+          ~!
           b:block)
    (format "for ~a = ~a, ~a~a do~a~aend"
            (rewrite-name #'name)
@@ -232,6 +232,7 @@
            (current-separator))]
 
   [(#%for ([name:name exp:expr] ...)
+          ~!
           b:block)
    (format "for ~a in ~a do~a~aend"
            (string-join (map rewrite-name (attribute name)) ", ")
@@ -242,15 +243,16 @@
   [stat:statement/function
    (attribute stat.lua)]
 
-  [(#%local [var:var ...+])
-   (format "local ~a"
-           (string-join (attribute var.lua) ", "))]
+  [(#%local [var:var ...+] ~! (~optional [exp:expr ...+]))
 
-  [(#%local [var:var ...+]
-            [exp:expr ...+])
-   (format "local ~a = ~a"
-           (string-join (attribute var.lua) ", ")
-           (string-join (attribute exp.lua) ", "))]
+   (if (attribute exp)
+
+       (format "local ~a = ~a"
+               (string-join (attribute var.lua) ", ")
+               (string-join (attribute exp.lua) ", "))
+
+       (format "local ~a"
+               (string-join (attribute var.lua) ", ")))]
 
   [(#%local func:statement/function)
    (format "local ~a" (attribute func.lua))]
@@ -261,14 +263,14 @@
 (define-lua-syntax-class if/then
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%then b:block)
+  [(#%then ~! b:block)
    (format "then~a"
            (indent (format-block (attribute b.lua))))])
 
 (define-lua-syntax-class if/elseif
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%elseif exp:expr then:if/then)
+  [(#%elseif ~! exp:expr then:if/then)
    (format "elseif ~a ~a"
            (attribute exp.lua)
            (attribute then.lua))])
@@ -276,17 +278,17 @@
 (define-lua-syntax-class if/else
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%else b:block)
+  [(#%else ~! b:block)
    (format "else~a"
            (indent (format-block (attribute b.lua))))])
 
 (define-lua-syntax-class statement/function
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%function (name:function-name
-                arg:name ...
-                (~optional (~and #%vararg
-                                 (~bind [vararg #t]))))
+  [(#%function ~! (name:function-name
+                   arg:name ...
+                   (~optional (~and #%vararg
+                                    (~bind [vararg #t]))))
                b:block)
    (format "function ~a(~a)~a~aend"
            (rewrite-name #'name #:omit '("." ":"))
@@ -303,7 +305,7 @@
 (define-lua-syntax-class return-statement
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%return expr:expr ...)
+  [(#%return ~! expr:expr ...)
    (format "return~a~a"
            (if (pair? (attribute expr))
                " "
@@ -348,7 +350,7 @@
   [tbl:table
    (attribute tbl.lua)]
 
-  [(unop:unary-op exp:expr)
+  [(unop:unary-op ~! exp:expr)
    (let ([op-sym (attribute unop.lua)])
      (format "~a~a~a"
              op-sym
@@ -357,7 +359,7 @@
                  "")
              (attribute exp.lua)))]
 
-  [(binop:binary-op a:expr b:expr)
+  [(binop:binary-op ~! a:expr b:expr)
    (format "~a ~a ~a"
            (attribute a.lua)
            (attribute binop.lua)
@@ -373,7 +375,7 @@
   [var:var
    (attribute var.lua)]
 
-  [(quote exp:expr)
+  [(quote ~! exp:expr)
    (format "(~a)" (attribute exp.lua))]
 
   [call:function-call
@@ -402,7 +404,7 @@
 (define-lua-syntax-class prefix-expr-or-method
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%method prefix:prefix-expr name:name)
+  [(#%method ~! prefix:prefix-expr name:name)
    (format "~a:~a"
            (attribute prefix.lua)
            (rewrite-name #'name))]
@@ -413,9 +415,11 @@
 (define-lua-syntax-class function-definition
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%function (arg:name ... (~optional
-                              (~and #%vararg(~bind [vararg #t]))))
+  [(#%function ~! (arg:name ... (~optional
+                                 (~and #%vararg
+                                       (~bind [vararg #t]))))
                b:block)
+
    (format "function(~a)~a~aend"
            (string-join (append (map rewrite-name (attribute arg))
                                 (if (attribute vararg)
@@ -428,18 +432,18 @@
 (define-lua-syntax-class table
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%table field:table-field ...)
+  [(#%table ~! field:table-field ...)
    (format "{~a}" (string-join (attribute field.lua) ", "))])
 
 (define-lua-syntax-class table-field
   #:literal-sets [s-lua-ir-literals]
 
-  [(key:name exp:expr)
+  [(key:name ~! exp:expr)
    (format "~a = ~a"
            (rewrite-name #'key)
            (attribute exp.lua))]
 
-  [(key:expr exp:expr)
+  [(key:expr ~! exp:expr)
    (format "[~a] = ~a"
            (attribute key.lua)
            (attribute exp.lua))]
