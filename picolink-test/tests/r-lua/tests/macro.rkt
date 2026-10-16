@@ -1,12 +1,19 @@
 #lang picolink/r-lua
 
-(define-macro let*
-  [(_ (bind ...) body ...)
-   (for/foldr ([acc #'(begin body ...)])
-              ([bind (in-list (attribute bind))])
-     #`(let (#,bind)
-         #,acc))])
+(require (in lua print)
+         (in macros
+             let*
+             when
+             unless))
 
 (let* ([x 1]
        [y x])
   y)
+
+(when #t
+  (print "foo")
+  "hello")
+
+(unless #f
+  (print "bar")
+  "world")
