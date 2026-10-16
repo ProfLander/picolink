@@ -108,11 +108,14 @@
       (syntax/loc this-syntax
         (#%define name expr)))]
 
-    [(define-macro ~! name expr)
-     (bind! #'name (r-lua-macro (eval-transformer (r-lua/macro #'expr))))
+    [(define-macro ~! name expr ...)
+     (bind! #'name (r-lua-macro
+                    (eval-transformer
+                     (r-lua/macro
+                      #'(expr ...)))))
      (in-r-lua
       (syntax/loc this-syntax
-        (#%define-macro name expr)))]
+        (#%define-macro name expr ...)))]
 
     [(~cata e r-lua/expr)
      (syntax/loc this-syntax
@@ -121,10 +124,10 @@
 (define/hygienic-expression-parser r-lua/macro
   #:literal-sets [r-lua-surface-literals]
 
-  [(pat body ...)
+  [([pat body ...] ...)
    (syntax/loc this-syntax
      (syntax-parser
-       [pat body ...]))])
+       [pat body ...] ...))])
 
 (define/hygienic (r-lua/expr stx)
   #:expression
