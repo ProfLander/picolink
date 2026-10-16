@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(let ([x 1]
-      [y 2])
-  y
-  x)
+(require (in tests/let/basic)
+         (in tests/let/nested)
+         (in tests/let/nested-bind)
+         (in tests/let/complex))
