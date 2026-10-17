@@ -1,8 +1,11 @@
 #lang picolink/r-lua
 
 (require (in lua print)
-         (in macros
-             let*
+         
+         (in prelude/binding
+             let*)
+
+         (in prelude/conditional
              when
              unless))
 

@@ -1,6 +1,7 @@
 #lang picolink/r-lua
 
-(require (in tests/begin)
+(require (in tests/define)
+         (in tests/begin)
          (in tests/let)
          (in tests/letrec)
          (in tests/set!)
