@@ -19,7 +19,6 @@
   "cannot use outside of r-lua"
   [#%begin
    #%define
-   #%define-macro
    #%let
    #%letrec
    #%declare

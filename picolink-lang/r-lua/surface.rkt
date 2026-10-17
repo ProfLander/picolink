@@ -79,8 +79,10 @@
        (r-lua/top-level req))
 
      (define bodies*
-       (for/list ([body (in-list bodies)])
-         (r-lua/top-level body)))
+       (for/list ([body (in-list bodies)]
+                  #:do [(define body* (r-lua/top-level body))]
+                  #:unless (void? body*))
+         body*))
 
      (for ([prov (in-list provides)])
        (r-lua/top-level prov))
@@ -113,9 +115,7 @@
                     (eval-transformer
                      (r-lua/macro
                       #'(expr ...)))))
-     (in-r-lua
-      (syntax/loc this-syntax
-        (#%define-macro name expr ...)))]
+     (void)]
 
     [(~cata e r-lua/expr)
      (syntax/loc this-syntax

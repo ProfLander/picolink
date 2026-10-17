@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require racket/list
-         racket/match
          racket/syntax
          syntax/parse
          (for-template picolink/r-lua/ir))
@@ -60,12 +59,6 @@
 
 (define-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
-
-  (pattern (#%define-macro ~! _ ...)
-           #:attr binds null
-           #:attr atom this-syntax
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
 
   (pattern (#%define ~! ident expr:expr)
 
