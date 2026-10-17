@@ -59,50 +59,49 @@
      #'(define-parser-like-syntax-class name s-lua
          body ...)]))
 
+
+; TODO: Reinstate tail-do elision in a way that is friendly
+;       to backend s-lua splicing
 (define-s-lua-syntax-class module-level
   #:literal-sets [r-lua-ir-literals]
 
-  [(#%begin ~! top ...)
-   (let ([lctx this-syntax]
-         [tops
-          (filter-map
-           (syntax-parser
-             #:literal-sets [r-lua-ir-literals]
-             [(#%define-macro ~! _ ...)
-              #f]
-             [top:top-level
-              (attribute top.s-lua)])
-           (syntax-e #'(top ...)))])
-
-     (in-s-lua
-      (syntax-parse tops
-        #:literal-sets [s-lua-ir-literals]
-        ; TODO: Reinstate tail-do elision in a way that is friendly
-        ;       to backend s-lua splicing
-        #;[[stmt ... (#%do ~! (#%block body ...))]
-           (in-s-lua
-            (syntax/loc lctx
-              (#%chunk (#%block stmt ... body ...))))]
-        [(top ...)
-         (in-s-lua
-          (syntax/loc lctx
-            (#%chunk (#%block top ...))))])))])
+  [(#%begin ~! top:top-level ...)
+   (in-s-lua
+    (with-syntax ([([top ...] ...) (attribute top.s-lua)])
+      (syntax/loc this-syntax
+       (#%chunk (#%block top ... ...)))))])
 
 (define-s-lua-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
 
   [(#%define ~! name val:expr)
-   (in-s-lua
-    (syntax/loc this-syntax
-      (#%local [name] [val.s-lua])))]
+   (let ([body (hoist-do #'val.s-lua)])
+     (if (= 1 (length body))
 
-  [(#%define-macro ~! _ ...)
-   (unimplemented)]
+         (list
+          (with-syntax ([val (car body)])
+            (syntax/loc this-syntax
+              (#%local [name] [val]))))
+
+         (list
+          (in-s-lua
+           (syntax/loc this-syntax
+             (#%local [name])))
+          (in-s-lua
+           (let ([body (hoist-do #'val.s-lua)])
+             (with-syntax ([(body ...) (drop-right body 1)]
+                           [tail (last body)])
+               (syntax/loc this-syntax
+                 (#%do
+                  (#%block
+                   body ...
+                   (#%assign [name] [tail]))))))))))]
 
   [e:expr
-   (in-s-lua
-    (syntax/loc this-syntax
-      e.s-lua))])
+   (list
+    (in-s-lua
+     (syntax/loc this-syntax
+       e.s-lua)))])
 
 (define-s-lua-syntax-class expr
   #:literal-sets [r-lua-ir-literals]
