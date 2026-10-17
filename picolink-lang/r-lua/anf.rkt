@@ -149,7 +149,7 @@
                     (declaration atom)
                     (statement
                      (in-r-lua
-                      #`(#%if cond
+                      #`(#%if cond.atom
                               #,then-anf
                               #,else-anf)))))
 
