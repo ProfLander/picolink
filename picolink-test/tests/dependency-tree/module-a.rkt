@@ -1,12 +1,10 @@
 #lang picolink/dsl
 
-(require (in fst/module-b b)
-         (in fst/module-c c))
+(require (only-in fst/module-b [b* b])
+         (only-in fst/module-c c))
 
-(provide a*)
+(provide [a a*])
 
 (define a (let ([x b])
             (let ([y c])
               y)))
-
-(define a* a)

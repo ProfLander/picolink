@@ -1,10 +1,10 @@
 #lang picolink/r-lua
 
-(require (in tests/define)
-         (in tests/begin)
-         (in tests/let)
-         (in tests/letrec)
-         (in tests/set!)
-         (in tests/void)
-         (in tests/string)
-         (in tests/macro))
+(require (only-in tests/define)
+         (only-in tests/begin)
+         (only-in tests/let)
+         (only-in tests/letrec)
+         (only-in tests/set!)
+         (only-in tests/void)
+         (only-in tests/string)
+         (only-in tests/macro))

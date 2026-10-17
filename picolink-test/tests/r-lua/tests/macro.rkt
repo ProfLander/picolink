@@ -1,13 +1,14 @@
 #lang picolink/r-lua
 
-(require (in lua print)
+(require (only-in lua
+                  print)
          
-         (in prelude/binding
-             let*)
+         (only-in prelude/binding
+                  let*)
 
-         (in prelude/conditional
-             when
-             unless))
+         (only-in prelude/conditional
+                  when
+                  unless))
 
 (let* ([x 1]
        [y x])

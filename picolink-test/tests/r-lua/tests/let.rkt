@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(require (in tests/let/basic)
-         (in tests/let/nested)
-         (in tests/let/nested-bind)
-         (in tests/let/complex))
+(require (only-in tests/let/basic)
+         (only-in tests/let/nested)
+         (only-in tests/let/nested-bind)
+         (only-in tests/let/complex))

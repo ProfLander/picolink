@@ -1,8 +1,10 @@
 #lang picolink/r-lua
 
-(require (in lua print)
-         (in prelude/function
-             identity))
+(require (only-in lua
+                  print)
+
+         (only-in prelude/function
+                  identity))
 
 (let ([x 2]
       [y (let ([x 3])

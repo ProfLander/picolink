@@ -1,6 +1,7 @@
 #lang picolink/r-lua
 
-(require (in prelude/equality eq?))
+(require (only-in prelude/equality
+                  eq?))
 
 (provide %tag
          tag?

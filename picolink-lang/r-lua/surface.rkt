@@ -13,7 +13,7 @@
 (define-literal-set r-lua-surface-literals
   #:datum-literals [begin
                      require
-                     in
+                     only-in
                      provide
                      define
                      define-macro
@@ -92,13 +92,29 @@
         (syntax/loc this-syntax
           (#%begin body ...))))]
 
-    [(require ~! (in mod
-                     (~cata req (require! this-syntax #'mod _))
-                     ...)
+    [(require ~! (only-in mod
+                          (~or (~and [req-from req-to]
+                                     (~do
+                                      (require! this-syntax
+                                                #'mod
+                                                #'req-to
+                                                (syntax-e #'req-from))))
+
+                               (~and req
+                                     (~do
+                                      (require! this-syntax
+                                                #'mod
+                                                #'req))))
+                          ...)
               ...)
      (void)]
 
-    [(provide ~! (~cata prov (provide! this-syntax _))
+    [(provide ~! (~or (~and [prov-from prov-to]
+                            (~do (provide! this-syntax
+                                           #'prov-from
+                                           #'prov-to)))
+                      (~and prov
+                            (~do (provide! this-syntax #'prov))))
               ...)
      (void)]
 

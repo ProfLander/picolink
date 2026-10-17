@@ -1,7 +1,10 @@
 #lang picolink/r-lua
 
-(require (in prelude/equality eq?)
-         (in lua print))
+(require (only-in prelude/equality
+                  eq?)
+
+         (only-in lua
+                  print))
 
 (provide =
          <

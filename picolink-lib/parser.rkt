@@ -49,6 +49,10 @@
                   local-id
                   [src-sym (syntax-e local-id)])
 
+  (displayln "require!")
+  (println local-id)
+  (println src-sym)
+
   (define local-id* (syntax-local-introduce local-id))
 
   (define mod*
@@ -62,12 +66,9 @@
      lctx
      src-mod-path))
 
-  (define in-id*
-    (strip-context local-id*))
-
   (define prov
     (parameterize ([current-def-ctx (parsed-module-provide-scope mod*)])
-      (lookup in-id*)))
+      (lookup (datum->syntax #f src-sym))))
 
   (unless prov
     (raise-syntax-error

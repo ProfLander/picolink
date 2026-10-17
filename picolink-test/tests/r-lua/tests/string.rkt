@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(require (in lua/string upper lower format))
+(require (only-in lua/string upper lower format))
 
 (define hello (upper "hello"))
 (define world (lower "WORLD"))

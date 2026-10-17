@@ -106,6 +106,9 @@
   (syntax-parser
     [(_ (target rest ...) (required ...))
 
+     (displayln "#%require-dependencies")
+     (println this-syntax)
+
      (define backend (syntax-local-backend this-syntax))
 
      (define mod (syntax-local-module #'target))
@@ -113,6 +116,11 @@
      (define dependencies
        (filter (λ (dep)
                  (and (not (member dep (attribute rest)
+                                   (λ (a b)
+                                     (equal? (syntax-e a)
+                                             (syntax-e b)))))
+
+                      (not (member dep (attribute required)
                                    (λ (a b)
                                      (equal? (syntax-e a)
                                              (syntax-e b)))))
@@ -164,6 +172,9 @@
   (syntax-parser
     [(_ mod ...)
 
+     (displayln "#%load-backend-modules")
+     (println this-syntax)
+
      (define backend (syntax-local-backend this-syntax))
      (define modules (backend-modules backend))
 
@@ -191,6 +202,9 @@
 (define-syntax #%build-program
   (syntax-parser
     [(_ mod ...)
+
+     (displayln "#%build-program")
+     (println this-syntax)
 
      (define backend     (syntax-local-backend this-syntax))
      (define program     (parse-program (attribute mod)))

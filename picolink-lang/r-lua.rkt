@@ -26,7 +26,7 @@
        (syntax-parse body
          #:literal-sets [r-lua-surface-literals]
 
-         [(require (in mod _ ...) ...)
+         [(require (only-in mod _ ...) ...)
           (append acc (attribute mod))]
 
          [_ acc]))]))

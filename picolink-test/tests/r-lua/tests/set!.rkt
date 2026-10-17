@@ -1,6 +1,7 @@
 #lang picolink/r-lua
 
-(require (in lua print))
+(require (only-in lua
+                  print))
 
 (define thing "define-thing")
 thing

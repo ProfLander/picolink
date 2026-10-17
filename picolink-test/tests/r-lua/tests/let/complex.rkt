@@ -1,8 +1,10 @@
 #lang picolink/r-lua
 
-(require (in lua print)
-         (in prelude/function
-             identity))
+(require (only-in lua
+                  print)
+
+         (only-in prelude/function
+                  identity))
 
 (let ([a identity]
       [b (λ (x) (λ (x) x))]
