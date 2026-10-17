@@ -250,9 +250,8 @@
      #:stx (s-lua-append
             stx
             (in-s-lua
-             (with-syntax ([module-name (symbol->string
-                                         (syntax-e
-                                          (compiled-module-ident mod)))]
+             (with-syntax ([module-name (module-ident->lua-string
+                                         (compiled-module-ident mod))]
                            [(def ...) definitions])
                #'(#%chunk
                   (#%block
@@ -337,7 +336,7 @@
     #:literal-sets [s-lua-ir-literals]
 
     [(#%chunk (#%block body ...))
-     (with-syntax ([path (symbol->string (syntax-e path))])
+     (with-syntax ([path (module-ident->lua-string path)])
        #'(#%assign
           [(#%member (#%member package preload)
                      path)]
@@ -393,9 +392,8 @@
                        stx-unbuffered-stdio)))
 
 (define (make-repl-stx mod)
-  (with-syntax ([module-name (symbol->string
-                              (syntax-e
-                               (compiled-module-ident mod)))])
+  (with-syntax ([module-name (module-ident->lua-string
+                              (compiled-module-ident mod))])
     (in-s-lua
      #'(#%chunk
         (#%block
