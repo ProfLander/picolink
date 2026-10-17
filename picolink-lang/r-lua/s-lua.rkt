@@ -161,7 +161,7 @@
                  [(else-body ...) (hoist-do #'else.s-lua)])
      (in-s-lua
       (syntax/loc this-syntax
-        (#%if cond
+        (#%if cond.s-lua
               (#%then (#%block then-body ...))
               (#%else (#%block else-body ...))))))]
 
