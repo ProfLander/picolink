@@ -33,8 +33,44 @@
        (syntax-parse body
          #:literal-sets [dsl-surface-literals]
 
-         [(require (only-in mod _ ...) ...)
-          (append acc (attribute mod))]
+         [(require (~or (~and mod:id
+                              (~do (set! acc
+                                         (append acc
+                                                 (list #'mod)))))
+
+                        (~and (only only-mod:id _ ...)
+                              (~do (set! acc
+                                         (append acc
+                                                 (list #'only-mod)))))
+
+                        (~and (prefix _:id prefix-mod:id)
+                              (~do (set! acc
+                                         (append acc
+                                                 (list #'prefix-mod)))))
+
+                        (~and (all-except all-except-mod:id _...)
+                              (~do
+                               (set! acc
+                                     (append acc
+                                             (list #'all-except-mod)))))
+
+                        (~and (prefix-all-except
+                               _
+                               prefix-all-except-mod:id
+                               _ ...)
+                              (~do
+                               (set! acc
+                                     (append acc
+                                             (list
+                                              #'prefix-all-except-mod)))))
+
+                        (~and (rename rename-mod:id _ _)
+                              (~do (set! acc
+                                         (append acc
+                                                 (list #'rename-mod))))))
+                   ...)
+
+          acc]
 
          [_ acc]))]))
 
@@ -80,27 +116,84 @@
      (with-syntax ([(body ...) bodies*])
        #'(#%begin body ...))]
 
-    [(require (only-in mod
-                       (~or (~and [req-from req-to]
-                                  (~do (require! this-syntax
-                                                 #'mod
-                                                 #'req-to
-                                                 (syntax-e #'req-from))))
-                            (~and req
-                                  (~do (require! this-syntax
-                                                 #'mod
-                                                 #'req))))
-                  ...)
+    [(require (~or (~and mod:id
+                         (~do (require! this-syntax #'mod)))
+
+                   (~and (only only-mod:id req:id ...)
+                         (~do (require/only! this-syntax
+                                             #'only-mod
+                                             (attribute req))))
+
+                   (~and (prefix req-prefix:id prefix-mod:id)
+                         (~do (require/prefix! this-syntax
+                                               #'req-prefix
+                                               #'prefix-mod)))
+
+                   (~and (all-except
+                          all-except-mod:id
+                          all-except-exception:id ...)
+
+                         (~do (require/all-except!
+                               this-syntax
+                               #'all-except-mod
+                               (attribute all-except-exception))))
+
+                   (~and (prefix-all-except
+                          all-except-prefix:id
+                          prefix-all-except-mod:id
+                          prefix-all-except-exception:id ...)
+
+                         (~do (require/all-except!
+                               this-syntax
+                               #'all-except-prefix
+                               #'prefix-all-except-mod
+                               (attribute prefix-all-except-exception))))
+
+                   (~and (rename rename-mod:id req-from:id req-to:id)
+                         (~do (require/rename! this-syntax
+                                               #'rename-mod
+                                               #'req-from
+                                               #'req-to))))
               ...)
      (void)]
 
-    [(provide (~or (~and [prov-from prov-to]
+    [(provide (~or (~and prov:id
                          (~do (provide! this-syntax
-                                        #'prov-from
-                                        #'prov-to)))
-                   (~and prov
-                         (~do (provide! this-syntax
-                                        #'prov))))
+                                        #'prov)))
+
+                   (~and (rename prov-from:id prov-to:id)
+                         (~do (provide/rename! this-syntax
+                                               #'prov-from
+                                               #'prov-to)))
+
+                   (~and (all-from mod:id)
+                         (~do (provide/all-from! this-syntax #'mod)))
+
+                   (~and (all-from-except except-mod:id
+                                          from-exception:id ...)
+                         (~do (provide/all-from-except!
+                               this-syntax
+                               #'except-mod
+                               (attribute from-exception))))
+
+                   (~and (all-defined)
+                         (~do (provide/all-defined! this-syntax)))
+
+                   (~and (all-defined-except ident:id ...)
+                         (~do (provide/all-defined-except!
+                               this-syntax
+                               (attribute ident))))
+
+                   (~and (prefix-all-defined prefix-id:id)
+                         (~do (provide/prefix-all-defined! this-syntax
+                                                           #'prefix-id)))
+
+                   (~and (prefix-all-defined-except except-prefix:id
+                                                    except-ident:id ...)
+                         (~do (provide/prefix-all-defined-except!
+                               this-syntax
+                               #'except-prefix
+                               (attribute except-ident)))))
               ...)
      (void)]
 

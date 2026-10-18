@@ -231,3 +231,7 @@
     (if binding-space
         ((make-interned-syntax-introducer binding-space) stx 'remove)
         stx)))
+
+(define (datum=? a b)
+  (equal? (syntax-e a)
+          (syntax-e b)))

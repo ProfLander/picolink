@@ -1,7 +1,8 @@
 #lang picolink/dsl
 
-(require (only-in snd/module-d d)
-         (only-in snd/module-e e))
+(require (only snd/module-d d)
+         (only snd/module-e e))
 
-(provide [b b*])
+(provide (all-defined))
+
 (define b 1234)

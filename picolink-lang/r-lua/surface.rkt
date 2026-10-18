@@ -95,24 +95,27 @@
     [(require ~! (only-in mod
                           (~or (~and [req-from req-to]
                                      (~do
-                                      (require! this-syntax
-                                                #'mod
-                                                #'req-to
-                                                (syntax-e #'req-from))))
+                                      (require/rename!
+                                       this-syntax
+                                       #'mod
+                                       #'req-from
+                                       #'req-to)))
 
                                (~and req
                                      (~do
-                                      (require! this-syntax
-                                                #'mod
-                                                #'req))))
+                                      (require/rename!
+                                       this-syntax
+                                       #'mod
+                                       #'req
+                                       #'req))))
                           ...)
               ...)
      (void)]
 
     [(provide ~! (~or (~and [prov-from prov-to]
-                            (~do (provide! this-syntax
-                                           #'prov-from
-                                           #'prov-to)))
+                            (~do (provide/rename! this-syntax
+                                                  #'prov-from
+                                                  #'prov-to)))
                       (~and prov
                             (~do (provide! this-syntax #'prov))))
               ...)

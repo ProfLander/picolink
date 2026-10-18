@@ -1,5 +1,5 @@
 #lang picolink/dsl
 
-(provide d)
+(provide (all-defined))
 
 (define d 1234)

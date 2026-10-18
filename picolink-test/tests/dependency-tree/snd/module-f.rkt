@@ -1,5 +1,5 @@
 #lang picolink/dsl
 
-(provide f)
+(provide (all-defined))
 
 (define f 90)
