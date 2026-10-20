@@ -60,6 +60,18 @@
 (define-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
 
+  (pattern (#%begin ~! top:top-level ...)
+
+           #:attr binds null
+
+           #:attr atom
+           (in-r-lua
+            (syntax/loc this-syntax
+              (#%begin top.anf ...)))
+
+           #:attr anf (binds+atom->r-lua-anf (attribute binds)
+                                             (attribute atom)))
+
   (pattern (#%define ~! ident expr:expr)
 
            #:attr binds null

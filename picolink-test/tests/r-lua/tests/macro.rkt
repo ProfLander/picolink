@@ -27,26 +27,23 @@
 
    (with-syntax ([name:struct
                   (format-id #'name "~a:struct" #'name)]
+
                  [(field-str (... ...))
                   (for/list ([field (in-list (attribute field))])
                     (symbol->string (syntax-e field)))]
 
-                 [(field* ...) (attribute field)])
+                 [(field ...) (attribute field)])
 
-     #'(define name
-         (λ (field* ...)
-           (#%intrinsic (#%table field* ...))))
+     #'(begin
+         (define name:struct
+           (#%intrinsic (#%table field-str (... ...))))
 
-     #;#'(begin
-           (define name:struct
-             (#%intrinsic (#%table field-str (... ...))))
-
-           (define name
-             (λ (field* ...)
-               (#%intrinsic (#%table field* ...))))))])
+         (define name
+           (λ (field ...)
+             (#%intrinsic (#%table field ...))))))])
 
 (define-struct foo [bar baz])
 
-#;foo:struct
+foo:struct
 
 (foo 1234 6789)

@@ -73,6 +73,9 @@
 
 (define-s-lua-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
+  
+  [(#%begin ~! top:top-level ...)
+   (apply append (attribute top.s-lua))]
 
   [(#%define ~! name val:expr)
    (let ([body (hoist-do #'val.s-lua)])
