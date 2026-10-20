@@ -100,6 +100,16 @@
                       #'(expr ...)))))
      (void)]
 
+    [(ident:id arg ...)
+     #:do [(define mac (lookup #'ident r-lua-macro?))]
+     #:when mac
+     #:cut
+     (r-lua/top-level
+      (apply-as-transformer (r-lua-macro-trx mac)
+                            #'ident
+                            'expression
+                            this-syntax))]
+
     [(~cata e r-lua/expr)
      (syntax/loc this-syntax
        e)]))
