@@ -1,7 +1,6 @@
 #lang picolink/r-lua
 
-(provide when
-         unless)
+(provide (all-defined))
 
 (define-macro when
   [(_ cond body ...)

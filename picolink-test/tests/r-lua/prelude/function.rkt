@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(provide identity)
+(provide (all-defined))
 
 (define identity
   (λ (x) x))

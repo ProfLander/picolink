@@ -3,8 +3,9 @@
 (require racket/function
          racket/match
          syntax/strip-context
-         picolink/module
-         picolink/output)
+         picolink/output
+         picolink/module/syntax
+         picolink/module/parsed)
 
 (require picolink/ee-lib)
 
@@ -12,20 +13,13 @@
 
 (define (program-module program ident)
   (parameterize ([current-def-ctx program])
-    (lookup ident)))
+    (lookup ident parsed-module?)))
 
 (define (program-bind! program ident stx)
   (parameterize ([current-def-ctx program])
     (bind! ident stx)))
 
 (define program-module-identifiers scope-idents)
-
-(define (program-ident lctx)
-  (datum->syntax lctx '#%program))
-
-(define (syntax-local-program lctx)
-  (syntax-local-value (program-ident lctx)))
-
 
 (define (parse-program mod-idents)
 
@@ -35,7 +29,7 @@
 
       (let* ([ident  (syntax-local-introduce (strip-context mod-ident))]
              [mod    (syntax-local-module mod-ident)]
-             [parsed (parse-module program mod)])
+             [parsed (parse-module program ident mod)])
 
         (program-bind! program ident parsed)))
 

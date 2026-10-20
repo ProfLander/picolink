@@ -1,14 +1,18 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     syntax/parse)
-
+(require racket/dict
          racket/syntax
 
+         syntax/parse
          syntax/strip-context
+
+         data/ddict
 
          picolink/ee-lib
          picolink/syntax
+         picolink/program
+         picolink/program/parameters
+         picolink/module/parameters
          picolink/module/parsed
          picolink/module/import
          picolink/module/export)
@@ -16,41 +20,107 @@
 (provide (all-defined-out))
 
 (define current-debug
-  (make-parameter #t))
-
-(define current-program-scope
   (make-parameter #f))
 
-(define current-require-scope
-  (make-parameter #f))
+(define (resolve-module lctx mod-path)
 
-(define current-module-scope
-  (make-parameter #f))
+  (when (current-debug)
+    (displayln "resolve-module:")
+    (println lctx)
+    (println mod-path))
 
-(define current-provide-scope
-  (make-parameter #f))
+  (define mod
+    (program-module (current-program-scope) mod-path))
 
-(define-syntax with-module-scopes
-  (syntax-parser
-    [(_ body ...)
-     #'(with-scope require-scope
-         (with-scope module-scope
-           (with-scope provide-scope
-             (parameterize ([current-require-scope require-scope]
-                            [current-module-scope  module-scope]
-                            [current-provide-scope provide-scope])
-               body ...))))]))
+  (unless mod
+    (raise-syntax-error
+     #f
+     "failed to resolve module"
+     lctx
+     mod-path))
 
-(define-syntax with-parsed-module-scopes
-  (syntax-parser
-    [(_ parsed body ...)
-     #'(parameterize ([current-require-scope
-                       (parsed-module-require-scope parsed)]
-                      [current-module-scope
-                       (parsed-module-module-scope  parsed)]
-                      [current-provide-scope
-                       (parsed-module-provide-scope parsed)])
-         body ...)]))
+  mod)
+
+(define (resolve-provide lctx mod src-sym local-id)
+
+  (when (current-debug)
+    (displayln "resolve-provide:")
+    (println lctx)
+    (println mod)
+    (println src-sym)
+    (println local-id))
+
+  (define prov
+    (parameterize ([current-def-ctx (parsed-module-provide-scope mod)])
+      (lookup (datum->syntax #f src-sym))))
+
+  (unless prov
+    (raise-syntax-error
+     #f
+     (format "~a does not provide ~a"
+             (syntax-e (parsed-module-ident mod))
+             (syntax-e local-id))
+     lctx
+     local-id))
+
+  prov)
+
+(define (resolve-definition lctx local-id)
+
+  (when (current-debug)
+    (displayln "resolve-definition:")
+    (println lctx)
+    (println local-id))
+
+  (define binding
+    (parameterize ([current-def-ctx (current-module-scope)])
+      (lookup local-id)))
+
+  (unless binding
+    (raise-syntax-error
+     #f
+     "unbound identifier"
+     lctx
+     local-id))
+
+  binding)
+
+(define (emplace-require! lctx mod local-id src-sym)
+
+  (define mod-id (parsed-module-ident mod))
+
+  (define local-id* (syntax-local-introduce local-id))
+
+  (let ([import (import local-id*
+                        src-sym
+                        mod-id
+                        lctx)])
+    (parameterize ([current-def-ctx (current-require-scope)])
+     (let ([imports (lookup mod-id)])
+
+       (unless imports
+         (set! imports (make-mutable-ddict))
+         (bind! (syntax-local-introduce (strip-context mod-id)) imports))
+
+       (dict-set! imports (syntax-e local-id) import)))))
+
+(define (require-module-provide! lctx mod prov src-sym local-id)
+
+  (when (current-debug)
+    (displayln "require-module-provide!:")
+    (println lctx)
+    (println mod)
+    (println prov)
+    (println src-sym)
+    (println local-id))
+
+  (define binding
+    (parameterize ([current-def-ctx (parsed-module-module-scope mod)])
+      (lookup (export-local-id prov))))
+
+  (emplace-require! lctx mod local-id src-sym)
+
+  (bind! local-id binding))
 
 (define (require! lctx src-mod-path)
 
@@ -86,42 +156,42 @@
     (println src-mod-path)
     (println exceptions))
 
-  (define mod
-    (parameterize ([current-def-ctx (current-program-scope)])
-      (lookup src-mod-path parsed-module?)))
+  (define mod (resolve-module lctx src-mod-path))
 
-  (displayln "mod:")
-  (println mod)
-
-  (unless mod
-    (raise-syntax-error
-     #f
-     "failed to resolve module"
-     lctx
-     src-mod-path))
+  (parameterize ([current-def-ctx (current-require-scope)])
+    (define mod-id (parsed-module-ident mod))
+    (define mod-id* (syntax-local-introduce (strip-context mod-id)))
+    (let ([imports (lookup mod-id*)])
+      (unless imports
+        (bind! mod-id* (make-mutable-ddict)))))
 
   (define provide-scope (parsed-module-provide-scope mod))
 
-  (define provides (scope-idents provide-scope))
-
-  (println provides)
-
-  (for ([prov (in-list provides)]
-        #:when (not (member prov exceptions datum=?)))
+  (for ([prov-id (in-list (scope-idents provide-scope))]
+        #:when (not (member prov-id exceptions datum=?)))
 
     (define local-id
       (datum->syntax src-mod-path
-                     (syntax-e prov)
+                     (syntax-e prov-id)
                      src-mod-path
                      src-mod-path))
 
     (define prefixed
-      (and prefix
-           (format-id local-id "~a~a" prefix local-id
-                      #:source local-id
-                      #:props local-id)))
+      (if prefix
+          (format-id local-id "~a~a" prefix local-id
+                     #:source local-id
+                     #:props local-id)
+          local-id))
 
-    (require/rename! lctx src-mod-path local-id (or prefixed local-id))))
+    (define src-sym (syntax-e local-id))
+
+    (define prov (resolve-provide lctx mod src-sym prefixed))
+
+    (require-module-provide! lctx
+                             mod
+                             prov
+                             src-sym
+                             prefixed)))
 
 (define (require/only! lctx src-mod-path local-ids)
 
@@ -147,43 +217,12 @@
   (define src-sym (syntax-e src-id))
 
   (define mod
-    (parameterize ([current-def-ctx (current-program-scope)])
-      (lookup src-mod-path parsed-module?)))
-
-  (unless mod
-    (raise-syntax-error
-     #f
-     "failed to resolve module"
-     lctx
-     src-mod-path))
+    (resolve-module lctx src-mod-path))
 
   (define prov
-    (parameterize ([current-def-ctx (parsed-module-provide-scope mod)])
-      (lookup (datum->syntax #f src-sym))))
+    (resolve-provide lctx mod src-sym local-id))
 
-  (define local-id* (syntax-local-introduce local-id))
-
-  (unless prov
-    (raise-syntax-error
-     #f
-     (format "~a does not provide ~a"
-             (syntax-e src-mod-path)
-             (syntax-e local-id*))
-     lctx
-     local-id*))
-
-  (parameterize ([current-def-ctx (current-require-scope)])
-    (bind! local-id*
-           (import local-id*
-                   src-sym
-                   src-mod-path
-                   lctx)))
-
-  (define binding
-    (parameterize ([current-def-ctx (parsed-module-module-scope mod)])
-      (lookup (export-local-id prov))))
-
-  (bind! local-id binding))
+  (require-module-provide! lctx mod prov src-sym local-id))
 
 (define (provide! lctx local-id)
 
@@ -211,19 +250,13 @@
   (define require-scope (current-require-scope))
 
   (define requires
-    (filter (λ (def)
-
-              (define import
-                (parameterize ([current-def-ctx require-scope])
-                  (lookup def)))
-
-              (define import-mod (import-src-mod-path import))
-
-              (and (datum=? mod-id import-mod)
-                   (not (member def exceptions
-                                datum=?))))
-
-            (scope-idents require-scope)))
+    (for*/list ([(import-mod-id imports) (in-scope require-scope)]
+                [(_ import)              (in-dict imports)]
+                #:do [(define import-id (import-local-id import))]
+                #:when (and (datum=? mod-id import-mod-id)
+                            (not (member import-id exceptions
+                                         datum=?))))
+      import-id))
 
   (for ([req (in-list requires)])
     (provide! lctx req)))
@@ -261,7 +294,10 @@
   (define module-scope (current-module-scope))
   (define require-scope (current-require-scope))
 
-  (define requires (scope-idents require-scope))
+  (define requires
+    (for*/list ([(_ imports) (in-scope require-scope)]
+                [(_ import)  (in-dict imports)])
+      (import-local-id import))) 
 
   (define definitions (filter (λ (def)
                                 (and (not (member def requires
@@ -273,12 +309,13 @@
   (for ([definition (in-list definitions)])
 
     (define prefixed
-      (and prefix
-           (format-id definition "~a~a" prefix definition
-                      #:source definition
-                      #:props definition)))
+      (if prefix
+          (format-id definition "~a~a" prefix definition
+                     #:source definition
+                     #:props definition)
+          definition))
 
-    (provide/rename! lctx definition (or prefixed definition))))
+    (provide/rename! lctx definition prefixed)))
 
 (define (provide/rename! lctx
                          local-id
@@ -289,16 +326,7 @@
     (println local-id)
     (println out-id))
 
-  (define binding
-    (parameterize ([current-def-ctx (current-module-scope)])
-      (lookup local-id)))
-
-  (unless binding
-    (raise-syntax-error
-     #f
-     "unbound identifier"
-     lctx
-     local-id))
+  (resolve-definition lctx local-id)
 
   (define out-id*
     (syntax-local-introduce (strip-context out-id)))
@@ -312,3 +340,149 @@
     (bind! out-id* provide-id))
 
   local-id)
+
+(define require?
+  (syntax-parser
+    #:datum-literals [require]
+    [(require _ ...) #t]
+    [_ #f]))
+
+(define provide?
+  (syntax-parser
+    #:datum-literals [provide]
+    [(provide _ ...) #t]
+    [_ #f]))
+
+(define-splicing-syntax-class (extract-require lctx)
+  #:datum-literals [require]
+  (pattern
+   (~and
+    (~do (define deps null))
+    (~seq
+     (~or (~and mod:id
+                (~do (set! deps (append deps (list #'mod)))))
+
+          (~and (only only-mod:id _ ...)
+                (~do (set! deps (append deps (list #'only-mod)))))
+
+          (~and (prefix _:id prefix-mod:id)
+                (~do (set! deps (append deps (list #'prefix-mod)))))
+
+          (~and (all-except all-except-mod:id _...)
+                (~do (set! deps
+                           (append deps (list #'all-except-mod)))))
+
+          (~and (prefix-all-except
+                 _
+                 prefix-all-except-mod:id
+                 _ ...)
+                (~do (set! deps
+                           (append deps (list #'prefix-all-except-mod)))))
+
+          (~and (rename rename-mod:id _ _)
+                (~do (set! deps (append deps (list #'rename-mod))))))
+     ...))
+
+   #:attr dependencies deps))
+
+
+(define-splicing-syntax-class (bind-require lctx)
+  #:datum-literals [require
+                    only
+                    prefix
+                    all-except
+                    prefix-all-except
+                    rename]
+  (pattern
+   (~seq (~or (~and mod:id
+                    (~do (require! lctx #'mod)))
+
+              (~and (only ~! only-mod:id req:id ...)
+                    (~do (require/only! lctx #'only-mod
+                                        (attribute req))))
+
+              (~and (prefix ~! req-prefix:id prefix-mod:id)
+                    (~do (require/prefix! lctx #'req-prefix
+                                          #'prefix-mod)))
+
+              (~and (all-except
+                     ~!
+                     all-except-mod:id
+                     all-except-exception:id ...)
+
+                    (~do (require/all-except!
+                          lctx
+                          #'all-except-mod
+                          (attribute all-except-exception))))
+
+              (~and (prefix-all-except
+                     ~!
+                     all-except-prefix:id
+                     prefix-all-except-mod:id
+                     prefix-all-except-exception:id ...)
+
+                    (~do (require/all-except!
+                          lctx
+                          #'all-except-prefix
+                          #'prefix-all-except-mod
+                          (attribute prefix-all-except-exception))))
+
+              (~and (rename ~! rename-mod:id req-from:id req-to:id)
+                    (~do (require/rename! lctx
+                                          #'rename-mod
+                                          #'req-from
+                                          #'req-to))))
+         ...)))
+
+(define-splicing-syntax-class (bind-provide lctx)
+  #:datum-literals [provide
+                    rename
+                    all-from
+                    all-from-except
+                    all-defined
+                    all-defined-except
+                    prefix-all-defined
+                    prefix-all-defined-except]
+  (pattern
+   (~seq (~or (~and prov:id
+                    (~do (provide! lctx
+                                   #'prov)))
+
+              (~and (rename ~! prov-from:id prov-to:id)
+                    (~do (provide/rename! lctx
+                                          #'prov-from
+                                          #'prov-to)))
+
+              (~and (all-from mod:id)
+                    (~do (provide/all-from! lctx #'mod)))
+
+              (~and (all-from-except
+                     ~!
+                     except-mod:id
+                     from-exception:id ...)
+                    (~do (provide/all-from-except!
+                          lctx
+                          #'except-mod
+                          (attribute from-exception))))
+
+              (~and (all-defined)
+                    (~do (provide/all-defined! lctx)))
+
+              (~and (all-defined-except ~! ident:id ...)
+                    (~do (provide/all-defined-except!
+                          lctx
+                          (attribute ident))))
+
+              (~and (prefix-all-defined ~! prefix-id:id)
+                    (~do (provide/prefix-all-defined! lctx
+                                                      #'prefix-id)))
+
+              (~and (prefix-all-defined-except
+                     ~!
+                     except-prefix:id
+                     except-ident:id ...)
+                    (~do (provide/prefix-all-defined-except!
+                          lctx
+                          #'except-prefix
+                          (attribute except-ident)))))
+         ...)))

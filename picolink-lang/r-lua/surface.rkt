@@ -13,7 +13,6 @@
 (define-literal-set r-lua-surface-literals
   #:datum-literals [begin
                      require
-                     only-in
                      provide
                      define
                      define-macro
@@ -52,18 +51,6 @@
 
   ident)
 
-(define require?
-  (syntax-parser
-    #:literal-sets [r-lua-surface-literals]
-    [(require _ ...) #t]
-    [_ #f]))
-
-(define provide?
-  (syntax-parser
-    #:literal-sets [r-lua-surface-literals]
-    [(provide _ ...) #t]
-    [_ #f]))
-
 (define/hygienic (r-lua/top-level stx)
   #:definition
 
@@ -92,33 +79,10 @@
         (syntax/loc this-syntax
           (#%begin body ...))))]
 
-    [(require ~! (only-in mod
-                          (~or (~and [req-from req-to]
-                                     (~do
-                                      (require/rename!
-                                       this-syntax
-                                       #'mod
-                                       #'req-from
-                                       #'req-to)))
-
-                               (~and req
-                                     (~do
-                                      (require/rename!
-                                       this-syntax
-                                       #'mod
-                                       #'req
-                                       #'req))))
-                          ...)
-              ...)
+    [(require ~! (~var _ (bind-require this-syntax)))
      (void)]
 
-    [(provide ~! (~or (~and [prov-from prov-to]
-                            (~do (provide/rename! this-syntax
-                                                  #'prov-from
-                                                  #'prov-to)))
-                      (~and prov
-                            (~do (provide! this-syntax #'prov))))
-              ...)
+    [(provide ~! (~var _ (bind-provide this-syntax)))
      (void)]
 
     [(define ~! name (~cata expr r-lua/expr))

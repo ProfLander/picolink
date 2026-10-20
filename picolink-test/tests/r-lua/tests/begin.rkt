@@ -1,9 +1,9 @@
 #lang picolink/r-lua
 
-(require (only-in lua
-                  print))
+(require (only lua
+               print))
 
 (begin
-  3
-  (print 4)
-  5)
+  #f
+  (print #t)
+  #f)

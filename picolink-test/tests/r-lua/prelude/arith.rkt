@@ -1,10 +1,10 @@
 #lang picolink/r-lua
 
-(require (only-in prelude/equality
-                  eq?)
+(require (only prelude/equality
+               eq?)
 
-         (only-in lua
-                  print))
+         (only lua
+               print))
 
 (provide =
          <

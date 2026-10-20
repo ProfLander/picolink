@@ -4,6 +4,7 @@
          racket/string
          racket/list
          racket/set
+         racket/dict
          racket/path
          racket/file
          racket/syntax
@@ -47,9 +48,9 @@
 
   (lua-module name path ident-prefix implicit))
 
-(define (lua-module-name=? self ident)
+(define (lua-module-name=? self sym)
   (equal? (syntax-e (lua-module-name self))
-          (syntax-e ident)))
+          (syntax-e sym)))
 
 (define current-lua-modules
   (make-parameter
@@ -170,20 +171,30 @@
 
 (define (splice-requires mod)
 
+  (define lua-mods (current-lua-modules))
+
   (define require-scope (compiled-module-require-scope mod))
 
   (define reqs
-    (for/list ([req (in-scope require-scope)]
-               #:do [(define mod-path (import-src-mod-path req))
-                     (define lua-mods (current-lua-modules))
-                     (define lua-mod
-                       (findf (curryr lua-module-name=? mod-path)
-                              lua-mods))]
-               #:unless (and lua-mod
-                             (lua-module-implicit lua-mod)))
-      req))
+    (reverse
+     (for*/list ([(mod-path imports) (in-scope require-scope)]
+                 [(_ import)         (in-dict imports)]
+                 #:do [(define lua-mod
+                         (findf (curryr lua-module-name=? mod-path)
+                                lua-mods))]
+                 #:unless (and lua-mod
+                               (lua-module-implicit lua-mod)))
+       import)))
 
-  (define req-mods (map import-src-mod-path reqs))
+  (define req-mods
+    (reverse
+     (for*/list ([mod-path (in-list (scope-idents require-scope))]
+                 #:do [(define lua-mod
+                         (findf (curryr lua-module-name=? mod-path)
+                                lua-mods))]
+                 #:unless (and lua-mod
+                               (lua-module-implicit lua-mod)))
+       mod-path)))
 
   (define req-mod-syms
     (set-map req-mods module-ident->lua-ident))
@@ -217,23 +228,29 @@
                  [(#%member req-bind-mod
                             req-bind-from) ...])))
 
-  (if (pair? reqs)
+  (let* ([stx (compiled-module-stx mod)]
 
-      (let ([stx (compiled-module-stx mod)])
+         [stx (if (pair? mod-req-binds)
+                  (s-lua-append
+                   (in-s-lua
+                    (with-syntax ([member-bindings member-bindings])
+                      #'(#%chunk
+                         (#%block
+                          member-bindings))))
+                   stx)
+                  stx)]
 
-        (compiled-module-update
-         mod
-         #:stx (s-lua-append
-                (in-s-lua
-                 (with-syntax ([module-bindings module-bindings]
-                               [member-bindings member-bindings])
-                   #'(#%chunk
-                      (#%block
-                       module-bindings
-                       member-bindings))))
-                stx)))
+         [stx (if (pair? req-mod-syms)
+                  (s-lua-append
+                   (in-s-lua
+                    (with-syntax ([module-bindings module-bindings])
+                      #'(#%chunk
+                         (#%block
+                          module-bindings))))
+                   stx)
+                  stx)])
 
-      mod))
+    (compiled-module-update mod #:stx stx)))
 
 (define (splice-lctx mod)
 
@@ -295,15 +312,15 @@
   (define require-scope (compiled-module-require-scope mod))
 
   (define rewrites
-    (for/fold ([acc (hash)])
-              ([import (in-scope require-scope)]
-               #:do [(define mod-path (import-src-mod-path import))
-                     (define lua-mods (current-lua-modules))
-                     (define lua-mod
-                       (findf (curryr lua-module-name=? mod-path)
-                              lua-mods))]
-               #:when (and lua-mod
-                           (lua-module-implicit lua-mod)))
+    (for*/fold ([acc (hash)])
+               ([(mod-path imports) (in-scope require-scope)]
+                [(_ import)         (in-dict imports)]
+                #:do [(define lua-mods (current-lua-modules))
+                      (define lua-mod
+                        (findf (curryr lua-module-name=? mod-path)
+                               lua-mods))]
+                #:when (and lua-mod
+                            (lua-module-implicit lua-mod)))
 
       (define prefix (lua-module-ident-prefix lua-mod))
 

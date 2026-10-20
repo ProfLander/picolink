@@ -3,7 +3,10 @@
 (require (for-syntax racket/base
                      syntax/parse)
 
+         racket/sequence
+
          syntax/parse
+
          ee-lib
          ee-lib/define)
 
@@ -58,7 +61,9 @@
                   [predicate (lambda (_) #t)]
                   #:space [space #f])
 
-  (let ([ids (scope-idents scope)])
-    (for/list ([id (in-list ids)])
-      (parameterize ([current-def-ctx scope])
-        (lookup id predicate #:space space)))))
+  (sequence-map (λ (id)
+                  (values id
+                          (parameterize ([current-def-ctx scope])
+                            (lookup id predicate #:space space))))
+
+                (in-list (scope-idents scope))))

@@ -12,6 +12,7 @@
                      picolink/language
                      picolink/module
                      picolink/program
+                     picolink/program/syntax
                      picolink/lang/expand-state)
 
          picolink/lang/source-module)

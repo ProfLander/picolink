@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(provide let*)
+(provide (all-defined))
 
 (define-macro let*
   [(_ (bind ...) body ...)

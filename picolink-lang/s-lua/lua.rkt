@@ -61,7 +61,8 @@
    ">=" "__ge__"
    "==" "__2eq__"
    "~=" "__ne__"
-   "?"  "__question__"))
+   "?"  "__question__"
+   "!"  "__exclamation__"))
 
 (define reserved-identifier->lua-name
   (hash

@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(provide %hash)
+(provide (all-defined))
 
 (define-macro %hash
   [(_ (~seq k v) ...)

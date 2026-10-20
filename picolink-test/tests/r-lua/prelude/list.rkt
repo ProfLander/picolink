@@ -1,24 +1,24 @@
 #lang picolink/r-lua
 
-(require (only-in lua
-                  setmetatable
-                  print)
+(require (only lua
+               setmetatable
+               print)
 
-         (only-in lua/string
-                  format)
+         (only lua/string
+               format)
 
-         (only-in prelude/tag
-                  tag?
-                  tag)
+         (only prelude/tag
+               tag?
+               tag)
 
-         (only-in prelude/equality
-                  eq?)
+         (only prelude/equality
+               eq?)
 
-         (only-in prelude/vector
-                  %vector)
+         (only prelude/vector
+               %vector)
 
-         (only-in prelude/hash
-                  %hash))
+         (only prelude/hash
+               %hash))
 
 (provide null?
          null

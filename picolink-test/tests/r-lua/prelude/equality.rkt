@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(provide eq?)
+(provide (all-defined))
 
 (define eq?
   (λ (a b)

@@ -1,7 +1,7 @@
 #lang picolink/dsl
 
-(require fst/module-b
-         fst/module-c)
+(require (only fst/module-b b)
+         (only fst/module-c c))
 
 (provide (all-from fst/module-b)
          (all-from fst/module-c)

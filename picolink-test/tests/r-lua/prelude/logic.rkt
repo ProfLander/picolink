@@ -1,7 +1,7 @@
 #lang picolink/r-lua
 
-(require (only-in lua
-                  print))
+(require (only lua
+               print))
 
 (provide and or not)
 

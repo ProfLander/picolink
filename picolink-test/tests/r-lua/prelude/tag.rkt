@@ -1,11 +1,9 @@
 #lang picolink/r-lua
 
-(require (only-in prelude/equality
-                  eq?))
+(require (only prelude/equality
+               eq?))
 
-(provide %tag
-         tag?
-         tag)
+(provide (all-defined))
 
 (define %tag "__tag")
 

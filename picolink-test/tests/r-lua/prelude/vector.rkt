@@ -1,6 +1,6 @@
 #lang picolink/r-lua
 
-(provide %vector)
+(provide (all-defined))
 
 (define-macro %vector
   [(_ v ...)

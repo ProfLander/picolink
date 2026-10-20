@@ -1,23 +1,23 @@
 #lang picolink/r-lua
 
-(require (only-in lua
-                  print)
+(require (only lua
+               print)
          
-         (only-in prelude/binding
-                  let*)
+         (only prelude/binding
+               let*)
 
-         (only-in prelude/conditional
-                  when
-                  unless))
+         (only prelude/conditional
+               when
+               unless))
 
-(let* ([x 1]
+(let* ([x "foo"]
        [y x])
   y)
 
 (when #t
-  (print "foo")
+  (print "bar")
   "hello")
 
 (unless #f
-  (print "bar")
+  (print "baz")
   "world")

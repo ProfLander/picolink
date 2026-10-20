@@ -1,4 +1,4 @@
 #lang picolink/r-lua
 
-(require (only-in tests/letrec/basic)
-         (only-in tests/letrec/nested))
+(require tests/letrec/basic
+         tests/letrec/nested)

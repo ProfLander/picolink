@@ -1,9 +1,9 @@
 #lang picolink/r-lua
 
-(require (only-in prelude/function
-                  identity))
+(require (only prelude/function
+               identity))
 
-(let ([x 6])
+(let ([x 2])
     x
     (let ([y (identity x)])
       y))

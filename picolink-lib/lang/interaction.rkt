@@ -1,16 +1,10 @@
 #lang racket/base
 
-(require syntax/parse
-
-         picolink/lang/expand-state
-         picolink/program
-         picolink/parser
+(require picolink/program
+         picolink/program/syntax
          picolink/backend
          picolink/language
-         picolink/module
-
-         picolink/lang/entry-point
-         picolink/lang/dependency)
+         picolink/module)
 
 (provide (all-defined-out))
 

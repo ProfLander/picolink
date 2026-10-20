@@ -1,6 +1,7 @@
 #lang picolink/backend
 
 (require racket/list
+         racket/dict
          racket/function
 
          syntax/parse
@@ -31,29 +32,31 @@
       (define stx (compiled-module-stx mod))
 
       (let* ([reqs
-              (for/list ([req (in-scope require-scope)])
+              (reverse
+               (for*/list ([(_ imports) (in-scope require-scope)]
+                           [(_ req)     (in-dict imports)])
 
-                (with-syntax ([local-id
-                               (racket-introduce
-                                (splice-from-scope
-                                 (import-local-id req)
-                                 module-scope))]
+                 (with-syntax ([local-id
+                                (racket-introduce
+                                 (splice-from-scope
+                                  (import-local-id req)
+                                  module-scope))]
 
-                              [dots (if (equal? (syntax-e mod-id)
-                                                'entry-point)
-                                        "."
-                                        "..")]
+                               [dots (if (equal? (syntax-e mod-id)
+                                                 'entry-point)
+                                         "."
+                                         "..")]
 
-                              [src-sym
-                               (import-src-sym req)]
-                              [src-mod-path
-                               (import-src-mod-path req)])
+                               [src-sym
+                                (import-src-sym req)]
+                               [src-mod-path
+                                (import-src-mod-path req)])
 
-                  #'(only-in (submod dots src-mod-path)
-                             [src-sym local-id])))]
+                   #'(only-in (submod dots src-mod-path)
+                              [src-sym local-id]))))]
 
              [provs
-              (for/list ([prov (in-scope provide-scope)])
+              (for/list ([(_ prov) (in-scope provide-scope)])
 
                 (with-syntax ([local-id
                                (racket-introduce (splice-from-scope

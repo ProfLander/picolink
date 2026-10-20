@@ -1,8 +1,8 @@
 #lang picolink/r-lua
 
-(require (only-in prelude/function
-                  identity))
+(require (only prelude/function
+               identity))
 
 (letrec ([a (λ (x) (b x))]
          [b identity])
-  (a 7))
+  (a 6))

@@ -5,8 +5,9 @@
          ee-lib
 
          picolink/syntax
-         picolink/parser
-         picolink/backend)
+         picolink/backend
+         picolink/module/parameters
+         picolink/program/parameters)
 
 (provide (all-defined-out))
 
