@@ -4,11 +4,13 @@
                      syntax/parse)
          picolink/ee-lib
          picolink/parser
+         picolink/module/scopes
          picolink/language)
 
 (provide (all-from-out racket/base
                        picolink/ee-lib
-                       picolink/parser)
+                       picolink/parser
+                       picolink/module/scopes)
          #%module-begin)
 
 (define-syntax #%module-begin

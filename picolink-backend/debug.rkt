@@ -10,6 +10,7 @@
 
          picolink/ee-lib
          picolink/module/compiled
+         picolink/module/scopes
 
          (for-template racket/base))
 
@@ -28,7 +29,7 @@
     (define provide-scope (compiled-module-provide-scope mod))
 
     (define (print-binding ident)
-      (define binding (lookup ident))
+      (define binding (lookup-in-module ident))
       (displayln (format "  ~a:" (syntax-e ident)))
       (displayln (format "   ~a" (string-replace (pretty-format binding)
                                                  "\n" "\n   "))))

@@ -4,6 +4,7 @@
          picolink/syntax
          picolink/ee-lib
          picolink/parser
+         picolink/module/scopes
          picolink/intrinsic/var
          (for-template picolink/r-lua/ir
                        picolink/s-lua/ir))
@@ -34,7 +35,7 @@
 
 (define (check-var ident)
 
-  (define binding (lookup ident))
+  (define binding (lookup-in-module ident))
 
   (unless binding
     (parameterize ([error-print-context-length 0])
@@ -87,21 +88,21 @@
 
     [(define ~! name (~cata expr r-lua/expr))
 
-     (bind! #'name (r-lua-var))
+     (bind-in-module! #'name (r-lua-var))
 
      (in-r-lua
       (syntax/loc this-syntax
         (#%define name expr)))]
 
     [(define-macro ~! name expr ...)
-     (bind! #'name (r-lua-macro
-                    (eval-transformer
-                     (r-lua/macro
-                      #'(expr ...)))))
+     (bind-in-module! #'name (r-lua-macro
+                              (eval-transformer
+                               (r-lua/macro
+                                #'(expr ...)))))
      (void)]
 
     [(ident:id arg ...)
-     #:do [(define mac (lookup #'ident r-lua-macro?))]
+     #:do [(define mac (lookup-in-module #'ident r-lua-macro?))]
      #:when mac
      #:cut
      (r-lua/top-level
@@ -219,7 +220,7 @@
          #%void))]
 
     [(ident:id arg ...)
-     #:do [(define mac (lookup #'ident r-lua-macro?))]
+     #:do [(define mac (lookup-in-module #'ident r-lua-macro?))]
      #:when mac
      #:cut
      (r-lua/expr

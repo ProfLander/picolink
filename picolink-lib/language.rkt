@@ -6,8 +6,7 @@
 
          picolink/syntax
          picolink/backend
-         picolink/module/scopes
-         picolink/program/scope)
+         picolink/module/scopes)
 
 (provide (all-defined-out))
 
@@ -38,10 +37,8 @@
   ((language-%wrap lang) stx))
 
 (define (language-parse lang
-                        program-scope
                         stx)
-  (parameterize ([current-program-scope program-scope]
-                 [current-def-ctx (current-module-scope)])
+  (parameterize ([current-def-ctx (current-module-scope)])
     ((language-%parse lang)
      (syntax-local-introduce stx))))
 

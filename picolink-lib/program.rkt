@@ -2,47 +2,42 @@
 
 (require racket/function
          racket/match
+
          syntax/strip-context
+
+         picolink/ee-lib
          picolink/output
+         picolink/program/scope
          picolink/module/syntax
          picolink/module/parsed)
 
-(require picolink/ee-lib)
-
 (provide (all-defined-out))
-
-(define (program-module program ident)
-  (parameterize ([current-def-ctx program])
-    (lookup ident parsed-module?)))
-
-(define (program-bind! program ident stx)
-  (parameterize ([current-def-ctx program])
-    (bind! ident stx)))
-
-(define program-module-identifiers scope-idents)
 
 (define (parse-program mod-idents)
 
   (with-scope program
 
-    (for ([mod-ident (in-list mod-idents)])
+    (parameterize ([current-program-scope program])
 
-      (let* ([ident  (syntax-local-introduce (strip-context mod-ident))]
-             [mod    (syntax-local-module mod-ident)]
-             [parsed (parse-module program ident mod)])
+      (for ([mod-ident (in-list mod-idents)])
 
-        (program-bind! program ident parsed)))
+        (let* ([ident  (syntax-local-introduce
+                        (strip-context mod-ident))]
 
-    program))
+               [mod    (syntax-local-module mod-ident)]
+               [parsed (parse-module ident mod)])
+
+          (bind-in-program! ident parsed)))
+
+      program)))
 
 (define (compile-program program backend)
 
-  (let* ([mod-ids
-          (program-module-identifiers program)])
+  (let* ([mod-ids (scope-idents program)])
 
     (for/list ([mod-id (in-list mod-ids)])
       (define mod
-        (program-module program mod-id))
+        (lookup-in-program mod-id))
 
       (compile-parsed-module mod-id
                              backend
@@ -50,8 +45,7 @@
 
 (define (parallel-compile-program program backend)
 
-  (let* ([mod-ids
-          (program-module-identifiers program)]
+  (let* ([mod-ids (scope-idents program)]
 
          [pool
           (make-parallel-thread-pool)]
@@ -59,7 +53,7 @@
          [threads
           (for/list ([mod-id (in-list mod-ids)])
             (define mod
-              (program-module program mod-id))
+              (lookup-in-program mod-id))
 
             (define-values (out-port get-out-events)
               (make-deferred-output-port))

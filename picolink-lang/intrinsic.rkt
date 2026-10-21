@@ -2,7 +2,6 @@
 
 (require racket/base
          racket/function
-         racket/syntax
          
          syntax/parse
 
@@ -25,7 +24,7 @@
       ...)
 
      (for ([prov (in-list (attribute prov))])
-       (bind! prov (intrinsic-var))
+       (bind-in-module! prov (intrinsic-var))
        (provide! prov prov))
 
      #f]))

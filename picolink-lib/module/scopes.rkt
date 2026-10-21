@@ -2,7 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
-         ee-lib)
+
+         picolink/ee-lib)
 
 (provide (all-defined-out))
 
@@ -25,3 +26,45 @@
                             [current-module-scope  module-scope]
                             [current-provide-scope provide-scope])
                body ...))))]))
+
+(define (lookup-in-require ident
+                           [predicate (lambda (v) #t)]
+                           #:space [binding-space #f])
+
+  "Lookup IDENT in the current require scope"
+
+  (lookup-in (current-require-scope)
+             ident
+             predicate
+             #:space binding-space))
+
+(define (lookup-in-provide ident
+                           [predicate (lambda (v) #t)]
+                           #:space [binding-space #f])
+
+  "Lookup IDENT in the current provide scope"
+
+  (lookup-in (current-provide-scope)
+             ident
+             predicate
+             #:space binding-space))
+
+(define (lookup-in-module ident
+                          [predicate (lambda (v) #t)]
+                          #:space [binding-space #f])
+
+  "Lookup IDENT in the current module scope"
+
+  (lookup-in (current-module-scope)
+             ident
+             predicate
+             #:space binding-space))
+
+(define (bind-in-require! ident val)
+  (bind-in! (current-require-scope) ident val))
+
+(define (bind-in-provide! ident val)
+  (bind-in! (current-provide-scope) ident val))
+
+(define (bind-in-module! ident val)
+  (bind-in! (current-module-scope) ident val))

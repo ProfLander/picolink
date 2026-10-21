@@ -12,6 +12,7 @@
                      picolink/language
                      picolink/module
                      picolink/program
+                     picolink/program/scope
                      picolink/program/syntax
                      picolink/lang/expand-state)
 
@@ -221,18 +222,30 @@
        (displayln "#%build-program")
        (println this-syntax))
 
-     (define backend     (syntax-local-backend this-syntax))
-     (define program     (parse-program (attribute mod)))
-     (define compiled    (if (current-parallel)
-                             (parallel-compile-program program backend)
-                             (compile-program program backend)))
-     (define transformed (backend-transform backend this-syntax compiled))
-     (define linked      (backend-link backend this-syntax transformed))
-     (define runner      (backend-run backend this-syntax linked))
+     (define backend
+       (syntax-local-backend this-syntax))
 
-     (with-syntax ([#%program (program-ident this-syntax)]
-                   [program program]
-                   [runner runner])
-       #'(begin
-           (define-syntax #%program program)
-           runner))]))
+     (define program (parse-program (attribute mod)))
+
+     (parameterize ([current-program-scope program])
+
+       (define compiled
+         (if (current-parallel)
+             (parallel-compile-program program backend)
+             (compile-program program backend)))
+
+       (define transformed
+         (backend-transform backend this-syntax compiled))
+
+       (define linked
+         (backend-link backend this-syntax transformed))
+
+       (define runner
+         (backend-run backend this-syntax linked))
+
+       (with-syntax ([#%program (program-ident this-syntax)]
+                     [program program]
+                     [runner runner])
+         #'(begin
+             (define-syntax #%program program)
+             runner)))]))

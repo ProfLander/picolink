@@ -28,13 +28,13 @@
                  (current-provide-scope)
                  (and stx (syntax-local-introduce stx))))
 
-(define (parse-module program ident mod)
+(define (parse-module ident mod)
 
   (with-module-scopes
 
     (let* ([lang (source-module-language mod)]
            [stx  (source-module-stx mod)]
-           [stx  (language-parse lang program stx)])
+           [stx  (language-parse lang stx)])
 
       (make-parsed-module ident lang stx))))
 

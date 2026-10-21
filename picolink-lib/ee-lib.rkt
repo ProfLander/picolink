@@ -57,6 +57,22 @@
 
 (define scope-idents internal-definition-context-binding-identifiers)
 
+(define (lookup-in scope
+                   ident
+                   [predicate (lambda (v) #t)]
+                   #:space [binding-space #f])
+
+  "Lookup IDENT in SCOPE"
+
+  (parameterize ([current-def-ctx scope])
+    (lookup ident predicate #:space binding-space)))
+
+(define (bind-in! scope ident val)
+  "Bind IDENT to VAL in SCOPE"
+
+  (parameterize ([current-def-ctx scope])
+    (bind! ident val)))
+
 (define (in-scope scope
                   [predicate (lambda (_) #t)]
                   #:space [space #f])

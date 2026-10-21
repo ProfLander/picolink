@@ -5,11 +5,12 @@
 
          racket/match
          racket/sequence
-         syntax/parse
-         picolink/syntax
-         picolink/parser
-         picolink/dsl/racket
 
+         syntax/parse
+
+         picolink/syntax
+         picolink/module/scopes
+         picolink/dsl/racket
          picolink/dsl/surface
 
          (for-template picolink/dsl/ir))
@@ -77,11 +78,12 @@
      (void)]
 
     [(define ident (~cata expr (dsl/expr _)))
-     (bind! #'ident (dsl-var))
+     (bind-in-module! #'ident (dsl-var))
      #'(#%define ident expr)]
 
     [(define-macro ident expr)
-     (bind! #'ident (dsl-syntax (eval-transformer (dsl/macro #'expr))))
+     (bind-in-module! #'ident
+                      (dsl-syntax (eval-transformer (dsl/macro #'expr))))
      #'(#%define-macro ident expr)]
 
     [(~cata e dsl/expr)
@@ -94,7 +96,7 @@
 
   [ident:id
 
-   (unless (lookup #'ident dsl-var?)
+   (unless (lookup-in-module #'ident dsl-var?)
      (parameterize ([error-print-context-length 0])
        (raise-syntax-error #f
                            "unbound variable"
@@ -111,7 +113,7 @@
      #'(#%let ([ident expr]) body ...)])]
 
   [(ident arg ...)
-   #:do [(define mac (lookup #'ident dsl-syntax?))]
+   #:do [(define mac (lookup-in-module #'ident dsl-syntax?))]
    #:when mac
    (dsl/expr
     (apply-as-transformer (dsl-syntax-trx mac)

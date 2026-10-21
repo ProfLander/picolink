@@ -30,7 +30,7 @@
     (println mod-path))
 
   (define mod
-    (program-module (current-program-scope) mod-path))
+    (lookup-in-program mod-path))
 
   (unless mod
     (raise-syntax-error
@@ -51,8 +51,8 @@
     (println local-id))
 
   (define prov
-    (parameterize ([current-def-ctx (parsed-module-provide-scope mod)])
-      (lookup (datum->syntax #f src-sym))))
+    (lookup-in (parsed-module-provide-scope mod)
+               (datum->syntax #f src-sym)))
 
   (unless prov
     (raise-syntax-error
@@ -73,8 +73,7 @@
     (println local-id))
 
   (define binding
-    (parameterize ([current-def-ctx (current-module-scope)])
-      (lookup local-id)))
+    (lookup-in-module local-id))
 
   (unless binding
     (raise-syntax-error
@@ -95,14 +94,14 @@
                         src-sym
                         mod-id
                         lctx)])
-    (parameterize ([current-def-ctx (current-require-scope)])
-     (let ([imports (lookup mod-id)])
+    (let ([imports (lookup-in-require mod-id)])
 
-       (unless imports
-         (set! imports (make-mutable-ddict))
-         (bind! (syntax-local-introduce (strip-context mod-id)) imports))
+      (unless imports
+        (set! imports (make-mutable-ddict))
+        (bind-in-require! (syntax-local-introduce (strip-context mod-id))
+                          imports))
 
-       (dict-set! imports (syntax-e local-id) import)))))
+      (dict-set! imports (syntax-e local-id) import))))
 
 (define (require-module-provide! lctx mod prov src-sym local-id)
 
@@ -115,12 +114,12 @@
     (println local-id))
 
   (define binding
-    (parameterize ([current-def-ctx (parsed-module-module-scope mod)])
-      (lookup (export-local-id prov))))
+    (lookup-in (parsed-module-module-scope mod)
+               (export-local-id prov)))
 
   (emplace-require! lctx mod local-id src-sym)
 
-  (bind! local-id binding))
+  (bind-in-module! local-id binding))
 
 (define (require! lctx src-mod-path)
 
@@ -158,12 +157,11 @@
 
   (define mod (resolve-module lctx src-mod-path))
 
-  (parameterize ([current-def-ctx (current-require-scope)])
-    (define mod-id (parsed-module-ident mod))
-    (define mod-id* (syntax-local-introduce (strip-context mod-id)))
-    (let ([imports (lookup mod-id*)])
-      (unless imports
-        (bind! mod-id* (make-mutable-ddict)))))
+  (define mod-id (parsed-module-ident mod))
+  (define mod-id* (syntax-local-introduce (strip-context mod-id)))
+  (let ([imports (lookup-in-require mod-id*)])
+    (unless imports
+      (bind-in-require! mod-id* (make-mutable-ddict))))
 
   (define provide-scope (parsed-module-provide-scope mod))
 
@@ -336,8 +334,7 @@
             out-id*
             lctx))
 
-  (parameterize ([current-def-ctx (current-provide-scope)])
-    (bind! out-id* provide-id))
+  (bind-in-provide! out-id* provide-id)
 
   local-id)
 
