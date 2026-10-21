@@ -2,6 +2,9 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
+
+         racket/function
+
          picolink/ee-lib
          picolink/parser
          picolink/module/scopes
@@ -17,6 +20,8 @@
   (syntax-parser
     [(_ (~or (~optional (~seq #:extract  extract))
              (~optional (~seq #:wrap     wrap))
+             (~optional (~seq #:inject   inject)
+                        #:defaults ([inject #'(const void)]))
              (~optional (~seq #:parse    parse))
              (~optional (~seq #:compiler compiler))
              body)
@@ -41,5 +46,6 @@
         (define #%language
           (make-language #:extract  extract
                          #:wrap     wrap
+                         #:inject   inject
                          #:parse    parse
                          #:compiler compiler)))]))

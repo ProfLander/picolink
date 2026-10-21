@@ -12,15 +12,18 @@
 
 (struct/cross-phase language [%extract
                               %wrap
+                              %inject
                               %parse
                               %compiler])
 
 (define (make-language #:extract  extract
                        #:wrap     wrap
+                       #:inject   inject
                        #:parse    parse
                        #:compiler compiler)
   (language extract
             wrap
+            inject
             parse
             compiler))
 
@@ -35,6 +38,9 @@
 
 (define (language-wrap lang stx)
   ((language-%wrap lang) stx))
+
+(define (language-inject lang)
+  ((language-%inject lang)))
 
 (define (language-parse lang
                         stx)

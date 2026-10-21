@@ -10,7 +10,6 @@
 
          picolink/ee-lib
          picolink/syntax
-         picolink/program
          picolink/program/scope
          picolink/module/scopes
          picolink/module/parsed

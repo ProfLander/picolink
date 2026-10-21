@@ -32,11 +32,14 @@
 
   (with-module-scopes
 
-    (let* ([lang (source-module-language mod)]
-           [stx  (source-module-stx mod)]
-           [stx  (language-parse lang stx)])
+    (let ([lang (source-module-language mod)])
 
-      (make-parsed-module ident lang stx))))
+      (language-inject lang)
+
+      (let* ([stx (source-module-stx mod)]
+             [stx (language-parse lang stx)])
+
+        (make-parsed-module ident lang stx)))))
 
 (define (compile-module-syntax lang backend stx)
 

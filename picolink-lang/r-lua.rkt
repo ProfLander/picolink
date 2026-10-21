@@ -14,6 +14,7 @@
 
 #:extract  r-lua-extract
 #:wrap     r-lua-wrap
+#:inject   r-lua-inject
 #:parse    r-lua-parse
 #:compiler r-lua-compiler
 
@@ -33,6 +34,10 @@
 
 (define (r-lua-wrap stx)
   #`(begin #,@stx))
+
+(define (r-lua-inject)
+  (define ident (syntax-local-introduce (datum->syntax #f 'lua)))
+  (require! ident ident))
 
 (define/hygienic (r-lua-parse stx)
   #:definition
