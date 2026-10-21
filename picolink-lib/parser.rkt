@@ -11,8 +11,8 @@
          picolink/ee-lib
          picolink/syntax
          picolink/program
-         picolink/program/parameters
-         picolink/module/parameters
+         picolink/program/scope
+         picolink/module/scopes
          picolink/module/parsed
          picolink/module/import
          picolink/module/export)

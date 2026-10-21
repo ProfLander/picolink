@@ -6,8 +6,8 @@
 
          picolink/syntax
          picolink/backend
-         picolink/module/parameters
-         picolink/program/parameters)
+         picolink/module/scopes
+         picolink/program/scope)
 
 (provide (all-defined-out))
 

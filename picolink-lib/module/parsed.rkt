@@ -9,7 +9,7 @@
          picolink/language
          picolink/module/source
          picolink/module/compiled
-         picolink/module/parameters)
+         picolink/module/scopes)
 
 (provide (all-defined-out))
 
