@@ -115,13 +115,20 @@
      (syntax/loc this-syntax
        e)]))
 
-(define/hygienic-expression-parser r-lua/macro
-  #:literal-sets [r-lua-surface-literals]
+(define r-lua/macro
+  (syntax-parser
+    #:literal-sets [r-lua-surface-literals]
 
-  [([pat body ...] ...)
-   (syntax/loc this-syntax
-     (syntax-parser
-       [pat body ...] ...))])
+    [([pat body ... tail] ...)
+     (syntax/loc this-syntax
+       (syntax-parser
+         [pat
+          body ...
+          (datum->syntax this-syntax
+                         (syntax->datum tail)
+                         this-syntax
+                         this-syntax)]
+         ...))]))
 
 (define/hygienic (r-lua/expr stx)
   #:expression

@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(provide string-append)
+(provide (all-defined))
 
 (define %cat
   (λ (a b)

@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(provide and or not)
+(provide (all-defined))
 
 (define %and
   (λ (a b)

@@ -6,17 +6,7 @@
          (only lua
                print))
 
-(provide =
-         <
-         >
-         <=
-         >=
-         +
-         -
-         *
-         /
-         expt
-         modulo)
+(provide (all-defined))
 
 (define = eq?)
 
@@ -41,9 +31,11 @@
     (#%intrinsic (#%add a b))))
 
 (define-macro +
+
   [(_ a b rest ...+)
    #'(let ([add (+ a b)])
        (+ add rest ...))]
+
   [(_ a b)
    #'(%add a b)])
 
