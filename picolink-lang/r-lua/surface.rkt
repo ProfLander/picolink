@@ -221,11 +221,6 @@
         (syntax/loc this-syntax
           (#%intrinsic form))))]
 
-    [(void)
-     (in-r-lua
-       (syntax/loc this-syntax
-         #%void))]
-
     [(ident:id arg ...)
      #:do [(define mac (lookup-in-module #'ident r-lua-macro?))]
      #:when mac

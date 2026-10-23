@@ -181,11 +181,6 @@
 (define-s-lua-syntax-class val
   #:literal-sets [r-lua-ir-literals]
 
-  [#%void
-   (in-s-lua
-    (syntax/loc this-syntax
-      #%nil))]
-
   [(~and datum
          (~or _:boolean
               _:number

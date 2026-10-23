@@ -7,18 +7,11 @@
          (only lua/string
                format)
 
-         (only prelude/tag
-               tag?
-               tag)
-
-         (only prelude/equality
-               eq?)
-
-         (only prelude/vector
-               %vector)
-
-         (only prelude/hash
-               %hash))
+         prelude/tag
+         prelude/equality
+         prelude/vector
+         prelude/hash
+         prelude/void)
 
 (provide null?
          null
@@ -38,11 +31,14 @@
     (eq? (tag v) %tag-null)))
 
 (define null
+
   (let ([index     (λ (self key)
-                       (if (tag? key)
-                           %tag-null
-                           (void)))]
+                     (if (tag? key)
+                         %tag-null
+                         (void)))]
+
         [to-string (λ (self) "()")])
+
     (setmetatable (%vector)
                   (%hash __index    index
                          __tostring to-string))))

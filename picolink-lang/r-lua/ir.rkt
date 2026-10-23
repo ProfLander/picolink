@@ -26,8 +26,7 @@
    #%abs
    #%app
    #%if
-   #%intrinsic
-   #%void])
+   #%intrinsic])
 
 (define-for-syntax in-r-lua (in-space 'r-lua))
 (define-for-syntax not-in-r-lua (not-in-space 'r-lua))

@@ -48,6 +48,7 @@
     (#%intrinsic (#%neg a))))
 
 (define-macro -
+
   [(_ a b rest ...+)
    #'(let ([sub (- a b)])
        (- sub rest ...))]
@@ -63,9 +64,11 @@
     (#%intrinsic (#%mul a b))))
 
 (define-macro *
+
   [(_ a b rest ...+)
    #'(let ([mul (* a b)])
        (* mul rest ...))]
+
   [(_ a b)
    #'(%mul a b)])
 
@@ -74,9 +77,11 @@
     (#%intrinsic (#%div a b))))
 
 (define-macro /
+
   [(_ a b rest ...+)
    #'(let ([div (/ a b)])
        (/ div rest ...))]
+
   [(_ a b)
    #'(%div a b)])
 

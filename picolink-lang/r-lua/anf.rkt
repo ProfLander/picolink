@@ -103,8 +103,7 @@
   (pattern (~or _:id
                 _:boolean
                 _:string
-                _:number
-                #%void)
+                _:number)
 
            #:cut
 
@@ -215,7 +214,7 @@
            #:attr atom
            (in-r-lua
             (syntax/loc this-syntax
-              #%void))
+              %void))
 
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
