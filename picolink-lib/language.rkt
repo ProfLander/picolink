@@ -10,18 +10,24 @@
 
 (provide (all-defined-out))
 
-(struct/cross-phase language [%extract
+(struct/cross-phase language [%search-paths
+                              %modules
+                              %extract
                               %wrap
                               %inject
                               %parse
                               %compiler])
 
-(define (make-language #:extract  extract
-                       #:wrap     wrap
-                       #:inject   inject
-                       #:parse    parse
-                       #:compiler compiler)
-  (language extract
+(define (make-language #:search-paths search-paths
+                       #:modules      modules
+                       #:extract      extract
+                       #:wrap         wrap
+                       #:inject       inject
+                       #:parse        parse
+                       #:compiler     compiler)
+  (language search-paths
+            modules
+            extract
             wrap
             inject
             parse
@@ -32,6 +38,12 @@
 
 (define (syntax-local-language lctx)
   (syntax-local-eval (language-ident lctx)))
+
+(define (language-search-paths lang)
+  ((language-%search-paths lang)))
+
+(define (language-modules lang)
+  ((language-%modules lang)))
 
 (define (language-extract lang stx)
   ((language-%extract lang) stx))

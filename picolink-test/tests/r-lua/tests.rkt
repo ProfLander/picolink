@@ -7,4 +7,5 @@
          tests/set!
          tests/void
          tests/string
-         tests/macro)
+         tests/macro
+         tests/prelude)

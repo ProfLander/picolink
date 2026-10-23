@@ -1,10 +1,6 @@
 #lang picolink/r-lua
 
-(require (only lua
-               print)
-
-         (only prelude/function
-               identity))
+(require (only lua print))
 
 (let ([x 4]
       [y (let ([x 3])

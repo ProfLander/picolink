@@ -1,8 +1,13 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/set
+                     racket/list
                      racket/syntax
+                     racket/function
+                     racket/sequence
                      racket/path
+
                      syntax/parse
 
                      picolink/syntax
@@ -115,51 +120,85 @@
            (define-for-syntax entry-point:#%module mod)
            cont))]))
 
-(define-syntax #%require-dependencies
-  (syntax-parser
-    [(_ (target rest ...) (required ...))
+(define-syntax (#%require-dependencies stx)
 
-     (when (current-debug)
-       (displayln "#%require-dependencies")
-       (println this-syntax))
+  (when (current-debug)
+    (displayln "#%require-dependencies")
+    (println stx))
+
+  (syntax-parse stx
+    [(_ (target rest ...) (required ...))
 
      (define backend (syntax-local-backend this-syntax))
 
      (define mod (syntax-local-module #'target))
 
+     (define lang (source-module-language mod))
+
+     (define search-paths (append (list (current-root))
+                                  (language-search-paths lang)
+                                  (backend-search-paths backend)))
+
      (define dependencies
        (filter (λ (dep)
-                 (and (not (member dep (attribute rest)
-                                   (λ (a b)
-                                     (equal? (syntax-e a)
-                                             (syntax-e b)))))
+                 (and (not (datum=? dep #'target))
+
+                      (not (member dep (attribute rest)
+                                   datum=?))
 
                       (not (member dep (attribute required)
-                                   (λ (a b)
-                                     (equal? (syntax-e a)
-                                             (syntax-e b)))))
-                      (not (member dep (backend-modules backend)
-                                   (λ (a b)
-                                     (equal? (syntax-e a)
-                                             (syntax-e (car b))))))))
+                                   datum=?))))
+
                (source-module-dependencies mod)))
 
      (define dependency-modules
        (map module-ident dependencies))
 
      (define paths
-       (let ([config-root (current-root)])
-         (for/list ([dependency (in-list dependencies)])
-           (let* ([dep-path (symbol->string (syntax-e dependency))]
-                  [abs-path (build-path config-root dep-path)]
-                  [abs-path (path-replace-extension abs-path ".rkt")])
+       (for/list ([dependency (in-list dependencies)])
 
-             (unless (file-exists? abs-path)
-               (raise-syntax-error #f
-                                   "failed to resolve module"
-                                   dependency))
+         (define path
+           (for/fold ([acc #f])
+                     ([search-path (in-list search-paths)]
+                      #:break acc)
 
-             (path->string abs-path)))))
+             (define dep-path (symbol->string (syntax-e dependency)))
+
+             (cond
+               [(path? search-path)
+
+                (let* ([abs-path
+                        (build-path search-path dep-path)]
+
+                       [abs-path
+                        (path-replace-extension abs-path ".rkt")])
+
+                  (and (file-exists? abs-path)
+                       (with-syntax ([path (path->string abs-path)])
+                         #'(file path))))]
+
+               [(symbol? search-path)
+                (define mod-path
+                  (string->symbol
+                   (string-append (symbol->string search-path)
+                                  "/"
+                                  dep-path)))
+
+                (and (with-handlers ([exn:fail? (const #f)])
+                       (module-declared? mod-path #t))
+                     (with-syntax ([mod-path mod-path])
+                       #'mod-path))]
+
+               [else
+                (error (format "invalid search path: ~a"
+                               search-path))])))
+
+         (unless path
+           (raise-syntax-error #f
+                               "failed to resolve module"
+                               dependency))
+
+         path))
 
      (with-syntax* ([(dependency ...) dependencies]
                     [(dep-mod ...)    dependency-modules]
@@ -167,7 +206,7 @@
 
        (syntax-local-lift-require
         (syntax-local-introduce
-         #'(for-meta 0 (rename (file path) dep-mod #%module) ...))
+         #'(for-meta 0 (rename path dep-mod #%module) ...))
 
         (forward-macro
          this-syntax
@@ -180,39 +219,7 @@
     [(_ () (required ...))
      (forward-macro
       this-syntax
-      #'(#%load-backend-modules required ...))]))
-
-(define-syntax #%load-backend-modules
-  (syntax-parser
-    [(_ mod ...)
-
-     (when (current-debug)
-       (displayln "#%load-backend-modules")
-       (println this-syntax))
-
-     (define backend (syntax-local-backend this-syntax))
-     (define modules (backend-modules backend))
-
-     (with-syntax* ([([name name:#%module path] ...)
-                     (for/list ([pair (in-list modules)])
-                       (let* ([name (car pair)]
-                              [name (syntax-shift-phase-level
-                                     (datum->syntax this-syntax name)
-                                     1)]
-                              [name:#%module (module-ident name)]
-                              [path (cdr pair)])
-                         (list name name:#%module path)))])
-
-       (syntax-local-lift-require
-
-        (syntax-local-introduce
-         #'(for-meta 0 (rename path name:#%module #%module) ...))
-
-        (forward-macro
-         this-syntax
-         #'(#%build-program name ... mod ...))
-
-        #f))]))
+      #'(#%build-program required ...))]))
 
 (define-syntax #%build-program
   (syntax-parser

@@ -25,12 +25,12 @@
 (provide (all-defined-out)
          (for-template (all-from-out picolink/lua/run)))
 
-#:target    lua-target
-#:modules   lua-modules
-#:transform lua-transform
-#:link      lua-link
-#:run       lua-run
-#:interact  lua-interact
+#:target       lua-target
+#:search-paths lua-search-paths
+#:transform    lua-transform
+#:link         lua-link
+#:run          lua-run
+#:interact     lua-interact
 
 (define current-debug
   (make-parameter #t))
@@ -40,6 +40,9 @@
                     ident-prefix
                     implicit]
   #:transparent)
+
+(define (lua-search-paths)
+  (list 'picolink/lua/modules))
 
 (define (make-lua-module name
                          #:path path
@@ -112,11 +115,6 @@
 
 (define lua-target
   (make-parameter 's-lua))
-
-(define (lua-modules)
-  (for/list ([lua-mod (in-list (current-lua-modules))])
-    (cons (lua-module-name lua-mod)
-          (lua-module-path lua-mod))))
 
 (define (lua-transform lctx prog)
   (let ([transform-mod (current-lua-transform-module)])

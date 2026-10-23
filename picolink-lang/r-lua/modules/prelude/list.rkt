@@ -1,4 +1,4 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
 (require (only lua
                setmetatable
@@ -86,25 +86,3 @@
                     (%hash __index    index
                            __tostring to-string)))))
 
-(define cell (cons 1 (cons 2 null)))
-
-(print "cell:")
-cell
-
-(print "null?:")
-(null? cell)
-
-(print "pair?:")
-(pair? cell)
-
-(print "car:")
-(car cell)
-
-(print "cdr:")
-(cdr cell)
-
-(print "cadr:")
-(cadr cell)
-
-(print "cddr:")
-(cddr cell)

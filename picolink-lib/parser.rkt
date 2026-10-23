@@ -349,8 +349,13 @@
     [(provide _ ...) #t]
     [_ #f]))
 
-(define-splicing-syntax-class (extract-require lctx)
-  #:datum-literals [require]
+(define-splicing-syntax-class extract-require
+  #:datum-literals [require
+                    only
+                    prefix
+                    all-except
+                    prefix-all-except
+                    rename]
   (pattern
    (~and
     (~do (define deps null))

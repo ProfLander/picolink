@@ -7,15 +7,12 @@
                        picolink/s-lua/ir))
 
 #:target    love-target
-#:modules   love-modules
 #:transform love-transform
 #:link      love-link
 #:run       love-run
 #:interact  love-interact
 
 (define love-target    lua-target)
-
-(define love-modules   lua-modules)
 
 (define (love-transform lctx prog)
   (let ([prog (lua-transform lctx prog)])

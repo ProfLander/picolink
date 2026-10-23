@@ -1,7 +1,4 @@
-#lang picolink/r-lua
-
-(require (only lua
-               print))
+#lang picolink/r-lua/base
 
 (provide string-append)
 
@@ -15,6 +12,3 @@
        (string-append cat rest ...))]
   [(_ a b)
    #'(%cat a b)])
-
-(print "string-append:")
-(string-append "foo" "bar" "baz")

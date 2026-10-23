@@ -1,6 +1,7 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
-(provide void)
+(provide %void
+         void)
 
 (define %void
   "#<void>")

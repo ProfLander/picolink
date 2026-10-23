@@ -36,7 +36,7 @@
        (syntax-parse body
          #:literal-sets [dsl-surface-literals]
 
-         [(require (~var reqs (extract-require this-syntax)))
+         [(require reqs:extract-require)
           (append acc (attribute reqs.dependencies))]
 
          [_ acc]))]))

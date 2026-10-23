@@ -1,4 +1,4 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
 (provide (all-defined))
 

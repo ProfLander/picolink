@@ -5,21 +5,22 @@
 (provide (all-defined-out))
 
 (struct backend [target
-                 %modules
+                 %search-paths
                  %transform
                  %link
                  %run
                  %interact]
   #:transparent)
 
-(define (make-backend #:target    target
-                      #:modules   modules
-                      #:transform transform
-                      #:link      link
-                      #:run       run
-                      #:interact  interact)
+(define (make-backend #:target       target
+                      #:search-paths search-paths
+                      #:transform    transform
+                      #:link         link
+                      #:run          run
+                      #:interact     interact)
+
   (backend target
-           modules
+           search-paths
            transform
            link
            run
@@ -31,8 +32,8 @@
 (define (syntax-local-backend lctx)
   (syntax-local-eval (backend-ident lctx)))
 
-(define (backend-modules backend)
-  ((backend-%modules backend)))
+(define (backend-search-paths backend)
+  ((backend-%search-paths backend)))
 
 (define (backend-transform backend lctx prog)
   ((backend-%transform backend) lctx prog))

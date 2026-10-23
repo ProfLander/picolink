@@ -18,7 +18,11 @@
 
 (define-syntax #%module-begin
   (syntax-parser
-    [(_ (~or (~optional (~seq #:extract  extract))
+    [(_ (~or (~optional (~seq #:search-paths search-paths)
+                        #:defaults ([search-paths #'(const null)]))
+             (~optional (~seq #:modules  modules)
+                        #:defaults ([modules #'(const null)]))
+             (~optional (~seq #:extract  extract))
              (~optional (~seq #:wrap     wrap))
              (~optional (~seq #:inject   inject)
                         #:defaults ([inject #'(const void)]))
@@ -44,8 +48,10 @@
 
         (provide #%language)
         (define #%language
-          (make-language #:extract  extract
-                         #:wrap     wrap
-                         #:inject   inject
-                         #:parse    parse
-                         #:compiler compiler)))]))
+          (make-language #:search-paths search-paths
+                         #:modules      modules
+                         #:extract      extract
+                         #:wrap         wrap
+                         #:inject       inject
+                         #:parse        parse
+                         #:compiler     compiler)))]))

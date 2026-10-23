@@ -1,7 +1,4 @@
-#lang picolink/r-lua
-
-(require (only lua
-               print))
+#lang picolink/r-lua/base
 
 (provide and or not)
 
@@ -16,9 +13,6 @@
   [(_ a b)
    #'(%and a b)])
 
-(print "and:")
-(and #t #f "nope")
-
 (define %or
   (λ (a b)
     (#%intrinsic (#%or a b))))
@@ -30,12 +24,7 @@
   [(_ a b)
    #'(%or a b)])
 
-(print "or:")
-(or #f #f "yes")
-
 (define not
   (λ (v)
     (#%intrinsic (#%not v))))
 
-(print "not:")
-(not "hello")

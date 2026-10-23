@@ -11,6 +11,9 @@
 
 (begin-for-syntax
 
+  (define current-debug
+    (make-parameter #f))
+
   (define (#%dependency-begin lctx language body)
 
     (with-syntax ([#%language (language-ident lctx)]
@@ -26,6 +29,10 @@
 
      (with-syntax ([mod (make-source-module-syntax #'#%language
                                                    #'(body ...))])
+
+       (when (current-debug)
+         (displayln "#%define-dependency")
+         (println this-syntax))
 
        #'(begin
            (require (for-syntax (only-in language #%language)))

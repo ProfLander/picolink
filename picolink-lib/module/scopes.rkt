@@ -55,10 +55,13 @@
 
   "Lookup IDENT in the current module scope"
 
-  (lookup-in (current-module-scope)
-             ident
-             predicate
-             #:space binding-space))
+  (define res
+    (lookup-in (current-module-scope)
+               ident
+               predicate
+               #:space binding-space))
+
+  res)
 
 (define (bind-in-require! ident val)
   (bind-in! (current-require-scope) ident val))

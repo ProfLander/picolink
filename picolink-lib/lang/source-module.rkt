@@ -12,7 +12,8 @@
     
     (let* ([lang (syntax-local-language lctx)]
            [stx  (language-wrap lang stx)]
-           [deps (language-extract lang stx)])
+           [deps (append (language-modules lang)
+                         (language-extract lang stx))])
 
       (with-syntax ([#%language (language-ident lctx)]
                     [(dep ...) deps]

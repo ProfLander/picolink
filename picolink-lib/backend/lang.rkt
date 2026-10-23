@@ -12,14 +12,14 @@
 
 (define-syntax #%module-begin
   (syntax-parser
-    [(_ (~or (~optional (~seq #:target    target))
-             (~optional (~seq #:modules   modules)
-                        #:defaults ([modules #'(const null)]))
-             (~optional (~seq #:transform transform)
+    [(_ (~or (~optional (~seq #:target       target))
+             (~optional (~seq #:search-paths search-paths)
+                        #:defaults ([search-paths #'(const null)]))
+             (~optional (~seq #:transform    transform)
                         #:defaults ([transform #'(λ (a b) b)]))
-             (~optional (~seq #:link      link))
-             (~optional (~seq #:run       run))
-             (~optional (~seq #:interact  interact))
+             (~optional (~seq #:link         link))
+             (~optional (~seq #:run          run))
+             (~optional (~seq #:interact     interact))
              body)
         ...)
 
@@ -40,9 +40,9 @@
 
         (provide #%backend)
         (define #%backend
-          (make-backend #:target    target
-                        #:modules   modules
-                        #:transform transform
-                        #:link      link
-                        #:run       run
-                        #:interact  interact)))]))
+          (make-backend #:target       target
+                        #:search-paths search-paths
+                        #:transform    transform
+                        #:link         link
+                        #:run          run
+                        #:interact     interact)))]))

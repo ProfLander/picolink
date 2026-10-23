@@ -1,4 +1,4 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
 (require (only prelude/equality
                eq?)
@@ -47,9 +47,6 @@
   [(_ a b)
    #'(%add a b)])
 
-(print "+:")
-(+ 1 2 3 4)
-
 (define %sub
   (λ (a b)
     (#%intrinsic (#%sub a b))))
@@ -69,10 +66,6 @@
   [(_ a)
    #'(%neg a)])
 
-(print "-:")
-(- 10 4 2 1)
-(- 10)
-
 (define %mul
   (λ (a b)
     (#%intrinsic (#%mul a b))))
@@ -84,9 +77,6 @@
   [(_ a b)
    #'(%mul a b)])
 
-(print "*:")
-(* 2 2 2)
-
 (define %div
   (λ (a b)
     (#%intrinsic (#%div a b))))
@@ -97,9 +87,6 @@
        (/ div rest ...))]
   [(_ a b)
    #'(%div a b)])
-
-(print "/:")
-(/ 8 2 2)
 
 (define expt
   (λ (a b)

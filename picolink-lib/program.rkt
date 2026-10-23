@@ -2,34 +2,108 @@
 
 (require racket/function
          racket/match
+         racket/hash
 
          syntax/strip-context
 
          picolink/ee-lib
+         picolink/syntax
          picolink/output
          picolink/program/scope
          picolink/module/syntax
+         picolink/module/source
          picolink/module/parsed)
 
 (provide (all-defined-out))
 
+(define (topological-sort-program mod-idents)
+
+  (define graph
+    (for*/fold ([graph (for/hash ([ident (in-list mod-idents)])
+                         (values (syntax-e ident) null))])
+               ([ident (in-list mod-idents)]
+                #:do [(define mod (syntax-local-module ident))
+                      (define deps (source-module-dependencies mod))]
+                [dep (in-list deps)])
+
+      (let ([dep   (syntax-e dep)]
+            [ident (syntax-e ident)])
+
+        (hash-update graph dep (curry cons ident)))))
+
+  (define in-degrees
+    (for/hash ([ident (in-list mod-idents)])
+
+      (let* ([mod  (syntax-local-module ident)]
+             [deps (source-module-dependencies mod)])
+
+        (values (syntax-e ident) (length deps)))))
+
+  (define queue
+    (for/list ([(mod-id in-degree) (in-hash in-degrees)]
+               #:when (= 0 in-degree))
+      mod-id))
+
+  (define order
+    (let loop ([order null]
+               [queue queue]
+               [in-degrees in-degrees])
+
+      (if (= 0 (length queue))
+
+          (for/list ([sym (in-list (reverse order))])
+            (findf (λ (b)
+                     (equal? sym (syntax-e b)))
+                   mod-idents))
+
+          (let ([u (car queue)])
+
+            (let-values ([(queue in-degrees)
+                          (for/fold ([queue (cdr queue)]
+                                     [in-degrees in-degrees])
+                                    ([dep (in-list (hash-ref graph u))])
+
+                            (define in-degree
+                              (- (hash-ref in-degrees dep) 1))
+
+                            (values (if (= 0 in-degree)
+                                        (append queue (list dep))
+                                        queue)
+
+                                    (hash-set in-degrees
+                                              dep
+                                              in-degree)))])
+
+              (loop (cons u order)
+                    queue
+                    in-degrees))))))
+
+  (unless (= (length order)
+             (length mod-idents))
+
+    (error "circular dependency"))
+
+  order)
+
 (define (parse-program mod-idents)
 
-  (with-scope program
+  (let ([mod-idents (topological-sort-program mod-idents)])
 
-    (parameterize ([current-program-scope program])
+    (with-scope program
 
-      (for ([mod-ident (in-list mod-idents)])
+      (parameterize ([current-program-scope program])
 
-        (let* ([ident  (syntax-local-introduce
-                        (strip-context mod-ident))]
+        (for ([mod-ident (in-list mod-idents)])
 
-               [mod    (syntax-local-module mod-ident)]
-               [parsed (parse-module ident mod)])
+          (let* ([ident  (syntax-local-introduce
+                          (strip-context mod-ident))]
 
-          (bind-in-program! ident parsed)))
+                 [mod    (syntax-local-module mod-ident)]
+                 [parsed (parse-module ident mod)])
 
-      program)))
+            (bind-in-program! ident parsed)))
+
+        program))))
 
 (define (compile-program program backend)
 
@@ -39,9 +113,7 @@
       (define mod
         (lookup-in-program mod-id))
 
-      (compile-parsed-module mod-id
-                             backend
-                             mod))))
+      (compile-parsed-module mod-id backend mod))))
 
 (define (parallel-compile-program program backend)
 
@@ -77,6 +149,7 @@
     (for/list ([parts (in-list threads)])
       (match parts
         [(list mod-id get-out-events get-err-events thrd)
+
          (define result
            (thread-wait thrd))
 

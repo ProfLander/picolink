@@ -1,10 +1,7 @@
 #lang picolink/r-lua
 
 (require (only lua
-               print)
-
-         (only prelude/function
-               identity))
+               print))
 
 (letrec ([a (λ (x) (b x))]
          [b identity])
