@@ -1,8 +1,11 @@
-#lang picolink/intrinsic
+#lang picolink/r-lua/base
 
-create
-resume
-running
-status
-wrap
-yield
+(require intrinsic)
+
+(define-intrinsics
+  create
+  resume
+  running
+  status
+  wrap
+  yield)

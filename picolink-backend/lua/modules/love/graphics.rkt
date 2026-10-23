@@ -1,155 +1,161 @@
-#lang picolink/intrinsic
+#lang picolink/r-lua/base
 
-; Types
-Canvas
-Drawable
-Font
-Framebuffer
-Image
-Mesh
-ParticleSystem
-PixelEffect
-Quad
-Shader
-SpriteBatch
-Text
-Texture
-Video
+(require intrinsic)
 
-; Drawing
-arc
-circle
-clear
-discard
-draw
-drawInstanced
-drawLayer
-ellipse
-flushBatch
-line
-points
-polygon
-present
-print
-printf
-rectangle
-stencil
+(provide (all-defined))
 
-; Object Creation
-captureScreenshot
-newArrayImage
-newCanvas
-newCubeImage
-newFont
-newImage
-newImageFont
-newMesh
-newParticleSystem
-newQuad
-newShader
-newSpriteBatch
-newText
-newVideo
-newVolumeImage
-setNewFont
-validateShader
+(define-intrinsic
 
-; Graphics State
-getBackgroundColor
-getBlendMode
-getCanvas
-getColor
-getDefaultFilter
-getDepthMode
-getFont
-getFrontFaceWinding
-getLineJoin
-getLineStyle
-getLineWidth
-getMeshCullMode
-getPointSize
-getScissor
-getShader
-getStackDepth
-getStencilTest
-intersectScissor
-isActive
-isGammaCorrect
-isWireframe
-reset
-setBackgroundColor
-setBlendMode
-setCanvas
-setColor
-setColorMask
-setDefaultFilter
-setDepthMode
-setFont
-setFrontFaceWinding
-setLineJoin
-setLineStyle
-setLineWidth
-setMeshCullMode
-setPointSize
-setScissor
-setShader
-setStencilTest
-setWireframe
+  ; Types
+  Canvas
+  Drawable
+  Font
+  Framebuffer
+  Image
+  Mesh
+  ParticleSystem
+  PixelEffect
+  Quad
+  Shader
+  SpriteBatch
+  Text
+  Texture
+  Video
 
-; Coordinate System
-applyTransform
-inverseTransformPoint
-origin
-pop
-push
-replaceTransform
-rotate
-scale
-shear
-transformPoint
-translate
+  ; Drawing
+  arc
+  circle
+  clear
+  discard
+  draw
+  drawInstanced
+  drawLayer
+  ellipse
+  flushBatch
+  line
+  points
+  polygon
+  present
+  print
+  printf
+  rectangle
+  stencil
 
-; Window
-getDPIScale
-getDimensions
-getHeight
-getPixelDimensions
-getPixelHeight
-getPixelWidth
-getWidth
+  ; Object Creation
+  captureScreenshot
+  newArrayImage
+  newCanvas
+  newCubeImage
+  newFont
+  newImage
+  newImageFont
+  newMesh
+  newParticleSystem
+  newQuad
+  newShader
+  newSpriteBatch
+  newText
+  newVideo
+  newVolumeImage
+  setNewFont
+  validateShader
 
-; System Information
-getCanvasFormats
-getImageFormats
-getRendererInfo
-getStats
-getSupported
-getSystemLimits
-getTextureTypes
+  ; Graphics State
+  getBackgroundColor
+  getBlendMode
+  getCanvas
+  getColor
+  getDefaultFilter
+  getDepthMode
+  getFont
+  getFrontFaceWinding
+  getLineJoin
+  getLineStyle
+  getLineWidth
+  getMeshCullMode
+  getPointSize
+  getScissor
+  getShader
+  getStackDepth
+  getStencilTest
+  intersectScissor
+  isActive
+  isGammaCorrect
+  isWireframe
+  reset
+  setBackgroundColor
+  setBlendMode
+  setCanvas
+  setColor
+  setColorMask
+  setDefaultFilter
+  setDepthMode
+  setFont
+  setFrontFaceWinding
+  setLineJoin
+  setLineStyle
+  setLineWidth
+  setMeshCullMode
+  setPointSize
+  setScissor
+  setShader
+  setStencilTest
+  setWireframe
 
-; Enums
-AlignMode
-ArcType
-AttributeDataType
-BlendAlphaMode
-BlendMode
-BufferDataUsage
-CanvasFormat
-CompareMode
-CullMode
-DrawMode
-FilterMode
-GraphicsFeature
-GraphicsLimit
-IndexDataType
-LineJoin
-LineStyle
-MeshDrawMode
-MipmapMode
-PixelFormat
-StackType
-StencilAction
-TextureType
-VertexAttributeStep
-VertexWinding
-WrapMode
+  ; Coordinate System
+  applyTransform
+  inverseTransformPoint
+  origin
+  pop
+  push
+  replaceTransform
+  rotate
+  scale
+  shear
+  transformPoint
+  translate
+
+  ; Window
+  getDPIScale
+  getDimensions
+  getHeight
+  getPixelDimensions
+  getPixelHeight
+  getPixelWidth
+  getWidth
+
+  ; System Information
+  getCanvasFormats
+  getImageFormats
+  getRendererInfo
+  getStats
+  getSupported
+  getSystemLimits
+  getTextureTypes
+
+  ; Enums
+  AlignMode
+  ArcType
+  AttributeDataType
+  BlendAlphaMode
+  BlendMode
+  BufferDataUsage
+  CanvasFormat
+  CompareMode
+  CullMode
+  DrawMode
+  FilterMode
+  GraphicsFeature
+  GraphicsLimit
+  IndexDataType
+  LineJoin
+  LineStyle
+  MeshDrawMode
+  MipmapMode
+  PixelFormat
+  StackType
+  StencilAction
+  TextureType
+  VertexAttributeStep
+  VertexWinding
+  WrapMode)

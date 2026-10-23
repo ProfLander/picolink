@@ -1,16 +1,21 @@
-#lang picolink/intrinsic
+#lang picolink/r-lua/base
 
-debug
-getfenv
-gethook
-getinfo
-getlocal
-getmetatable
-getregistry
-getupvalue
-setfenv
-sethook
-setlocal
-setmetatable
-setupvalue
-traceback
+(require intrinsic)
+
+(provide (all-defined))
+
+(define-intrinsics
+  debug
+  getfenv
+  gethook
+  getinfo
+  getlocal
+  getmetatable
+  getregistry
+  getupvalue
+  setfenv
+  sethook
+  setlocal
+  setmetatable
+  setupvalue
+  traceback)

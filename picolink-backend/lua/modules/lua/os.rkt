@@ -1,13 +1,18 @@
-#lang picolink/intrinsic
+#lang picolink/r-lua/base
 
-clock
-date
-difftime
-execute
-exit
-getenv
-remove
-rename
-setlocale
-time
-tmpname
+(require intrinsic)
+
+(provide (all-defined))
+
+(define-intrinsics
+  clock
+  date
+  difftime
+  execute
+  exit
+  getenv
+  remove
+  rename
+  setlocale
+  time
+  tmpname)

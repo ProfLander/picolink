@@ -1,20 +1,25 @@
-#lang picolink/intrinsic
+#lang picolink/r-lua/base
 
-close
-flush
-input
-lines
-open
-output
-popen
-read
-tmpfile
-type
-write
+(require intrinsic)
 
-stdin
-stdout
-stderr
+(provide (all-defined))
+
+(define-intrinsics
+  close
+  flush
+  input
+  lines
+  open
+  output
+  popen
+  read
+  tmpfile
+  type
+  write
+
+  stdin
+  stdout
+  stderr)
 
 ;file:close
 ;file:flush

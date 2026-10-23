@@ -1,7 +1,12 @@
-#lang picolink/intrinsic
+#lang picolink/r-lua/base
 
-concat
-insert
-maxn
-remove
-sort
+(require intrinsic)
+
+(provide (all-defined))
+
+(define-intrinsics
+  concat
+  insert
+  maxn
+  remove
+  sort)

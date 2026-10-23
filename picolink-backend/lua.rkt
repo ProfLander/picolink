@@ -35,71 +35,8 @@
 (define current-debug
   (make-parameter #t))
 
-(struct lua-module [name
-                    path
-                    ident-prefix
-                    implicit]
-  #:transparent)
-
 (define (lua-search-paths)
   (list 'picolink/lua/modules))
-
-(define (make-lua-module name
-                         #:path path
-                         #:ident-prefix [ident-prefix ""]
-                         #:implicit [implicit #t])
-
-  (lua-module name path ident-prefix implicit))
-
-(define (lua-module-name=? self sym)
-  (equal? (syntax-e (lua-module-name self))
-          (syntax-e sym)))
-
-(define current-lua-modules
-  (make-parameter
-   (list (make-lua-module
-          #'lua
-          #:path #'picolink/lua/modules/lua)
-
-         (make-lua-module
-          #'lua/coroutine
-          #:path #'picolink/lua/modules/lua/coroutine
-          #:ident-prefix "coroutine")
-
-         (make-lua-module
-          #'lua/debug
-          #:path #'picolink/lua/modules/lua/debug
-          #:ident-prefix "debug")
-
-         (make-lua-module
-          #'lua/io
-          #:path #'picolink/lua/modules/lua/io
-          #:ident-prefix "io")
-
-         (make-lua-module
-          #'lua/math
-          #:path #'picolink/lua/modules/lua/math
-          #:ident-prefix "math")
-
-         (make-lua-module
-          #'lua/os
-          #:path #'picolink/lua/modules/lua/os
-          #:ident-prefix "os")
-
-         (make-lua-module
-          #'lua/package
-          #:path #'picolink/lua/modules/lua/package
-          #:ident-prefix "package")
-
-         (make-lua-module
-          #'lua/string
-          #:path #'picolink/lua/modules/lua/string
-          #:ident-prefix "string")
-
-         (make-lua-module
-          #'lua/table
-          #:path #'picolink/lua/modules/lua/table
-          #:ident-prefix "table"))))
 
 (define (subprocess-ident lctx)
   (datum->syntax lctx '#%subprocess))
@@ -126,7 +63,6 @@
 (define (lua-transform-module _lctx prog mod)
   (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
                                  'entry-point)]
-         [mod (rewrite-intrinsics prog mod)]
          [mod (splice-requires mod)]
          [mod (splice-lctx mod)]
          [mod (splice-provides mod)]
@@ -169,30 +105,16 @@
 
 (define (splice-requires mod)
 
-  (define lua-mods (current-lua-modules))
-
   (define require-scope (compiled-module-require-scope mod))
 
   (define reqs
     (reverse
      (for*/list ([(mod-path imports) (in-scope require-scope)]
-                 [(_ import)         (in-dict imports)]
-                 #:do [(define lua-mod
-                         (findf (curryr lua-module-name=? mod-path)
-                                lua-mods))]
-                 #:unless (and lua-mod
-                               (lua-module-implicit lua-mod)))
+                 [(_ import)         (in-dict imports)])
        import)))
 
   (define req-mods
-    (reverse
-     (for*/list ([mod-path (in-list (scope-idents require-scope))]
-                 #:do [(define lua-mod
-                         (findf (curryr lua-module-name=? mod-path)
-                                lua-mods))]
-                 #:unless (and lua-mod
-                               (lua-module-implicit lua-mod)))
-       mod-path)))
+    (reverse (scope-idents require-scope)))
 
   (define req-mod-syms
     (set-map req-mods module-ident->lua-ident))
@@ -304,47 +226,6 @@
                        (#%return (#%table [prov prov] ...)))))))))
 
       mod))
-
-(define (rewrite-intrinsics _prog mod)
-
-  (define require-scope (compiled-module-require-scope mod))
-
-  (define rewrites
-    (for*/fold ([acc (hash)])
-               ([(mod-path imports) (in-scope require-scope)]
-                [(_ import)         (in-dict imports)]
-                #:do [(define lua-mods (current-lua-modules))
-                      (define lua-mod
-                        (findf (curryr lua-module-name=? mod-path)
-                               lua-mods))]
-                #:when (and lua-mod
-                            (lua-module-implicit lua-mod)))
-
-      (define prefix (lua-module-ident-prefix lua-mod))
-
-      (define ident (import-local-id import))
-
-      (define sym (syntax-e ident))
-
-      (define rewrite
-        (dotted-path->member-access
-         (string-append prefix "." (symbol->string sym))))
-
-      (hash-set acc sym rewrite)))
-
-  (define rewrite
-    (syntax-parser
-      [(form ...)
-       (datum->syntax this-syntax (map rewrite (attribute form)))]
-      [ident:id
-       #:do [(define rewrite (hash-ref rewrites (syntax-e #'ident) #f))]
-       #:when rewrite
-       (datum->syntax this-syntax rewrite)]
-      [_ this-syntax]))
-
-  (let* ([stx (compiled-module-stx mod)]
-         [stx (rewrite stx)])
-    (compiled-module-update mod #:stx stx)))
 
 (define (lift-package-preloader path stx)
   (syntax-parse stx

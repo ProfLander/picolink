@@ -3,13 +3,14 @@
 (require prelude/arith
          prelude/binding
          prelude/conditional
-         prelude/list
-         prelude/tag
          prelude/equality
          prelude/function
          prelude/hash
+         prelude/list
          prelude/logic
+         prelude/print
          prelude/string
+         prelude/tag
          prelude/vector
          prelude/void)
 
@@ -22,6 +23,7 @@
          (all-from prelude/function)
          (all-from prelude/hash)
          (all-from prelude/logic)
+         (all-from prelude/print)
          (all-from prelude/string)
          (all-from prelude/vector)
          (all-from prelude/void))

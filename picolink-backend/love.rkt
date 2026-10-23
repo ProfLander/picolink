@@ -21,7 +21,6 @@
 (define (love-transform-module _lctx prog mod)
   (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
                                  'entry-point)]
-         [mod (rewrite-intrinsics prog mod)]
          [mod (splice-requires mod)]
          [mod (splice-lctx mod)]
          [mod (splice-provides mod)]
