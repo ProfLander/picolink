@@ -1,7 +1,5 @@
 #lang picolink/r-lua
 
-(require (only lua print))
-
 (print "and:")
 (and #t #f "nope")
 

@@ -1,8 +1,5 @@
 #lang picolink/r-lua
 
-(require (only lua
-               print))
-
 (define thing "define-thing")
 thing
 (set! thing "define-set")
