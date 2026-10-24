@@ -1,10 +1,17 @@
 #lang picolink/r-lua/base
 
-(provide %void
-         void)
+(require (only lua newproxy))
+
+(require prelude/equality)
+
+(provide (all-defined))
 
 (define %void
-  "#<void>")
+  (newproxy))
+
+(define void?
+  (λ (v)
+    (eq? v %void)))
 
 (define-macro void
   [(_ body ...)
