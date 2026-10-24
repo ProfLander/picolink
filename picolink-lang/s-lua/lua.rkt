@@ -316,6 +316,9 @@
   [(#%member exp:expr field:name)
    (format "~a.~a" (attribute exp.lua) (rewrite-name #'field))]
 
+  [(#%member exp:prefix-expr (quote field:expr))
+   (format "~a[~a]" (attribute exp.lua) (attribute field.lua))]
+
   [(#%member exp:prefix-expr field:expr)
    (format "~a[~a]" (attribute exp.lua) (attribute field.lua))])
 
