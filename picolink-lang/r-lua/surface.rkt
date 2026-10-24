@@ -109,7 +109,7 @@
      (r-lua/top-level
       (apply-as-transformer (r-lua-macro-trx mac)
                             #'ident
-                            'expression
+                            'definition
                             this-syntax))]
 
     [(~cata e r-lua/expr)
