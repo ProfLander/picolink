@@ -9,6 +9,8 @@
 
 (define print
   (λ (v)
-    (unless (eq? v %void)
-      (%print v))
-    %void))
+    (cond
+      [(eq? v #f) (void (%print "#f"))]
+      [(eq? v #t) (void (%print "#t"))]
+      [(void? v)  (void)]
+      [else       (void (%print v))])))
