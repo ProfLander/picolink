@@ -1,7 +1,9 @@
 #lang picolink/r-lua/base
 
-(require (only prelude/equality
-               eq?))
+(require (only lua type)
+         (only lua/ext/table member)
+         (only lua/ext/type table?)
+         prelude/equality)
 
 (provide (all-defined))
 
@@ -13,4 +15,6 @@
 
 (define tag
   (λ (v)
-    (#%intrinsic (#%member v __tag))))
+    (if (table? v)
+        (member v "__tag")
+        #f)))
