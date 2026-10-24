@@ -4,3 +4,7 @@
 
 (define identity
   (λ (x) x))
+
+(define const
+  (λ (x)
+    (λ (_) x)))
