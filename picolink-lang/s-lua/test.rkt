@@ -157,7 +157,7 @@
                 (in-s-lua
                  #'(#%chunk
                     (#%block
-                     (#%function (a.b.c:d x y)
+                     (#%function a.b.c:d (x y)
                                  (#%block))))))
 
                (string-join '("function a.b.c:d(x, y)"
@@ -171,7 +171,7 @@
                  #'(#%chunk
                     (#%block
                      (#%local
-                      (#%function (lf x y)
+                      (#%function lf (x y)
                                   (#%block)))))))
 
                (string-join '("local function lf(x, y)"
@@ -303,7 +303,7 @@
                 (in-s-lua
                  #'(#%chunk
                     (#%block
-                     (#%local (#%function (named-varargs a b #%vararg)
+                     (#%local (#%function named-varargs (a b #%vararg)
                                           (#%block
                                            (#%return))))))))
 
@@ -416,10 +416,10 @@
                 (in-s-lua
                  #'(#%chunk
                     (#%block
-                     (#%function (r0)
+                     (#%function r0 ()
                                  (#%block
                                   (#%return)))
-                     (#%function (r1)
+                     (#%function r1 ()
                                  (#%block
                                   (#%return 1)))))))
 
@@ -437,7 +437,7 @@
                 (in-s-lua
                  #'(#%chunk
                     (#%block
-                     (#%local (#%function (vararg-host #%vararg)
+                     (#%local (#%function vararg-host (#%vararg)
                                           (#%block
                                            (#%local [_] [#%vararg]))))))))
 

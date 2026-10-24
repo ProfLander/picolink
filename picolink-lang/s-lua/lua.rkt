@@ -279,10 +279,11 @@
 (define-lua-syntax-class statement/function
   #:literal-sets [s-lua-ir-literals]
 
-  [(#%function ~! (name:function-name
-                   arg:name ...
-                   (~optional (~and #%vararg
-                                    (~bind [vararg #t]))))
+  [(#%function ~!
+               name:function-name
+               (arg:name ...
+                         (~optional (~and #%vararg
+                                          (~bind [vararg #t]))))
                b:block)
    (format "function ~a(~a)~a~aend"
            (rewrite-name #'name #:omit '("." ":"))
