@@ -79,26 +79,41 @@
 
   [(#%define ~! name val:expr)
    (let ([body (hoist-do #'val.s-lua)])
-     (if (= 1 (length body))
+     (cond
+       [(= 1 (length body))
+        (let ([body (car body)])
+          (syntax-parse body
 
-         (list
-          (with-syntax ([val (car body)])
-            (syntax/loc this-syntax
-              (#%local [name] [val]))))
+            #:literal-sets [s-lua-ir-literals]
+            
+            ; Hoist top-level lambda definitions into local functions
+            [(quote (#%function (arg ...) (#%block body ...)))
+             (list
+              (syntax/loc this-syntax
+                (#%local (#%function name (arg ...)
+                                     (#%block body ...)))))]
 
-         (list
-          (in-s-lua
-           (syntax/loc this-syntax
-             (#%local [name])))
-          (in-s-lua
-           (let ([body (hoist-do #'val.s-lua)])
-             (with-syntax ([(body ...) (drop-right body 1)]
-                           [tail (last body)])
-               (syntax/loc this-syntax
-                 (#%do
-                  (#%block
-                   body ...
-                   (#%assign [name] [tail]))))))))))]
+            ; Otherwise, treat as local binding
+            [_
+             (list
+              (with-syntax ([val body])
+                (syntax/loc this-syntax
+                  (#%local [name] [val]))))]))]
+
+       [else
+        (list
+         (in-s-lua
+          (syntax/loc this-syntax
+            (#%local [name])))
+         (in-s-lua
+          (let ([body (hoist-do #'val.s-lua)])
+            (with-syntax ([(body ...) (drop-right body 1)]
+                          [tail (last body)])
+              (syntax/loc this-syntax
+                (#%do
+                 (#%block
+                  body ...
+                  (#%assign [name] [tail]))))))))]))]
 
   [e:expr
    (list
