@@ -43,4 +43,6 @@
   os
   package
   string
-  table)
+  table
+
+  newproxy)
