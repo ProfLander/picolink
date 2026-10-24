@@ -86,13 +86,14 @@
     [(provide ~! (~var _ (bind-provide this-syntax)))
      (void)]
 
-    [(define ~! name (~cata expr r-lua/expr))
+    [(define ~! name expr)
 
      (bind-in-module! #'name (r-lua-var))
 
      (in-r-lua
-      (syntax/loc this-syntax
-        (#%define name expr)))]
+      (with-syntax ([expr (r-lua/expr #'expr)])
+        (syntax/loc this-syntax
+          (#%define name expr))))]
 
     [(define-macro ~! name expr ...)
      (bind-in-module! #'name (r-lua-macro
