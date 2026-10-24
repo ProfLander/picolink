@@ -63,11 +63,11 @@
 
   res)
 
-(define (bind-in-require! ident val)
-  (bind-in! (current-require-scope) ident val))
+(define (bind-in-require! ident val [space #f])
+  (bind-in! (current-require-scope) ident val #:space space))
 
-(define (bind-in-provide! ident val)
-  (bind-in! (current-provide-scope) ident val))
+(define (bind-in-provide! ident val #:space [space #f])
+  (bind-in! (current-provide-scope) ident val #:space space))
 
-(define (bind-in-module! ident val)
-  (bind-in! (current-module-scope) ident val))
+(define (bind-in-module! ident val #:space [space #f])
+  (bind-in! (current-module-scope) ident val #:space space))

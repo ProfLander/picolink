@@ -67,11 +67,11 @@
   (parameterize ([current-def-ctx scope])
     (lookup ident predicate #:space binding-space)))
 
-(define (bind-in! scope ident val)
+(define (bind-in! scope ident val #:space [space #f])
   "Bind IDENT to VAL in SCOPE"
 
   (parameterize ([current-def-ctx scope])
-    (bind! ident val)))
+    (bind! ident val #:space space)))
 
 (define (in-scope scope
                   [predicate (lambda (_) #t)]
