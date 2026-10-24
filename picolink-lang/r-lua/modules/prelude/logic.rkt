@@ -2,27 +2,21 @@
 
 (provide (all-defined))
 
-(define %and
-  (λ (a b)
-    (#%intrinsic (#%and a b))))
-
 (define-macro and
-  [(_ a b rest ...+)
-   #'(let ([res (and a b)])
-       (and res rest ...))]
-  [(_ a b)
-   #'(%and a b)])
-
-(define %or
-  (λ (a b)
-    (#%intrinsic (#%or a b))))
+  [(_ a rest ...+)
+   #'(let ([tail (and rest ...)])
+       (if tail
+           a
+           #f))]
+  [(_ a)
+   #'(if a a #f)])
 
 (define-macro or
-  [(_ a b rest ...+)
-   #'(let ([res (or a b)])
-       (or res rest ...))]
-  [(_ a b)
-   #'(%or a b)])
+  [(_ a rest ...+)
+   #'(let ([tail (or rest ...)])
+       (if a a tail))]
+  [(_ a)
+   #'a])
 
 (define not
   (λ (v)
