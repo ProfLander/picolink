@@ -1,7 +1,8 @@
 #lang picolink/language
 
 (require racket/base
-         picolink/r-lua/base)
+         picolink/r-lua/base
+         picolink/r-lua/space)
 
 (provide (all-defined-out))
 
@@ -18,4 +19,4 @@
 
 (define (r-lua-inject)
   (define ident (syntax-local-introduce (datum->syntax #f 'prelude)))
-  (require! ident ident))
+  (require! ident ident #:space r-lua-space))

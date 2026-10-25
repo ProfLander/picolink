@@ -40,7 +40,7 @@
 
   mod)
 
-(define (resolve-provide lctx mod src-sym local-id)
+(define (resolve-provide lctx mod src-sym local-id #:space [space #f])
 
   (when (current-debug)
     (displayln "resolve-provide:")
@@ -51,7 +51,8 @@
 
   (define prov
     (lookup-in (parsed-module-provide-scope mod)
-               (datum->syntax #f src-sym)))
+               (datum->syntax #f src-sym)
+               #:space space))
 
   (unless prov
     (raise-syntax-error
@@ -64,7 +65,7 @@
 
   prov)
 
-(define (resolve-definition lctx local-id)
+(define (resolve-definition lctx local-id #:space [space #f])
 
   (when (current-debug)
     (displayln "resolve-definition:")
@@ -72,7 +73,7 @@
     (println local-id))
 
   (define binding
-    (lookup-in-module local-id))
+    (lookup-in-module local-id #:space space))
 
   (unless binding
     (raise-syntax-error
@@ -83,7 +84,7 @@
 
   binding)
 
-(define (emplace-require! lctx mod local-id src-sym)
+(define (emplace-require! lctx mod local-id src-sym #:space [space #f])
 
   (define mod-id (parsed-module-ident mod))
 
@@ -93,16 +94,18 @@
                         src-sym
                         mod-id
                         lctx)])
-    (let ([imports (lookup-in-require mod-id)])
+    (let ([imports (lookup-in-require mod-id #:space space)])
 
       (unless imports
         (set! imports (make-mutable-ddict))
         (bind-in-require! (syntax-local-introduce (strip-context mod-id))
-                          imports))
+                          imports
+                          #:space space))
 
       (dict-set! imports (syntax-e local-id) import))))
 
-(define (require-module-provide! lctx mod prov src-sym local-id)
+(define (require-module-provide! lctx mod prov src-sym local-id
+                                 #:space [space #f])
 
   (when (current-debug)
     (displayln "require-module-provide!:")
@@ -114,39 +117,44 @@
 
   (define binding
     (lookup-in (parsed-module-module-scope mod)
-               (export-local-id prov)))
+               (export-local-id prov)
+               #:space space))
 
-  (emplace-require! lctx mod local-id src-sym)
+  (emplace-require! lctx mod local-id src-sym #:space space)
 
-  (bind-in-module! local-id binding))
+  (bind-in-module! local-id binding #:space space))
 
-(define (require! lctx src-mod-path)
+(define (require! lctx src-mod-path #:space [space #f])
 
   (when (current-debug)
     (displayln "require!")
     (println src-mod-path))
 
-  (require/prefix! lctx #f src-mod-path))
+  (require/prefix! lctx #f src-mod-path #:space space))
 
-(define (require/prefix! lctx prefix src-mod-path)
+(define (require/prefix! lctx prefix src-mod-path #:space [space #f])
 
   (when (current-debug)
     (displayln "require/prefix!")
     (println prefix)
     (println src-mod-path))
 
-  (require/prefix-all-except! lctx prefix src-mod-path null))
+  (require/prefix-all-except! lctx prefix src-mod-path null
+                              #:space space))
 
-(define (require/all-except! lctx src-mod-path exceptions)
+(define (require/all-except! lctx src-mod-path exceptions
+                             #:space [space #f])
 
   (when (current-debug)
     (displayln "require/all-except!")
     (println src-mod-path)
     (println exceptions))
 
-  (require/prefix-all-except! lctx #f src-mod-path exceptions))
+  (require/prefix-all-except! lctx #f src-mod-path exceptions
+                              #:space space))
 
-(define (require/prefix-all-except! lctx prefix src-mod-path exceptions)
+(define (require/prefix-all-except! lctx prefix src-mod-path exceptions
+                                    #:space [space #f])
 
   (when (current-debug)
     (displayln "require/prefix-all-except!")
@@ -158,9 +166,9 @@
 
   (define mod-id (parsed-module-ident mod))
   (define mod-id* (syntax-local-introduce (strip-context mod-id)))
-  (let ([imports (lookup-in-require mod-id*)])
+  (let ([imports (lookup-in-require mod-id* #:space space)])
     (unless imports
-      (bind-in-require! mod-id* (make-mutable-ddict))))
+      (bind-in-require! mod-id* (make-mutable-ddict) #:space space)))
 
   (define provide-scope (parsed-module-provide-scope mod))
 
@@ -182,15 +190,17 @@
 
     (define src-sym (syntax-e local-id))
 
-    (define prov (resolve-provide lctx mod src-sym prefixed))
+    (define prov (resolve-provide lctx mod src-sym prefixed
+                                  #:space space))
 
     (require-module-provide! lctx
                              mod
                              prov
                              src-sym
-                             prefixed)))
+                             prefixed
+                             #:space space)))
 
-(define (require/only! lctx src-mod-path local-ids)
+(define (require/only! lctx src-mod-path local-ids #:space [space #f])
 
   (when (current-debug)
     (displayln "require/only!")
@@ -198,12 +208,14 @@
     (println local-ids))
 
   (for ([local-id (in-list local-ids)])
-    (require/rename! lctx src-mod-path local-id local-id)))
+    (require/rename! lctx src-mod-path local-id local-id
+                     #:space space)))
 
 (define (require/rename! lctx
                          src-mod-path
                          src-id
-                         local-id)
+                         local-id
+                         #:space [space #f])
 
   (when (current-debug)
     (displayln "require/rename!")
@@ -217,27 +229,28 @@
     (resolve-module lctx src-mod-path))
 
   (define prov
-    (resolve-provide lctx mod src-sym local-id))
+    (resolve-provide lctx mod src-sym local-id #:space space))
 
-  (require-module-provide! lctx mod prov src-sym local-id))
+  (require-module-provide! lctx mod prov src-sym local-id #:space space))
 
-(define (provide! lctx local-id)
+(define (provide! lctx local-id #:space [space #f])
 
   (when (current-debug)
     (displayln "provide!")
     (println local-id))
 
-  (provide/rename! lctx local-id local-id))
+  (provide/rename! lctx local-id local-id #:space space))
 
-(define (provide/all-from! lctx mod-id)
+(define (provide/all-from! lctx mod-id #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/all-from!")
     (println mod-id))
 
-  (provide/all-from-except! lctx mod-id null))
+  (provide/all-from-except! lctx mod-id null #:space space))
 
-(define (provide/all-from-except! lctx mod-id exceptions)
+(define (provide/all-from-except! lctx mod-id exceptions
+                                  #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/all-from-except!")
@@ -256,32 +269,33 @@
       import-id))
 
   (for ([req (in-list requires)])
-    (provide! lctx req)))
+    (provide! lctx req #:space space)))
 
-(define (provide/all-defined! lctx)
+(define (provide/all-defined! lctx #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/all-defined!"))
 
-  (provide/all-defined-except! lctx null))
+  (provide/all-defined-except! lctx null #:space space))
 
-(define (provide/all-defined-except! lctx exceptions)
+(define (provide/all-defined-except! lctx exceptions #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/all-defined-except!")
     (println exceptions))
 
-  (provide/prefix-all-defined-except! lctx #f exceptions))
+  (provide/prefix-all-defined-except! lctx #f exceptions #:space space))
 
-(define (provide/prefix-all-defined! lctx prefix)
+(define (provide/prefix-all-defined! lctx prefix #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/prefix-all-defined!")
     (println prefix))
 
-  (provide/prefix-all-defined-except! lctx prefix null))
+  (provide/prefix-all-defined-except! lctx prefix null #:space space))
 
-(define (provide/prefix-all-defined-except! lctx prefix exceptions)
+(define (provide/prefix-all-defined-except! lctx prefix exceptions
+                                            #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/prefix-all-defined-except!")
@@ -312,18 +326,19 @@
                      #:props definition)
           definition))
 
-    (provide/rename! lctx definition prefixed)))
+    (provide/rename! lctx definition prefixed #:space space)))
 
 (define (provide/rename! lctx
                          local-id
-                         out-id)
+                         out-id
+                         #:space [space #f])
 
   (when (current-debug)
     (displayln "provide/rename!")
     (println local-id)
     (println out-id))
 
-  (resolve-definition lctx local-id)
+  (resolve-definition lctx local-id #:space space)
 
   (define out-id*
     (syntax-local-introduce (strip-context out-id)))
@@ -333,7 +348,7 @@
             out-id*
             lctx))
 
-  (bind-in-provide! out-id* provide-id)
+  (bind-in-provide! out-id* provide-id #:space space)
 
   local-id)
 
@@ -387,7 +402,7 @@
    #:attr dependencies deps))
 
 
-(define-splicing-syntax-class (bind-require lctx)
+(define-splicing-syntax-class (bind-require lctx #:space [space #f])
   #:datum-literals [require
                     only
                     prefix
@@ -396,15 +411,17 @@
                     rename]
   (pattern
    (~seq (~or (~and mod:id
-                    (~do (require! lctx #'mod)))
+                    (~do (require! lctx #'mod #:space space)))
 
               (~and (only ~! only-mod:id req:id ...)
                     (~do (require/only! lctx #'only-mod
-                                        (attribute req))))
+                                        (attribute req)
+                                        #:space space)))
 
               (~and (prefix ~! req-prefix:id prefix-mod:id)
                     (~do (require/prefix! lctx #'req-prefix
-                                          #'prefix-mod)))
+                                          #'prefix-mod
+                                          #:space space)))
 
               (~and (all-except
                      ~!
@@ -414,7 +431,8 @@
                     (~do (require/all-except!
                           lctx
                           #'all-except-mod
-                          (attribute all-except-exception))))
+                          (attribute all-except-exception)
+                          #:space space)))
 
               (~and (prefix-all-except
                      ~!
@@ -426,16 +444,18 @@
                           lctx
                           #'all-except-prefix
                           #'prefix-all-except-mod
-                          (attribute prefix-all-except-exception))))
+                          (attribute prefix-all-except-exception)
+                          #:space space)))
 
               (~and (rename ~! rename-mod:id req-from:id req-to:id)
                     (~do (require/rename! lctx
                                           #'rename-mod
                                           #'req-from
-                                          #'req-to))))
+                                          #'req-to
+                                          #:space space))))
          ...)))
 
-(define-splicing-syntax-class (bind-provide lctx)
+(define-splicing-syntax-class (bind-provide lctx #:space [space #f])
   #:datum-literals [provide
                     rename
                     all-from
@@ -447,15 +467,17 @@
   (pattern
    (~seq (~or (~and prov:id
                     (~do (provide! lctx
-                                   #'prov)))
+                                   #'prov
+                                   #:space space)))
 
               (~and (rename ~! prov-from:id prov-to:id)
                     (~do (provide/rename! lctx
                                           #'prov-from
-                                          #'prov-to)))
+                                          #'prov-to
+                                          #:space space)))
 
               (~and (all-from mod:id)
-                    (~do (provide/all-from! lctx #'mod)))
+                    (~do (provide/all-from! lctx #'mod #:space space)))
 
               (~and (all-from-except
                      ~!
@@ -464,19 +486,22 @@
                     (~do (provide/all-from-except!
                           lctx
                           #'except-mod
-                          (attribute from-exception))))
+                          (attribute from-exception)
+                          #:space space)))
 
               (~and (all-defined)
-                    (~do (provide/all-defined! lctx)))
+                    (~do (provide/all-defined! lctx #:space space)))
 
               (~and (all-defined-except ~! ident:id ...)
                     (~do (provide/all-defined-except!
                           lctx
-                          (attribute ident))))
+                          (attribute ident)
+                          #:space space)))
 
               (~and (prefix-all-defined ~! prefix-id:id)
                     (~do (provide/prefix-all-defined! lctx
-                                                      #'prefix-id)))
+                                                      #'prefix-id
+                                                      #:space space)))
 
               (~and (prefix-all-defined-except
                      ~!
@@ -485,5 +510,6 @@
                     (~do (provide/prefix-all-defined-except!
                           lctx
                           #'except-prefix
-                          (attribute except-ident)))))
+                          (attribute except-ident)
+                          #:space space))))
          ...)))

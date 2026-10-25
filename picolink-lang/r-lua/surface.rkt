@@ -6,6 +6,7 @@
          picolink/parser
          picolink/module/scopes
          picolink/intrinsic/var
+         picolink/r-lua/space
          (for-template picolink/r-lua/ir
                        picolink/s-lua/ir))
 
@@ -35,7 +36,7 @@
 
 (define (check-var ident)
 
-  (define binding (lookup-in-module ident))
+  (define binding (lookup-in-module ident #:space r-lua-space))
 
   (unless binding
     (parameterize ([error-print-context-length 0])
@@ -80,15 +81,15 @@
         (syntax/loc this-syntax
           (#%begin body ...))))]
 
-    [(require ~! (~var _ (bind-require this-syntax)))
+    [(require ~! (~var _ (bind-require this-syntax #:space r-lua-space)))
      (void)]
 
-    [(provide ~! (~var _ (bind-provide this-syntax)))
+    [(provide ~! (~var _ (bind-provide this-syntax #:space r-lua-space)))
      (void)]
 
     [(define ~! name expr)
 
-     (bind-in-module! #'name (r-lua-var))
+     (bind-in-module! #'name (r-lua-var) #:space r-lua-space)
 
      (in-r-lua
       (with-syntax ([expr (r-lua/expr #'expr)])
@@ -96,19 +97,22 @@
           (#%define name expr))))]
 
     [(define-macro ~! name expr ...)
-     (bind-in-module! #'name (r-lua-macro
-                              (eval-transformer
-                               (r-lua/macro
-                                #'(expr ...)))))
+     (bind-in-module! #'name
+                      (r-lua-macro
+                       (eval-transformer
+                        (r-lua/macro
+                         #'(expr ...))))
+                      #:space r-lua-space)
      (void)]
 
     [(ident:id arg ...)
-     #:do [(define mac (lookup-in-module #'ident r-lua-macro?))]
+     #:do [(define mac (lookup-in-module #'ident r-lua-macro?
+                                         #:space r-lua-space))]
      #:when mac
      #:cut
      (r-lua/top-level
       (apply-as-transformer (r-lua-macro-trx mac)
-                            #'ident
+                            #f ;#'ident
                             'definition
                             this-syntax))]
 
@@ -223,12 +227,13 @@
           (#%intrinsic form))))]
 
     [(ident:id arg ...)
-     #:do [(define mac (lookup-in-module #'ident r-lua-macro?))]
+     #:do [(define mac (lookup-in-module #'ident r-lua-macro?
+                                         #:space r-lua-space))]
      #:when mac
      #:cut
      (r-lua/expr
       (apply-as-transformer (r-lua-macro-trx mac)
-                            #'ident
+                            #f ;#'ident
                             'expression
                             this-syntax))]
 
