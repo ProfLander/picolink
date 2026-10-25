@@ -1,17 +1,15 @@
 #lang picolink/r-lua
 
-(require (only lua print))
-
 (let* ([x "foo"]
        [y x])
   y)
 
 (when #t
-  #;(print "bar")
+  (print "bar")
   "hello")
 
 (unless #f
-  #;(print "baz")
+  (print "baz")
   "world")
 
 (define-macro define-struct
