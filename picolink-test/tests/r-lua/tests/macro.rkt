@@ -18,7 +18,7 @@
    (with-syntax ([name:struct
                   (format-id #'name "~a:struct" #'name)]
 
-                 [(field-str (... ...))
+                 [(field-str ...)
                   (for/list ([field (in-list (attribute field))])
                     (symbol->string (syntax-e field)))]
 
@@ -26,7 +26,7 @@
 
      #'(begin
          (define name:struct
-           (#%intrinsic (#%table field-str (... ...))))
+           (#%intrinsic (#%table field-str ...)))
 
          (define name
            (λ (field ...)

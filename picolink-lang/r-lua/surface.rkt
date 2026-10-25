@@ -101,7 +101,9 @@
                       (r-lua-macro
                        (eval-transformer
                         (r-lua/macro
-                         #'(expr ...))))
+                         (datum->syntax this-syntax
+                                        (attribute expr)
+                                        this-syntax))))
                       #:space r-lua-space)
      (void)]
 
