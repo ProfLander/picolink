@@ -18,7 +18,6 @@
                        (map (λ (form)
                               (replace name form))
                             (attribute form))
-                       this-syntax
                        this-syntax)]
 
        [_ this-syntax]))
