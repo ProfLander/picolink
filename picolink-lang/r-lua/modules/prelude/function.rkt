@@ -1,10 +1,11 @@
 #lang picolink/r-lua/base
 
+(require prelude/surface)
+
 (provide (all-defined))
 
-(define identity
-  (λ (x) x))
+(define (identity x)
+  x)
 
-(define const
-  (λ (x)
-    (λ (_) x)))
+(define (const x)
+  (λ (_) x))

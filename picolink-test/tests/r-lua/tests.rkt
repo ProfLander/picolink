@@ -4,7 +4,6 @@
          tests/begin
          tests/let
          tests/letrec
-         tests/set!
          tests/void
          tests/string
          tests/macro

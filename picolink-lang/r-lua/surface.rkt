@@ -16,15 +16,7 @@
   #:datum-literals [begin
                      require
                      provide
-                     define
-                     define-macro
-                     let
-                     letrec
-                     set!
-                     λ
-                     if
-                     void
-                     #%intrinsic]
+                     define-macro]
   [])
 
 (struct/cross-phase r-lua-var [])
@@ -59,6 +51,9 @@
   (syntax-parse stx
     #:literal-sets [r-lua-surface-literals]
 
+    [(_:r-lua-ir-literal _ ...)
+     this-syntax]
+
     [(begin ~! body ...)
 
      (define-values (requires provides bodies)
@@ -87,15 +82,6 @@
     [(provide ~! (~var _ (bind-provide this-syntax #:space r-lua-space)))
      (void)]
 
-    [(define ~! name expr)
-
-     (bind-in-module! #'name (r-lua-var) #:space r-lua-space)
-
-     (in-r-lua
-      (with-syntax ([expr (r-lua/expr #'expr)])
-        (syntax/loc this-syntax
-          (#%define name expr))))]
-
     [(define-macro ~! name expr ...)
      (bind-in-module! #'name
                       (r-lua-macro
@@ -122,19 +108,26 @@
      (syntax/loc this-syntax
        e)]))
 
+(define-splicing-syntax-class parse-option
+  (pattern kw:keyword)
+  (pattern (~seq kw:keyword expr)))
+
 (define r-lua/macro
   (syntax-parser
     #:literal-sets [r-lua-surface-literals]
 
-    [([pat body ... tail] ...)
+    [(opt:parse-option ...
+      [pat body ... tail] ...)
      (syntax/loc this-syntax
        (syntax-parser
+         opt ...
          [pat
           body ...
-          (datum->syntax this-syntax
-                         (syntax->datum tail)
-                         this-syntax
-                         this-syntax)]
+          (in-r-lua
+           (datum->syntax this-syntax
+                          (syntax->datum tail)
+                          this-syntax
+                          this-syntax))]
          ...))]))
 
 (define/hygienic (r-lua/expr stx)
@@ -143,90 +136,8 @@
   (syntax-parse stx
     #:literal-sets [r-lua-surface-literals]
 
-    [(~cata ident:id check-var)
-     (syntax/loc this-syntax
-       ident)]
-
-    [b:boolean
-     (syntax/loc this-syntax
-       b)]
-
-    [n:number
-     (syntax/loc this-syntax
-       n)]
-
-    [s:string
-     (syntax/loc this-syntax
-       s)]
-
-    [(begin (~cata body r-lua/expr) ...)
-     (in-r-lua
-       (syntax/loc this-syntax
-         (#%begin body ...)))]
-
-    [(let ~! _ ...)
-     (syntax-parser/scope
-      scope
-      [(_ ([name (~cata val r-lua/expr)] ...)
-          body ...)
-
-       (for ([name (in-list (attribute name))])
-         (bind! name (r-lua-var) #:space r-lua-space))
-
-       (in-r-lua
-        (with-syntax ([(body ...) (map r-lua/expr (attribute body))])
-          (syntax/loc this-syntax
-            (#%let ([name val] ...)
-                   (#%begin body ...)))))])]
-
-    [(letrec ~! _ ...)
-     (syntax-parser/scope
-      scope
-      [(_ ([name val] ...)
-          body ...)
-
-       (for ([name (in-list (attribute name))])
-         (bind! name (r-lua-var) #:space r-lua-space))
-
-       (in-r-lua
-        (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
-                      [(body ...) (map r-lua/expr (attribute body))])
-          (syntax/loc this-syntax
-            (#%letrec ([name val] ...)
-                      (#%begin body ...)))))])]
-
-    [(set! ~! (~cata name check-var)
-           (~cata val r-lua/expr))
-
-     (in-r-lua
-      (syntax/loc this-syntax
-        (#%set! name val)))]
-
-    [(λ ~! _ ...)
-     (syntax-parser/scope
-      scope
-      [(_ ((~cata arg (bind! _ (r-lua-var) #:space r-lua-space)) ...)
-          (~cata body r-lua/expr) ...)
-
-       (in-r-lua
-        (syntax/loc this-syntax
-          (#%abs (arg ...)
-                 (#%begin body ...))))])]
-
-    [(if ~! (~cata cond r-lua/expr)
-         (~cata then r-lua/expr)
-         (~cata else r-lua/expr))
-
-     (in-r-lua
-      (syntax/loc this-syntax
-        (#%if cond then else)))]
-
-    [(#%intrinsic ~! form)
-
-     (in-r-lua
-      (with-syntax ([form (in-s-lua #'form)])
-        (syntax/loc this-syntax
-          (#%intrinsic form))))]
+    [(_:r-lua-ir-literal _ ...)
+     this-syntax]
 
     [(ident:id arg ...)
      #:do [(define mac (lookup-in-module #'ident r-lua-macro?
@@ -238,6 +149,16 @@
                             #f ;#'ident
                             'expression
                             this-syntax))]
+
+    [(~or d:boolean
+          d:number
+          d:string)
+     (syntax/loc this-syntax
+       d)]
+
+    [(~cata ident:id check-var)
+     (syntax/loc this-syntax
+       ident)]
 
     [((~cata expr r-lua/expr) ...+)
      #:cut

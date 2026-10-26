@@ -16,6 +16,7 @@
          prelude/equality
          prelude/hash
          prelude/logic
+         prelude/surface
          prelude/tag
          prelude/vector
          prelude/void)
@@ -36,9 +37,8 @@
 
 (define %tag-null "null")
 
-(define null?
-  (λ (v)
-    (eq? (tag v) %tag-null)))
+(define (null? v)
+  (eq? (tag v) %tag-null))
 
 (define null
 
@@ -53,75 +53,64 @@
                   (%hash __index    index
                          __tostring to-string))))
 
-(define car
-  (λ (v)
-    (member v 1)))
+(define (car v)
+  (member v 1))
 
-(define cdr
-  (λ (v)
-    (member v 2)))
+(define (cdr v)
+  (member v 2))
 
-(define cadr
-  (λ (v)
-    (car (cdr v))))
+(define (cadr v)
+  (car (cdr v)))
 
-(define cddr
-  (λ (v)
-    (cdr (cdr v))))
+(define (cddr v)
+  (cdr (cdr v)))
 
 (define %tag-pair "pair")
 
-(define pair?
-  (λ (v)
-    (eq? (tag v) %tag-pair)))
+(define (pair? v)
+  (eq? (tag v) %tag-pair))
 
-(define list?
-  (λ (v)
-    (if (pair? v)
-        (list? (cdr v))
-        (null? v))))
+(define (list? v)
+  (if (pair? v)
+      (list? (cdr v))
+      (null? v)))
 
-(define print-list
-  (λ (self)
+(define (print-list self)
+  (letrec ([%print-list
+            (λ (self)
+              (let ([lhs (car self)]
+                    [rhs (cdr self)])
+                (if (null? rhs)
+                    (tostring lhs)
+                    (format "%s %s" lhs (%print-list rhs)))))])
 
-    (letrec ([%print-list
-              (λ (self)
-                (let ([lhs (car self)]
-                      [rhs (cdr self)])
-                  (if (null? rhs)
-                      (tostring lhs)
-                      (format "%s %s" lhs (%print-list rhs)))))])
+    (format "(%s)" (%print-list self))))
 
-      (format "(%s)" (%print-list self)))))
+(define (print-pair self)
+  (letrec ([%print-pair
+            (λ (self)
+              (let ([lhs (car self)]
+                    [rhs (cdr self)])
+                (if (pair? rhs)
+                    (format "%s %s" lhs (%print-pair rhs))
+                    (format "%s . %s" lhs rhs))))])
 
-(define print-pair
-  (λ (self)
-    (letrec ([%print-pair
-              (λ (self)
-                (let ([lhs (car self)]
-                      [rhs (cdr self)])
-                  (if (pair? rhs)
-                      (format "%s %s" lhs (%print-pair rhs))
-                      (format "%s . %s" lhs rhs))))])
+    (format "(%s)" (%print-pair self))))
 
-      (format "(%s)" (%print-pair self)))))
+(define (cons a b)
+  (let* ([index      (λ (self key)
+                       (if (tag? key)
+                           %tag-pair
+                           (void)))]
 
-(define cons
-  (λ (a b)
+         [to-string  (λ (self)
+                       (if (list? self)
+                           (print-list self)
+                           (print-pair self)))])
 
-    (let* ([index      (λ (self key)
-                         (if (tag? key)
-                             %tag-pair
-                             (void)))]
-
-           [to-string  (λ (self)
-                         (if (list? self)
-                             (print-list self)
-                             (print-pair self)))])
-
-      (setmetatable (%vector a b)
-                    (%hash __index    index
-                           __tostring to-string)))))
+    (setmetatable (%vector a b)
+                  (%hash __index    index
+                         __tostring to-string))))
 
 (define-macro list
 

@@ -1,17 +1,16 @@
 #lang picolink/r-lua/base
 
 (require (only lua type)
-         prelude/equality)
+         prelude/equality
+         prelude/surface)
 
 (provide (all-defined))
 
-(define string?
-  (λ (v)
-    (eq? (type v) "string")))
+(define (string? v)
+  (eq? (type v) "string"))
 
-(define %cat
-  (λ (a b)
-    (#%intrinsic (#%cat a b))))
+(define (%cat a b)
+  (#%intrinsic (#%cat a b)))
 
 (define-macro string-append
   [(_ a b rest ...+)

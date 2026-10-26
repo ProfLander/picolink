@@ -1,5 +1,7 @@
 #lang picolink/r-lua/base
 
+(require prelude/surface)
+
 (provide (all-defined))
 
 (define-macro and
@@ -18,7 +20,6 @@
   [(_ a)
    #'a])
 
-(define not
-  (λ (v)
-    (#%intrinsic (#%not v))))
+(define (not v)
+  (#%intrinsic (#%not v)))
 

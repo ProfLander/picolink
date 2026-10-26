@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     syntax/parse
                      ee-lib
                      picolink/syntax)
 
@@ -28,5 +29,19 @@
    #%if
    #%intrinsic])
 
-(define-for-syntax in-r-lua (in-space 'r-lua))
-(define-for-syntax not-in-r-lua (not-in-space 'r-lua))
+(begin-for-syntax
+  (define in-r-lua (in-space 'r-lua))
+  (define not-in-r-lua (not-in-space 'r-lua))
+
+  (define-syntax-class r-lua-ir-literal
+    #:literal-sets [r-lua-ir-literals]
+    (pattern (~or #%begin
+                  #%define
+                  #%let
+                  #%letrec
+                  #%declare
+                  #%set!
+                  #%abs
+                  #%app
+                  #%if
+                  #%intrinsic))))

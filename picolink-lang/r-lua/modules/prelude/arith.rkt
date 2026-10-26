@@ -4,31 +4,28 @@
                eq?)
 
          (only lua
-               print))
+               print)
+
+         prelude/surface)
 
 (provide (all-defined))
 
 (define = eq?)
 
-(define <
-  (λ (a b)
-    (#%intrinsic (#%lt a b))))
+(define (< a b)
+  (#%intrinsic (#%lt a b)))
 
-(define >
-  (λ (a b)
-    (#%intrinsic (#%gt a b))))
+(define (> a b)
+  (#%intrinsic (#%gt a b)))
 
-(define <=
-  (λ (a b)
-    (#%intrinsic (#%le a b))))
+(define (<= a b)
+  (#%intrinsic (#%le a b)))
 
-(define >=
-  (λ (a b)
-    (#%intrinsic (#%ge a b))))
+(define (>= a b)
+  (#%intrinsic (#%ge a b)))
 
-(define %add
-  (λ (a b)
-    (#%intrinsic (#%add a b))))
+(define (%add a b)
+  (#%intrinsic (#%add a b)))
 
 (define-macro +
 
@@ -39,13 +36,11 @@
   [(_ a b)
    #'(%add a b)])
 
-(define %sub
-  (λ (a b)
-    (#%intrinsic (#%sub a b))))
+(define (%sub a b)
+  (#%intrinsic (#%sub a b)))
 
-(define %neg
-  (λ (a)
-    (#%intrinsic (#%neg a))))
+(define (%neg a)
+  (#%intrinsic (#%neg a)))
 
 (define-macro -
 
@@ -59,9 +54,8 @@
   [(_ a)
    #'(%neg a)])
 
-(define %mul
-  (λ (a b)
-    (#%intrinsic (#%mul a b))))
+(define (%mul a b)
+  (#%intrinsic (#%mul a b)))
 
 (define-macro *
 
@@ -72,9 +66,8 @@
   [(_ a b)
    #'(%mul a b)])
 
-(define %div
-  (λ (a b)
-    (#%intrinsic (#%div a b))))
+(define (%div a b)
+  (#%intrinsic (#%div a b)))
 
 (define-macro /
 
@@ -85,10 +78,8 @@
   [(_ a b)
    #'(%div a b)])
 
-(define expt
-  (λ (a b)
-    (#%intrinsic (#%exp a b))))
+(define (expt a b)
+  (#%intrinsic (#%exp a b)))
 
-(define modulo
-  (λ (a b)
-    (#%intrinsic (#%mod a b))))
+(define (modulo a b)
+  (#%intrinsic (#%mod a b)))

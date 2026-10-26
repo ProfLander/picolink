@@ -13,7 +13,7 @@
   "world")
 
 (define-macro define-struct
-  [(_ name [field ...])
+  [(_ name [field:id ...])
 
    (with-syntax ([name:struct
                   (format-id #'name "~a:struct" #'name)]

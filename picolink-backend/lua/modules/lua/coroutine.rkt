@@ -2,6 +2,8 @@
 
 (require intrinsic)
 
+(provide (all-defined))
+
 (define-intrinsics
   create
   resume

@@ -1,10 +1,10 @@
 #lang picolink/r-lua/base
 
 (require (only lua type)
-         prelude/equality)
+         prelude/equality
+         prelude/surface)
 
 (provide (all-defined))
 
-(define number?
-  (λ (v)
-    (eq? (type v) "number")))
+(define (number? v)
+  (eq? (type v) "number"))

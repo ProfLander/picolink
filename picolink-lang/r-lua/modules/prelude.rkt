@@ -13,6 +13,7 @@
          prelude/print
          prelude/procedure
          prelude/string
+         prelude/surface
          prelude/tag
          prelude/vector
          prelude/void)
@@ -30,6 +31,7 @@
          (all-from prelude/print)
          (all-from prelude/procedure)
          (all-from prelude/string)
+         (all-from prelude/surface)
          (all-from prelude/tag)
          (all-from prelude/vector)
          (all-from prelude/void))

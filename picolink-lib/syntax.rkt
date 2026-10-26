@@ -30,37 +30,6 @@
     (pattern ident:id
              #:attr class #f)))
 
-#;(define-syntax ~cata
-  (pattern-expander
-   (syntax-parser
-
-     [(_ pvar:pattern-var parser:id ...)
-      #`(~and #,(if (attribute pvar.class)
-                    #'(~var temp pvar.class)
-                    #'temp)
-              (~parse pvar.ident
-                      (begin (parser #'temp)
-                             ...)))]
-
-     [(_ pvar:pattern-var parser:expr ...)
-      (with-syntax ([temp #'temp])
-
-        (define replace
-          (syntax-parser
-            [(e ...)
-             (datum->syntax this-syntax
-                            (map replace (attribute e))
-                            this-syntax
-                            this-syntax)]
-            [(~datum _) #'#'temp]
-            [ident #'ident]))
-
-        (with-syntax ([(parser ...) (map replace (attribute parser))])
-          #`(~and #,(if (attribute pvar.class)
-                        #'(~var temp pvar.class)
-                        #'temp)
-                  (~parse pvar.ident (begin parser ...)))))])))
-
 (define-syntax ~cata
   (pattern-expander
    (syntax-parser
