@@ -171,7 +171,7 @@
           body ...)
 
        (for ([name (in-list (attribute name))])
-         (bind! name (r-lua-var)))
+         (bind! name (r-lua-var) #:space r-lua-space))
 
        (in-r-lua
         (with-syntax ([(body ...) (map r-lua/expr (attribute body))])
@@ -186,7 +186,7 @@
           body ...)
 
        (for ([name (in-list (attribute name))])
-         (bind! name (r-lua-var)))
+         (bind! name (r-lua-var) #:space r-lua-space))
 
        (in-r-lua
         (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
@@ -205,7 +205,7 @@
     [(λ ~! _ ...)
      (syntax-parser/scope
       scope
-      [(_ ((~cata arg (bind! _ (r-lua-var))) ...)
+      [(_ ((~cata arg (bind! _ (r-lua-var) #:space r-lua-space)) ...)
           (~cata body r-lua/expr) ...)
 
        (in-r-lua
