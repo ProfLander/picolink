@@ -16,7 +16,8 @@
   #:datum-literals [begin
                      require
                      provide
-                     define-macro]
+                     define-macro
+                     #%intrinsic]
   [])
 
 (struct/cross-phase r-lua-var [])
@@ -150,15 +151,22 @@
                             'expression
                             this-syntax))]
 
+    [(~cata ident:id check-var)
+     (syntax/loc this-syntax
+       ident)]
+
     [(~or d:boolean
           d:number
           d:string)
      (syntax/loc this-syntax
        d)]
 
-    [(~cata ident:id check-var)
-     (syntax/loc this-syntax
-       ident)]
+    [(#%intrinsic ~! form)
+
+     (in-r-lua
+      (with-syntax ([form (in-s-lua #'form)])
+        (syntax/loc this-syntax
+          (#%intrinsic form))))]
 
     [((~cata expr r-lua/expr) ...+)
      #:cut

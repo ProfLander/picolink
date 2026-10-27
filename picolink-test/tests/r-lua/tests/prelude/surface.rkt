@@ -21,3 +21,16 @@ thing3
 (begin
   (set! thing3 "tail-set"))
 thing3
+
+(define (dotted-varargs x . y)
+  (print "arg:")
+  (print x)
+  (print "dotted varargs:")
+  (print y))
+
+(define (single-varargs . z)
+  (print "single varargs:")
+  (print z))
+
+(dotted-varargs 1 2 3 4)
+(single-varargs 1 2 3 4)

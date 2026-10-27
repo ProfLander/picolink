@@ -219,15 +219,14 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%abs ~! (arg ...) body:expr ...)
+  (pattern (#%abs ~! args body:expr ...)
 
            #:attr binds null
            
            #:attr atom
            (in-r-lua
             (syntax/loc this-syntax
-              (#%abs (arg ...)
-                     body.anf ...)))
+              (#%abs args body.anf ...)))
 
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))

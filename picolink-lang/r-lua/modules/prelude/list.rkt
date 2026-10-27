@@ -33,7 +33,9 @@
          car
          cdr
          cadr
-         cddr)
+         cddr
+
+         vararg->list)
 
 (define %tag-null "null")
 
@@ -120,3 +122,21 @@
 
   [(_ a)
    #'(cons a null)])
+
+(define vararg->list
+  (#%intrinsic
+   '(#%function (#%vararg)
+                (#%block
+                 (#%if (#%gt (#%call select "#" #%vararg) 0)
+
+                       (#%then
+                        (#%block
+                         (#%return
+                          (#%call cons
+                                  '(#%call select 1 #%vararg)
+                                  (#%call vararg->list
+                                          (#%call select 2 #%vararg))))))
+
+                       (#%else
+                        (#%block
+                         (#%return null))))))))

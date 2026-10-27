@@ -4,6 +4,7 @@
                      syntax/parse)
          
          racket/list
+         racket/syntax
 
          syntax/parse
 
@@ -193,6 +194,17 @@
     (syntax/loc this-syntax
       v.s-lua))])
 
+(define-syntax-class formals
+  #:attributes [[arg 1] tail]
+
+  (pattern tail:id
+           #:attr [arg 1] null)
+
+  (pattern (arg:id ...)
+           #:attr tail #f)
+
+  (pattern (arg:id ... . tail:id)))
+
 (define-s-lua-syntax-class val
   #:literal-sets [r-lua-ir-literals]
 
@@ -205,14 +217,26 @@
     (syntax/loc this-syntax
       datum))]
 
-  [(#%abs ~! (arg ...) body:expr)
+  [(#%abs ~! args:formals body:expr)
+
    (let ([body (hoist-do #'body.s-lua)])
      (in-s-lua
-      (with-syntax ([(body ...) (drop-right body 1)]
-                    [ret (last body)])
+      (with-syntax* ([ret (last body)]
+                     [(body ...) (drop-right body 1)]
+                     [(vararg ...)
+                      (if (attribute args.tail)
+                          #'(#%vararg)
+                          #'())]
+                     [(vararg-bind ...)
+                      (if (attribute args.tail)
+                          #'((#%local [args.tail] [(#%call vararg->list
+                                                           vararg ...)]))
+                          #'())])
+
         (syntax/loc this-syntax
-          '(#%function (arg ...)
+          '(#%function (args.arg ... vararg ...)
                        (#%block
+                        vararg-bind ...
                         body ...
                         (#%return ret)))))))])
 

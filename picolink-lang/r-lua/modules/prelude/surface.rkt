@@ -16,6 +16,14 @@
    (syntax/loc this-syntax
      (define name (λ (arg ...) body ...)))]
 
+  [(_ (name:id arg ... . tail) body ...)
+   (syntax/loc this-syntax
+     (define name (λ (arg ... . tail) body ...)))]
+
+  [(_ (name:id . tail) body ...)
+   (syntax/loc this-syntax
+     (define name (λ tail body ...)))]
+
   [(_ name:id expr)
    (bind-in-module! #'name (r-lua-var) #:space r-lua-space)
    (with-syntax ([expr (r-lua/expr #'expr)])
@@ -34,12 +42,37 @@
   [(_ _ ...)
    (syntax-parser/scope
     scope
-    [(_ ((~cata arg (bind! _ (r-lua-var) #:space r-lua-space)) ...)
-        (~cata body r-lua/expr) ...)
+    [(_ args body ...)
 
-     (syntax/loc this-syntax
-       (#%abs (arg ...)
-              (#%begin body ...)))])])
+     (with-syntax* ([args
+                     (syntax-parse #'args
+                       [arg:id
+
+                        (bind! #'arg (r-lua-var) #:space r-lua-space)]
+
+                       [(arg:id ... . tail:id)
+
+                        (let ([args
+                               (for/list ([arg (in-list (attribute arg))])
+                                 (bind! arg (r-lua-var)
+                                        #:space r-lua-space))]
+
+                              [tail
+                               (bind! #'tail (r-lua-var)
+                                      #:space r-lua-space)])
+
+                          (append args tail))]
+                       
+                       [(arg:id ...)
+
+                        (for/list ([arg (in-list (attribute arg))])
+                          (bind! arg (r-lua-var) #:space r-lua-space))])]
+
+                    [(body ...) (map r-lua/expr (attribute body))])
+
+       (syntax/loc this-syntax
+         (#%abs args
+                (#%begin body ...))))])])
 
 (define-macro set!
   [(_ (~cata name check-var) (~cata val r-lua/expr))
