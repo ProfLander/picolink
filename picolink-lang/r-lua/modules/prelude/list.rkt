@@ -125,18 +125,18 @@
 
 (define vararg->list
   (#%intrinsic
-   '(#%function (#%vararg)
-                (#%block
-                 (#%if (#%gt (#%call select "#" #%vararg) 0)
+   (#%function (#%vararg)
+               (#%block
+                (#%if (#%gt (#%call select "#" #%vararg) 0)
 
-                       (#%then
-                        (#%block
-                         (#%return
-                          (#%call cons
-                                  '(#%call select 1 #%vararg)
-                                  (#%call vararg->list
-                                          (#%call select 2 #%vararg))))))
+                      (#%then
+                       (#%block
+                        (#%return
+                         (#%call cons
+                                 '(#%call select 1 #%vararg)
+                                 (#%call vararg->list
+                                         (#%call select 2 #%vararg))))))
 
-                       (#%else
-                        (#%block
-                         (#%return null))))))))
+                      (#%else
+                       (#%block
+                        (#%return null))))))))

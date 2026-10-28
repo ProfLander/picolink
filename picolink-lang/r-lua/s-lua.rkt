@@ -88,7 +88,8 @@
             #:literal-sets [s-lua-ir-literals]
             
             ; Hoist top-level lambda definitions into local functions
-            [(quote (#%function (arg ...) (#%block body ...)))
+            [(~or (#%function (arg ...) (#%block body ...))
+                  (quote (#%function (arg ...) (#%block body ...))))
              (list
               (syntax/loc this-syntax
                 (#%local (#%function name (arg ...)
