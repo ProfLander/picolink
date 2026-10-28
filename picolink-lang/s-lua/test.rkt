@@ -157,7 +157,12 @@
                 (in-s-lua
                  #'(#%chunk
                     (#%block
-                     (#%function a.b.c:d (x y)
+                     (#%function (#%method
+                                  (#%member
+                                   (#%member a b)
+                                   c)
+                                  d)
+                                 (x y)
                                  (#%block))))))
 
                (string-join '("function a.b.c:d(x, y)"

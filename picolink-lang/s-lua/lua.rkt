@@ -32,15 +32,6 @@
            #:fail-when reserved-name
            (format "reserved name: ~a" (car reserved-name))))
 
-(define-syntax-class function-name
-  (pattern ident:id
-
-           #:with (segments (~optional member))
-           (string-split (symbol->string (syntax-e #'ident)) ":")
-
-           #:with (path ...)
-           (string-split (syntax-e #'segments) ".")))
-
 (define reserved-symbol->lua-name
   (hash
    "="  "__eq__"
@@ -281,13 +272,13 @@
   #:literal-sets [s-lua-ir-literals]
 
   [(#%function ~!
-               name:function-name
+               name:statement/function/name
                (arg:name ...
                          (~optional (~and #%vararg
                                           (~bind [vararg #t]))))
                b:block)
    (format "function ~a(~a)~a~aend"
-           (rewrite-name #'name #:omit '("." ":"))
+           (attribute name.lua)
            (string-join (append (map (compose symbol->string
                                               syntax-e)
                                      (attribute arg))
@@ -297,6 +288,24 @@
                         ", ")
            (indent (format-block (attribute b.lua)))
            (current-separator))])
+
+(define-lua-syntax-class statement/function/path
+  #:literal-sets [s-lua-ir-literals]
+  [(#%member ~! path:statement/function/path name:name)
+   (string-append (attribute path.lua)
+                  "."
+                  (rewrite-name #'name))]
+  [name:name
+   (rewrite-name #'name)])
+
+(define-lua-syntax-class statement/function/name
+  #:literal-sets [s-lua-ir-literals]
+  [(#%method ~! path:statement/function/path name:name)
+   (string-append (attribute path.lua)
+                  ":"
+                  (rewrite-name #'name))]
+  [(~and path:statement/function/path)
+   (attribute path.lua)])
 
 (define-lua-syntax-class return-statement
   #:literal-sets [s-lua-ir-literals]
