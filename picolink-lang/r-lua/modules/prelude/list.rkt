@@ -8,6 +8,9 @@
          (only lua/ext/table
                member)
 
+         (only lua/ext/values
+               foldr-values)
+
          (only lua/string
                format)
 
@@ -33,9 +36,7 @@
          car
          cdr
          cadr
-         cddr
-
-         vararg->list)
+         cddr)
 
 (define %tag-null "null")
 
@@ -114,29 +115,10 @@
                   (%hash __index    index
                          __tostring to-string))))
 
-(define-macro list
-
-  [(_ a rest ...+)
-   #'(let ([tail (list rest ...)])
-       (cons a tail))]
-
-  [(_ a)
-   #'(cons a null)])
-
-(define vararg->list
+(define list
   (s-lua
    (#%function (#%vararg)
                (#%block
-                (#%if (#%gt (#%call select "#" #%vararg) 0)
-
-                      (#%then
-                       (#%block
-                        (#%return
-                         (#%call cons
-                                 '(#%call select 1 #%vararg)
-                                 (#%call vararg->list
-                                         (#%call select 2 #%vararg))))))
-
-                      (#%else
-                       (#%block
-                        (#%return null))))))))
+                (#%return
+                 (#%call foldr-values
+                         cons null #%vararg))))))

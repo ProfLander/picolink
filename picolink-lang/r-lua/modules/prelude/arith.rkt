@@ -6,6 +6,9 @@
          (only lua
                print)
 
+         (only lua/ext/values
+               foldl-values)
+
          prelude/surface)
 
 (provide (all-defined))
@@ -27,56 +30,51 @@
 (define (%add a b)
   (s-lua (#%add a b)))
 
-(define-macro +
-
-  [(_ a b rest ...+)
-   #'(let ([add (+ a b)])
-       (+ add rest ...))]
-
-  [(_ a b)
-   #'(%add a b)])
+(define +
+  (s-lua
+   (#%function (#%vararg)
+               (#%block
+                (#%return
+                 (#%call foldl-values %add #%vararg))))))
 
 (define (%sub a b)
   (s-lua (#%sub a b)))
 
-(define (%neg a)
-  (s-lua (#%neg a)))
+(define -
+  (s-lua
+   (#%function (#%vararg)
+               (#%block
+                (#%if (#%eq (#%call select "#" #%vararg) 1)
 
-(define-macro -
+                      (#%then
+                       (#%block
+                        (#%return
+                         (#%neg #%vararg))))
 
-  [(_ a b rest ...+)
-   #'(let ([sub (- a b)])
-       (- sub rest ...))]
-
-  [(_ a b)
-   #'(%sub a b)]
-
-  [(_ a)
-   #'(%neg a)])
+                      (#%else
+                       (#%block
+                        (#%return
+                         (#%call foldl-values %sub #%vararg)))))))))
 
 (define (%mul a b)
   (s-lua (#%mul a b)))
 
-(define-macro *
-
-  [(_ a b rest ...+)
-   #'(let ([mul (* a b)])
-       (* mul rest ...))]
-
-  [(_ a b)
-   #'(%mul a b)])
+(define *
+  (s-lua
+   (#%function (#%vararg)
+               (#%block
+                (#%return
+                 (#%call foldl-values %mul #%vararg))))))
 
 (define (%div a b)
   (s-lua (#%div a b)))
 
-(define-macro /
-
-  [(_ a b rest ...+)
-   #'(let ([div (/ a b)])
-       (/ div rest ...))]
-
-  [(_ a b)
-   #'(%div a b)])
+(define /
+  (s-lua
+   (#%function (#%vararg)
+               (#%block
+                (#%return
+                 (#%call foldl-values %div #%vararg))))))
 
 (define (expt a b)
   (s-lua (#%exp a b)))

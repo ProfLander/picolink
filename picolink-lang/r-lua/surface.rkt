@@ -100,7 +100,7 @@
      #:cut
      (r-lua/top-level
       (apply-as-transformer (r-lua-macro-trx mac)
-                            #f ;#'ident
+                            #f
                             'definition
                             this-syntax))]
 

@@ -1,6 +1,7 @@
 #lang picolink/r-lua/base
 
 (require (only lua type)
+         (only lua/ext/values foldl-values)
          prelude/equality
          prelude/surface)
 
@@ -12,9 +13,9 @@
 (define (%cat a b)
   (s-lua (#%cat a b)))
 
-(define-macro string-append
-  [(_ a b rest ...+)
-   #'(let ([cat (string-append a b)])
-       (string-append cat rest ...))]
-  [(_ a b)
-   #'(%cat a b)])
+(define string-append
+  (s-lua
+   (#%function (#%vararg)
+               (#%block
+                (#%return
+                 (#%call foldl-values %cat #%vararg))))))

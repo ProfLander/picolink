@@ -13,8 +13,8 @@
 (define (void? v)
   (eq? v %void))
 
-(define-macro void
-  [(_ body ...)
-   #'(begin
-       body ...
-       %void)])
+(define void
+  (s-lua
+   (#%function (#%vararg)
+    (#%block
+     (#%return %void)))))

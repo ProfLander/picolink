@@ -230,8 +230,8 @@
                           #'())]
                      [(vararg-bind ...)
                       (if (attribute args.tail)
-                          #'((#%local [args.tail] [(#%call vararg->list
-                                                           vararg ...)]))
+                          #'((#%local [args.tail]
+                                      [(#%call list vararg ...)]))
                           #'())])
 
         (syntax/loc this-syntax
