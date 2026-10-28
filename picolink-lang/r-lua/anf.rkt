@@ -243,7 +243,7 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%intrinsic ~! form)
+  (pattern (#%s-lua ~! form)
 
            #:attr binds null
            

@@ -26,11 +26,11 @@
 
      #'(begin
          (define name:struct
-           (#%intrinsic (#%table field-str ...)))
+           (s-lua (#%table field-str ...)))
 
          (define name
            (λ (field ...)
-             (#%intrinsic (#%table field ...))))))])
+             (s-lua (#%table field ...))))))])
 
 (define-struct foo [bar baz])
 

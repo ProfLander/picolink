@@ -4,8 +4,6 @@
 
 (define-macro begin
   [(_ body ...)
-   #:when (eq? 'expression (syntax-local-context))
-
    (with-syntax ([(body ...) (map r-lua/expr (attribute body))])
      (syntax/loc this-syntax
        (#%begin body ...)))])
@@ -109,3 +107,9 @@
        (syntax/loc this-syntax
          (#%letrec ([name val] ...)
                    (#%begin body ...))))])])
+
+(define-macro s-lua
+  [(_ form)
+   (with-syntax ([form (in-s-lua #'form)])
+     (syntax/loc this-syntax
+       (#%s-lua form)))])

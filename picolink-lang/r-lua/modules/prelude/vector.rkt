@@ -8,4 +8,4 @@
                                (attribute v))])
      #'(let ([k v]
              ...)
-         (#%intrinsic (#%table v ...))))])
+         (s-lua (#%table v ...))))])

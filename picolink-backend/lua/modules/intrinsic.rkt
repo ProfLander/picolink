@@ -29,5 +29,5 @@
                                      (replace name #'template))
                                    (attribute name))])
      #'(begin
-         (define name (#%intrinsic value))
+         (define name (s-lua value))
          ...))])

@@ -13,5 +13,5 @@
              ...
              [v-key v]
              ...)
-         (#%intrinsic
+         (s-lua
           (#%table [k v] ...))))])

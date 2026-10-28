@@ -184,7 +184,7 @@
               (#%then (#%block then-body ...))
               (#%else (#%block else-body ...))))))]
 
-  [(#%intrinsic ~! form)
+  [(#%s-lua ~! form)
    (in-s-lua
     (not-in-r-lua
      (syntax/loc this-syntax

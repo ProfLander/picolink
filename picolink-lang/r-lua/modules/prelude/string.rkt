@@ -10,7 +10,7 @@
   (eq? (type v) "string"))
 
 (define (%cat a b)
-  (#%intrinsic (#%cat a b)))
+  (s-lua (#%cat a b)))
 
 (define-macro string-append
   [(_ a b rest ...+)

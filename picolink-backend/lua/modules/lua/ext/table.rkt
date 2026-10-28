@@ -5,4 +5,4 @@
 (provide (all-defined))
 
 (define (member t k)
-  (#%intrinsic (#%member t (quote k))))
+  (s-lua (#%member t (quote k))))

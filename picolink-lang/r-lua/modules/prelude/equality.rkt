@@ -5,4 +5,4 @@
 (provide (all-defined))
 
 (define (eq? a b)
-  (#%intrinsic (#%eq a b)))
+  (s-lua (#%eq a b)))

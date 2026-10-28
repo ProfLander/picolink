@@ -124,7 +124,7 @@
    #'(cons a null)])
 
 (define vararg->list
-  (#%intrinsic
+  (s-lua
    (#%function (#%vararg)
                (#%block
                 (#%if (#%gt (#%call select "#" #%vararg) 0)

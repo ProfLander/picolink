@@ -13,19 +13,19 @@
 (define = eq?)
 
 (define (< a b)
-  (#%intrinsic (#%lt a b)))
+  (s-lua (#%lt a b)))
 
 (define (> a b)
-  (#%intrinsic (#%gt a b)))
+  (s-lua (#%gt a b)))
 
 (define (<= a b)
-  (#%intrinsic (#%le a b)))
+  (s-lua (#%le a b)))
 
 (define (>= a b)
-  (#%intrinsic (#%ge a b)))
+  (s-lua (#%ge a b)))
 
 (define (%add a b)
-  (#%intrinsic (#%add a b)))
+  (s-lua (#%add a b)))
 
 (define-macro +
 
@@ -37,10 +37,10 @@
    #'(%add a b)])
 
 (define (%sub a b)
-  (#%intrinsic (#%sub a b)))
+  (s-lua (#%sub a b)))
 
 (define (%neg a)
-  (#%intrinsic (#%neg a)))
+  (s-lua (#%neg a)))
 
 (define-macro -
 
@@ -55,7 +55,7 @@
    #'(%neg a)])
 
 (define (%mul a b)
-  (#%intrinsic (#%mul a b)))
+  (s-lua (#%mul a b)))
 
 (define-macro *
 
@@ -67,7 +67,7 @@
    #'(%mul a b)])
 
 (define (%div a b)
-  (#%intrinsic (#%div a b)))
+  (s-lua (#%div a b)))
 
 (define-macro /
 
@@ -79,7 +79,7 @@
    #'(%div a b)])
 
 (define (expt a b)
-  (#%intrinsic (#%exp a b)))
+  (s-lua (#%exp a b)))
 
 (define (modulo a b)
-  (#%intrinsic (#%mod a b)))
+  (s-lua (#%mod a b)))

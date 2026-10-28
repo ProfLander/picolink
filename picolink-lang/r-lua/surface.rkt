@@ -16,8 +16,7 @@
   #:datum-literals [begin
                      require
                      provide
-                     define-macro
-                     #%intrinsic]
+                     define-macro]
   [])
 
 (struct/cross-phase r-lua-var [])
@@ -147,7 +146,7 @@
      #:cut
      (r-lua/expr
       (apply-as-transformer (r-lua-macro-trx mac)
-                            #f ;#'ident
+                            #f
                             'expression
                             this-syntax))]
 
@@ -160,13 +159,6 @@
           d:string)
      (syntax/loc this-syntax
        d)]
-
-    [(#%intrinsic ~! form)
-
-     (in-r-lua
-      (with-syntax ([form (in-s-lua #'form)])
-        (syntax/loc this-syntax
-          (#%intrinsic form))))]
 
     [((~cata expr r-lua/expr) ...+)
      #:cut

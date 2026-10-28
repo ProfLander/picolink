@@ -5,25 +5,25 @@
 (provide (all-defined))
 
 (define (nil? v)
-  (#%intrinsic (#%eq (#%call type v) "nil")))
+  (s-lua (#%eq (#%call type v) "nil")))
 
 (define (boolean? v)
-  (#%intrinsic (#%eq (#%call type v) "boolean")))
+  (s-lua (#%eq (#%call type v) "boolean")))
 
 (define (number? v)
-  (#%intrinsic (#%eq (#%call type v) "number")))
+  (s-lua (#%eq (#%call type v) "number")))
 
 (define (string? v)
-  (#%intrinsic (#%eq (#%call type v) "string")))
+  (s-lua (#%eq (#%call type v) "string")))
 
 (define (userdata? v)
-  (#%intrinsic (#%eq (#%call type v) "userdata")))
+  (s-lua (#%eq (#%call type v) "userdata")))
 
 (define (function? v)
-  (#%intrinsic (#%eq (#%call type v) "function")))
+  (s-lua (#%eq (#%call type v) "function")))
 
 (define (thread? v)
-  (#%intrinsic (#%eq (#%call type v) "thread")))
+  (s-lua (#%eq (#%call type v) "thread")))
 
 (define (table? v)
-  (#%intrinsic (#%eq (#%call type v) "table")))
+  (s-lua (#%eq (#%call type v) "table")))

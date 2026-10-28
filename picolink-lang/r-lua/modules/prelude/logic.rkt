@@ -21,5 +21,5 @@
    #'a])
 
 (define (not v)
-  (#%intrinsic (#%not v)))
+  (s-lua (#%not v)))
 
