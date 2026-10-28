@@ -7,23 +7,19 @@
 (define-macro and
 
   [(_ a rest ...+)
-   #'(let ([tail (and rest ...)])
-       (if tail
-           a
-           #f))]
+   #'(if a
+         (and rest ...)
+         #f)]
 
   [(_ a)
-   #'(if a
-         a
-         #f)])
+   #'a])
 
 (define-macro or
 
   [(_ a rest ...+)
-   #'(let ([tail (or rest ...)])
-       (if a
-           a
-           tail))]
+   #'(if a
+         a
+         (or rest ...))]
 
   [(_ a)
    #'a])
