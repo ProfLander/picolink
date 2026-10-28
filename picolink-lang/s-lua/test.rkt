@@ -203,7 +203,7 @@
                                "s"
                                #%vararg])))))
 
-               (string-join '("local literals_and_forms = nil, false, true, 1, \"s\", ...")
+               (string-join '("local literals__minus__and__minus__forms = nil, false, true, 1, \"s\", ...")
                             "\n"))
 
   (test-equal? "local functiondef"
@@ -228,7 +228,7 @@
                      (#%local [prefixexp]
                               [literals-and-forms])))))
 
-               (string-join '("local prefixexp = literals_and_forms")
+               (string-join '("local prefixexp = literals__minus__and__minus__forms")
                             "\n"))
 
   (test-equal? "local table"
@@ -277,9 +277,9 @@
                      (#%local [p2] [(#%call f)])
                      (#%local [p3] ['literals-and-forms])))))
 
-               (string-join '("local p1 = literals_and_forms"
+               (string-join '("local p1 = literals__minus__and__minus__forms"
                               "local p2 = f()"
-                              "local p3 = (literals_and_forms)")
+                              "local p3 = (literals__minus__and__minus__forms)")
                             "\n"))
 
   (test-equal? "var"
@@ -307,7 +307,7 @@
                                           (#%block
                                            (#%return))))))))
 
-               (string-join '("local function named_varargs(a, b, ...)"
+               (string-join '("local function named__minus__varargs(a, b, ...)"
                               "  return"
                               "end")
                             "\n"))
@@ -393,8 +393,8 @@
                               "local ge = 1 >= 2"
                               "local eq = 1 == 2"
                               "local ne = 1 ~= 2"
-                              "local op_and = true and false"
-                              "local op_or = true or false")
+                              "local op__minus__and = true and false"
+                              "local op__minus__or = true or false")
                             "\n"))
 
   (test-equal? "unops"
@@ -441,7 +441,7 @@
                                           (#%block
                                            (#%local [_] [#%vararg]))))))))
 
-               (string-join '("local function vararg_host(...)"
+               (string-join '("local function vararg__minus__host(...)"
                               "  local _ = ..."
                               "end")
                             "\n")))
