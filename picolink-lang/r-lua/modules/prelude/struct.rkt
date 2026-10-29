@@ -3,13 +3,17 @@
 (provide (all-defined))
 
 (define-macro define-struct
-  [(_ name [field:id ...]
+  [(_ name:id [field:id ...]
       (~or (~optional (~seq #:constructor-name constructor-name)
                       #:defaults ([constructor-name #'name]))
            
            (~optional (~seq #:type-name type-name)
                       #:defaults ([type-name
                                    (format-id #'name "~a:type" #'name)]))
+
+           (~optional (~seq #:printed-name printed-name)
+                      #:defaults ([printed-name
+                                   (format-id #'name "#<~a>" #'name)]))
 
            (~optional (~seq #:predicate-name predicate-name)
                       #:defaults ([predicate-name
@@ -24,7 +28,7 @@
 
      #'(begin
          (define-type type-name
-           #:printed-name name
+           #:printed-name printed-name
            #:predicate-name predicate-name)
 
          (define (constructor-name field ...)
