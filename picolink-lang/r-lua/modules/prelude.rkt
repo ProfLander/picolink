@@ -12,6 +12,7 @@
          prelude/list
          prelude/logic
          prelude/number
+         prelude/object
          prelude/print
          prelude/procedure
          prelude/string
@@ -33,6 +34,7 @@
          (all-from prelude/list)
          (all-from prelude/logic)
          (all-from prelude/number)
+         (all-from prelude/object)
          (all-from prelude/print)
          (all-from prelude/procedure)
          (all-from prelude/string)
