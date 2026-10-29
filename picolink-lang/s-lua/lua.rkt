@@ -202,9 +202,16 @@
                  "")
              separator))]
 
-  [(#%for (name:name from:expr
-                     to:expr
-                     (~optional step:expr))
+  [(#%for [name:name ... (#%in exp:expr ...)]
+          ~!
+          b:block)
+   (format "for ~a in ~a do~a~aend"
+           (string-join (map rewrite-name (attribute name)) ", ")
+           (string-join (attribute exp.lua) ", ")
+           (indent (format-block (attribute b.lua)))
+           (current-separator))]
+
+  [(#%for (name:name from:expr to:expr (~optional step:expr))
           ~!
           b:block)
    (format "for ~a = ~a, ~a~a do~a~aend"
@@ -214,15 +221,6 @@
            (if (attribute step)
                (string-append ", " (attribute step.lua))
                "")
-           (indent (format-block (attribute b.lua)))
-           (current-separator))]
-
-  [(#%for ([name:name exp:expr] ...)
-          ~!
-          b:block)
-   (format "for ~a in ~a do~a~aend"
-           (string-join (map rewrite-name (attribute name)) ", ")
-           (string-join (attribute exp.lua) ", ")
            (indent (format-block (attribute b.lua)))
            (current-separator))]
 

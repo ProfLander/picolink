@@ -141,8 +141,7 @@
                 (in-s-lua
                  #'(#%chunk
                     (#%block
-                     (#%for ([k f]
-                             [v g])
+                     (#%for [k v (#%in f g)]
                             (#%block
                              (#%break)))))))
 

@@ -24,6 +24,7 @@
    #%until
    #%if
    #%for
+   #%in
    #%local
    #%then
    #%elseif
