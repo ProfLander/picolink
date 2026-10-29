@@ -6,13 +6,18 @@
          (for-template picolink/love/run
                        picolink/s-lua/ir))
 
-#:target    love-target
-#:transform love-transform
-#:link      love-link
-#:run       love-run
-#:interact  love-interact
+#:target       love-target
+#:search-paths love-search-paths
+#:transform    love-transform
+#:link         love-link
+#:run          love-run
+#:interact     love-interact
 
 (define love-target    lua-target)
+
+(define (love-search-paths)
+  (append (lua-search-paths)
+          (list 'picolink/love/modules)))
 
 (define (love-transform lctx prog)
   (let ([prog (lua-transform lctx prog)])
@@ -64,7 +69,8 @@
          (#%local [repl-scope] [module-name])
 
          (#%function
-          (love.load)
+          (#%member love load)
+          ()
 
           (#%block
            (#%assign [repl-thread]
@@ -82,7 +88,8 @@
            (#%call (#%method repl-thread start))))
 
          (#%function
-          (love.update dt)
+          (#%member love update)
+          (dt)
 
           (#%block
            (#%local [input]
@@ -114,7 +121,9 @@
                             err)))))))))
 
          (#%function
-          (love.errorhandler msg)
+          (#%member love errorhandler)
+          (msg)
+
           (#%block
            (#%call (#%method (#%member io stderr) write)
                    (#%call (#%member debug traceback)
