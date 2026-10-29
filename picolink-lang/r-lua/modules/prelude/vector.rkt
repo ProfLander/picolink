@@ -5,6 +5,9 @@
                getmetatable
                tostring)
 
+         (only lua/table
+               insert)
+
          (only lua/ext/table
                table-ref
                table-set!
@@ -42,8 +45,9 @@
 (define (vector-set! self idx val)
   (table-set! self (+ 1 idx) val))
 
-(define (vector-length self idx)
-  (table-length self))
+(define vector-length table-length)
+
+(define vector-push insert)
 
 (impl ToString vector:type
 
@@ -60,23 +64,3 @@
                 ")"))])
 
         (s-lua (#%table ["to-string" to-string]))))
-
-(define inst (vector 2 4 6 8))
-
-(print "inst:")
-inst
-
-(print "(vector-length inst):")
-(vector-length inst)
-
-(print "(vector-ref inst 0):")
-(vector-ref inst 0)
-
-(print "(vector-ref inst 1):")
-(vector-ref inst 1)
-
-(print "(vector-ref inst 2):")
-(vector-ref inst 2)
-
-(print "(vector-ref inst 3):")
-(vector-ref inst 3)
