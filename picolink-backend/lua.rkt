@@ -359,6 +359,7 @@
                  entry-point-body ...))))]
 
          [compile  (s-lua-compiler 'lua)]
+
          [compiled (compile stx)])
 
     (when (current-debug)
@@ -395,7 +396,7 @@
     (for ([(path mod) (in-hash modules)])
 
       (when (current-debug)
-        (displayln "~a:\n" path)
+        (displayln (format "~a:\n" path))
         (displayln mod)
         (displayln ""))
 
