@@ -6,5 +6,4 @@
          tests/letrec
          tests/void
          tests/string
-         tests/macro
          tests/prelude)

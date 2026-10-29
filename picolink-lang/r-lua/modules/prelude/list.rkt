@@ -2,8 +2,8 @@
 
 (require (only lua
                tostring
-               setmetatable
-               print)
+               getmetatable
+               setmetatable)
 
          (only lua/ext/table
                member)
@@ -14,13 +14,17 @@
          (only lua/string
                format)
 
+         prelude/arith
          prelude/binding
          prelude/function
          prelude/equality
          prelude/hash
+         prelude/interface
          prelude/logic
+         prelude/print
+         prelude/struct
          prelude/surface
-         prelude/tag
+         prelude/type
          prelude/vector
          prelude/void)
 
@@ -29,49 +33,37 @@
 
          pair?
          cons
-
-         list?
-         list
-
          car
          cdr
          cadr
-         cddr)
+         cddr
 
-(define %tag-null "null")
+         list?
+         list)
 
-(define (null? v)
-  (eq? (tag v) %tag-null))
+(define-struct %null []
+  #:predicate-name null?)
 
-(define null
+(impl ToString %null:type
+      (let ([to-string (const "()")])
+        (s-lua (#%table ["to-string" to-string]))))
 
-  (let ([index     (λ (self key)
-                     (if (tag? key)
-                         %tag-null
-                         (void)))]
+(define null (%null))
 
-        [to-string (const "()")])
-
-    (setmetatable (%vector)
-                  (%hash __index    index
-                         __tostring to-string))))
+(define-struct pair [ar dr]
+  #:constructor-name cons)
 
 (define (car v)
-  (member v 1))
+  (pair-ref v 0))
 
 (define (cdr v)
-  (member v 2))
+  (pair-ref v 1))
 
 (define (cadr v)
   (car (cdr v)))
 
 (define (cddr v)
   (cdr (cdr v)))
-
-(define %tag-pair "pair")
-
-(define (pair? v)
-  (eq? (tag v) %tag-pair))
 
 (define (list? v)
   (if (pair? v)
@@ -100,20 +92,12 @@
 
     (format "(%s)" (%print-pair self))))
 
-(define (cons a b)
-  (let* ([index      (λ (self key)
-                       (if (tag? key)
-                           %tag-pair
-                           (void)))]
-
-         [to-string  (λ (self)
-                       (if (list? self)
-                           (print-list self)
-                           (print-pair self)))])
-
-    (setmetatable (%vector a b)
-                  (%hash __index    index
-                         __tostring to-string))))
+(impl ToString pair:type
+      (let ([to-string (λ (self)
+                         (if (list? self)
+                             (print-list self)
+                             (print-pair self)))])
+        (s-lua (#%table ["to-string" to-string]))))
 
 (define list
   (s-lua
