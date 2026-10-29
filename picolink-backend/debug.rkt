@@ -29,7 +29,7 @@
     (define provide-scope (compiled-module-provide-scope mod))
 
     (define (print-binding ident)
-      (define binding (lookup-in-module ident))
+      (define binding (lookup ident))
       (displayln (format "  ~a:" (syntax-e ident)))
       (displayln (format "   ~a" (string-replace (pretty-format binding)
                                                  "\n" "\n   "))))
