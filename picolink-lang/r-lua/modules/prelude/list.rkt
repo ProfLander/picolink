@@ -6,7 +6,8 @@
                setmetatable)
 
          (only lua/ext/table
-               member)
+               table-ref
+               table-set!)
 
          (only lua/ext/values
                foldr-values)
@@ -25,7 +26,6 @@
          prelude/struct
          prelude/surface
          prelude/type
-         prelude/vector
          prelude/void)
 
 (provide null?

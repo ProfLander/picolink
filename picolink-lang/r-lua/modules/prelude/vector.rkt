@@ -6,8 +6,9 @@
                tostring)
 
          (only lua/ext/table
-               member
-               length)
+               table-ref
+               table-set!
+               table-length)
 
          prelude/arith
          prelude/binding
@@ -36,10 +37,13 @@
                          (#%table #%vararg)))))))
 
 (define (vector-ref self idx)
-  (member self (+ 1 idx)))
+  (table-ref self (+ 1 idx)))
+
+(define (vector-set! self idx val)
+  (table-set! self (+ 1 idx) val))
 
 (define (vector-length self idx)
-  (length self))
+  (table-length self))
 
 (impl ToString vector:type
 
@@ -47,7 +51,7 @@
              (λ (self)
                (string-append
                 (for/fold ([acc "#("])
-                          ([i (in-range 0 (- (length self) 1))])
+                          ([i (in-range 0 (- (vector-length self) 1))])
                   (let* ([val (vector-ref self i)]
                          [str (tostring val)])
                     (if (eq? i 0)

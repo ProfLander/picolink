@@ -19,11 +19,8 @@
    (with-syntax ([name-ref
                   (format-id #'name "~a-ref" #'name)]
 
-                 [(field-str ...)
-                  (for/list ([field (in-list (attribute field))])
-                    (symbol->string (syntax-e field)))]
-
-                 [(field ...) (attribute field)])
+                 [name-set!
+                  (format-id #'name "~a-set!" #'name)])
 
      #'(begin
          (define-type type-name
@@ -35,9 +32,7 @@
                     (s-lua (#%table field ...))))
 
          (define (name-ref self idx)
-           (member self (+ idx 1)))
+           (table-ref self (+ idx 1)))
 
-         #;(define (name-set! self idx val)
-             (s-lua (#%assign [(#%member self (#%add idx 1))]
-                              [val]))
-             (void))))])
+         (define (name-set! self idx val)
+           (table-set! self (+ idx 1) val))))])
