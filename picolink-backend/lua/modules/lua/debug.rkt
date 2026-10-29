@@ -5,6 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
+  #:template (#%member debug _)
   debug
   getfenv
   gethook
