@@ -316,6 +316,7 @@
            (string-join (attribute expr.lua) ", "))])
 
 (define-lua-syntax-class var
+  #:commit
   #:literal-sets [s-lua-ir-literals]
 
   [name:name
@@ -375,18 +376,20 @@
    (attribute prefix.lua)])
 
 (define-lua-syntax-class prefix-expr
+  #:commit
   #:literal-sets [s-lua-ir-literals]
-
-  [var:var
-   (attribute var.lua)]
 
   [(quote ~! exp:expr)
    (format "(~a)" (attribute exp.lua))]
 
   [call:function-call
-   (attribute call.lua)])
+   (attribute call.lua)]
+
+  [var:var
+   (attribute var.lua)])
 
 (define-lua-syntax-class function-call
+  #:commit
   #:literal-sets [s-lua-ir-literals]
 
   [(#%call prefix:prefix-expr-or-method str:string)

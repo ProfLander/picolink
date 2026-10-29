@@ -67,10 +67,12 @@
 (define-syntax define-parser-like-syntax-class
   (syntax-parser
     [(_ name:id out:id
+        (~optional (~and commit #:commit))
         (~seq kw:keyword expr:expr) ...
         [pat body ... ret] ...)
      #'(define-syntax-class name
          (~@ kw expr) ...
+         (~? commit)
          (pattern pat
                   #:do [body ...]
                   #:attr out ret)
