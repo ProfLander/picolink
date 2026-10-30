@@ -58,5 +58,5 @@
 (define (debug-run _lctx _linked)
   #'(void))
 
-(define (debug-interact)
+(define (debug-interact _lctx _stx)
   #'(void))
