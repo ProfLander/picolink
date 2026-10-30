@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only prelude/equality
+(require (only r-lua/prelude/equality
                eq?)
 
          (only lua
@@ -9,7 +9,7 @@
          (only lua/ext/values
                foldl-values)
 
-         prelude/surface)
+         r-lua/prelude/surface)
 
 (provide (all-defined))
 

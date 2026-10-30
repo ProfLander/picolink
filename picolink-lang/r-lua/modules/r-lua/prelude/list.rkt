@@ -15,18 +15,18 @@
          (only lua/string
                format)
 
-         prelude/arith
-         prelude/binding
-         prelude/function
-         prelude/equality
-         prelude/hash
-         prelude/interface
-         prelude/logic
-         prelude/print
-         prelude/struct
-         prelude/surface
-         prelude/type
-         prelude/void)
+         r-lua/prelude/arith
+         r-lua/prelude/binding
+         r-lua/prelude/function
+         r-lua/prelude/equality
+         r-lua/prelude/hash
+         r-lua/prelude/interface
+         r-lua/prelude/logic
+         r-lua/prelude/print
+         r-lua/prelude/struct
+         r-lua/prelude/surface
+         r-lua/prelude/type
+         r-lua/prelude/void)
 
 (provide null?
          null

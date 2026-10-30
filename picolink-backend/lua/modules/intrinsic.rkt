@@ -1,9 +1,9 @@
 #lang picolink/r-lua/base
 
-(require prelude/surface)
+(require r-lua/prelude/surface)
 
 (provide (all-defined)
-         (all-from prelude/surface))
+         (all-from r-lua/prelude/surface))
 
 (define-macro define-intrinsics
   [(_ (~optional (~seq #:template template)

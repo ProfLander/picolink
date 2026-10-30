@@ -1,8 +1,8 @@
 #lang picolink/r-lua/base
 
 (require (only lua type)
-         prelude/equality
-         prelude/surface)
+         r-lua/prelude/equality
+         r-lua/prelude/surface)
 
 (provide (all-defined))
 

@@ -13,17 +13,17 @@
                table-set!
                table-length)
 
-         prelude/arith
-         prelude/binding
-         prelude/equality
-         prelude/for
-         prelude/interface
-         prelude/logic
-         prelude/print
-         prelude/surface
-         prelude/string
-         prelude/type
-         prelude/void)
+         r-lua/prelude/arith
+         r-lua/prelude/binding
+         r-lua/prelude/equality
+         r-lua/prelude/for
+         r-lua/prelude/interface
+         r-lua/prelude/logic
+         r-lua/prelude/print
+         r-lua/prelude/surface
+         r-lua/prelude/string
+         r-lua/prelude/type
+         r-lua/prelude/void)
 
 (provide (all-defined))
 

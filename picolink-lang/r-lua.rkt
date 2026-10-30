@@ -15,8 +15,11 @@
 #:compiler     r-lua-compiler
 
 (define (r-lua-modules)
-  (list #'prelude))
+  (list #'r-lua/prelude))
 
 (define (r-lua-inject)
-  (define ident (syntax-local-introduce (datum->syntax #f 'prelude)))
+
+  (define ident
+    (syntax-local-introduce (datum->syntax #f 'r-lua/prelude)))
+
   (require! ident ident #:space r-lua-space))

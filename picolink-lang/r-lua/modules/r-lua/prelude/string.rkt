@@ -2,8 +2,8 @@
 
 (require (only lua type)
          (only lua/ext/values foldl-values)
-         prelude/equality
-         prelude/surface)
+         r-lua/prelude/equality
+         r-lua/prelude/surface)
 
 (provide (all-defined))
 

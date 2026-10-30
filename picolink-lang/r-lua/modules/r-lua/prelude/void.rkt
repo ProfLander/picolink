@@ -2,8 +2,8 @@
 
 (require (only lua newproxy))
 
-(require prelude/equality
-         prelude/surface)
+(require r-lua/prelude/equality
+         r-lua/prelude/surface)
 
 (provide (all-defined))
 

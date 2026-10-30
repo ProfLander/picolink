@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require prelude/void)
+(require r-lua/prelude/void)
 
 (provide (all-defined))
 

@@ -4,12 +4,12 @@
                getmetatable
                setmetatable)
 
-         prelude/equality
-         prelude/function
-         prelude/logic
-         prelude/print
-         prelude/surface
-         prelude/void)
+         r-lua/prelude/equality
+         r-lua/prelude/function
+         r-lua/prelude/logic
+         r-lua/prelude/print
+         r-lua/prelude/surface
+         r-lua/prelude/void)
 
 (provide (all-defined))
 

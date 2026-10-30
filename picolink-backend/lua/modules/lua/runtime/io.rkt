@@ -8,9 +8,9 @@
                table-ref
                table-call)
 
-         prelude/surface
-         prelude/print
-         prelude/void)
+         r-lua/prelude/surface
+         r-lua/prelude/print
+         r-lua/prelude/void)
 
 (define (set-unbuffered-stdio!)
   (table-call stdout "setvbuf" "no")
