@@ -15,5 +15,11 @@
                 (#%assign [(#%member t (quote k))] [v])
                 (#%return %void)))))
 
+(define table-call
+  (s-lua
+   (#%function (t k #%vararg)
+               (#%block
+                (#%return (#%call (#%member t 'k) t #%vararg))))))
+
 (define (table-length t)
   (s-lua (#%length t)))
