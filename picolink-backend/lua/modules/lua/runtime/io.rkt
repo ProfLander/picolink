@@ -12,6 +12,8 @@
          r-lua/prelude/print
          r-lua/prelude/void)
 
+(provide (all-defined))
+
 (define (set-unbuffered-stdio!)
   (table-call stdout "setvbuf" "no")
   (table-call stderr "setvbuf" "no")
