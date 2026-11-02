@@ -131,25 +131,25 @@
     (syntax/loc this-syntax
       (#%assign [ident] [expr.s-lua])))]
 
-  [(#%let ~! ([name val:expr] ...)
-          body:expr)
+  [(#%let-values ~! ([(name:id ...) val:expr] ...)
+                 body:expr)
    (in-s-lua
     (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
       (syntax/loc this-syntax
         (#%do
          (#%block
-          (#%local [name ...] [val.s-lua ...])
+          (#%local [name ...] [val.s-lua]) ...
           body ...)))))]
 
-  [(#%letrec ~! ([name val:expr] ...)
-             body:expr)
+  [(#%letrec-values ~! ([(name:id ...) val:expr] ...)
+                    body:expr)
    (in-s-lua
     (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
       (syntax/loc this-syntax
         (#%do
          (#%block
-          (#%local [name ...])
-          (#%assign [name ...] [val.s-lua ...])
+          (#%local [name ... ...])
+          (#%assign [name ...] [val.s-lua]) ...
           body ...)))))]
 
   [(#%declare ~! (name ...)

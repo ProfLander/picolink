@@ -120,7 +120,9 @@
                                      [atom (attribute body.atom)])
                             (append binds
                                     (list (close-bind)
-                                          (let-bind (generate-temporary) atom))))))]
+                                          (let-bind (list
+                                                     (generate-temporary))
+                                                    atom))))))]
 
            #:attr binds (drop-right %binds 2)
 
@@ -162,8 +164,8 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%let ~! ([ident:id expr:expr] ...)
-                  body:expr)
+  (pattern (#%let-values ~! ([(ident:id ...) expr:expr] ...)
+                         body:expr)
 
            #:attr binds
            (append (apply append (attribute expr.binds))
@@ -172,10 +174,11 @@
 
                    (apply append
                           (list (map (syntax-parser
-                                       [(ident atom)
-                                        (let-bind #'ident #'atom)])
+                                       [((ident ...) atom)
+                                        (let-bind (attribute ident)
+                                                  #'atom)])
                                      (syntax-e
-                                      #'([ident expr.atom] ...)))))
+                                      #'([(ident ...) expr.atom] ...)))))
 
                    (attribute body.binds))
 
@@ -184,8 +187,8 @@
            #:attr anf (binds+atom->r-lua-anf (attribute binds)
                                              (attribute atom)))
 
-  (pattern (#%letrec ~! ([ident:id expr:expr] ...)
-                     body:expr)
+  (pattern (#%letrec-values ~! ([(ident:id ...) expr:expr] ...)
+                            body:expr)
 
            #:attr binds
            (append (apply append (attribute expr.binds))
@@ -194,10 +197,11 @@
 
                    (apply append
                           (list (map (syntax-parser
-                                       [(ident atom)
-                                        (letrec-bind #'ident #'atom)])
+                                       [((ident ...) atom)
+                                        (letrec-bind (attribute ident)
+                                                     #'atom)])
                                      (syntax-e
-                                      #'([ident expr.atom] ...)))))
+                                      #'([(ident ...) expr.atom] ...)))))
 
                    (attribute body.binds))
 
@@ -268,49 +272,49 @@
                  ([bind (in-list binds)])
         (cond
           [(let-bind? bind)
-           (with-syntax ([ident (let-bind-ident bind)]
+           (with-syntax ([(ident ...) (let-bind-ident bind)]
                          [expr  (let-bind-expr bind)])
              (syntax-parse stx
                #:literal-sets [r-lua-ir-literals]
-               [(#%let ([stx-ident stx-expr] ...)
-                       body)
+               [(#%let-values ([(stx-ident ...) stx-expr] ...)
+                              body)
                 #:when open
                 #:cut
                 (values (in-r-lua
                          (syntax/loc this-syntax
-                           (#%let ([ident expr]
-                                   [stx-ident stx-expr]
-                                   ...)
-                                  body)))
+                           (#%let-values ([(ident ...) expr]
+                                          [(stx-ident ...) stx-expr]
+                                          ...)
+                                         body)))
                         open)]
                [stx
                 (values (in-r-lua
                          (syntax/loc this-syntax
-                           (#%let ([ident expr])
-                                  stx)))
+                           (#%let-values ([(ident ...) expr])
+                                         stx)))
                         #t)]))]
 
           [(letrec-bind? bind)
-           (with-syntax ([ident    (letrec-bind-ident bind)]
+           (with-syntax ([(ident ...)    (letrec-bind-ident bind)]
                          [expr     (letrec-bind-expr bind)])
              (syntax-parse stx
                #:literal-sets [r-lua-ir-literals]
-               [(#%letrec ([stx-ident stx-expr] ...)
-                          body)
+               [(#%letrec-values ([(stx-ident ...) stx-expr] ...)
+                                 body)
                 #:when open
                 #:cut
                 (values (in-r-lua
                          (syntax/loc this-syntax
-                           (#%letrec ([ident expr]
-                                      [stx-ident stx-expr]
-                                      ...)
-                                     body)))
+                           (#%letrec-values ([(ident ...) expr]
+                                             [(stx-ident ...) stx-expr]
+                                             ...)
+                                            body)))
                         open)]
                [stx
                 (values (in-r-lua
                          (syntax/loc this-syntax
-                           (#%letrec ([ident expr])
-                                     stx)))
+                           (#%letrec-values ([(ident ...) expr])
+                                            stx)))
                         #t)]))]
 
           [(declaration? bind)

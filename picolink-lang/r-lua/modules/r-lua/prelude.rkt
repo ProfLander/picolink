@@ -19,6 +19,7 @@
          r-lua/prelude/struct
          r-lua/prelude/surface
          r-lua/prelude/type
+         r-lua/prelude/values
          r-lua/prelude/vector
          r-lua/prelude/void)
 
@@ -41,5 +42,6 @@
          (all-from r-lua/prelude/struct)
          (all-from r-lua/prelude/surface)
          (all-from r-lua/prelude/type)
+         (all-from r-lua/prelude/values)
          (all-from r-lua/prelude/vector)
          (all-from r-lua/prelude/void))

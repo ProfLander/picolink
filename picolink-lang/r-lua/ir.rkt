@@ -21,8 +21,8 @@
   [#%module-begin
    #%begin
    #%define
-   #%let
-   #%letrec
+   #%let-values
+   #%letrec-values
    #%declare
    #%set!
    #%abs
@@ -39,8 +39,8 @@
     (pattern (~or #%module-begin
                   #%begin
                   #%define
-                  #%let
-                  #%letrec
+                  #%let-values
+                  #%letrec-values
                   #%declare
                   #%set!
                   #%abs

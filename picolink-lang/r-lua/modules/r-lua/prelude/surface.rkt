@@ -77,36 +77,51 @@
    (syntax/loc this-syntax
      (#%set! name val))])
 
-(define-macro let
+(define-macro let-values
   [(_ _ ...)
    (syntax-parser/scope
     scope
-    [(_ ([name (~cata val r-lua/expr)] ...)
+    [(_ ([(name ...) (~cata val r-lua/expr)] ...)
         body ...)
 
-     (for ([name (in-list (attribute name))])
+     (for ([name (in-list (apply append (attribute name)))])
        (bind! name (r-lua-var) #:space r-lua-space))
 
      (with-syntax ([(body ...) (map r-lua/expr (attribute body))])
        (syntax/loc this-syntax
-         (#%let ([name val] ...)
-                (#%begin body ...))))])])
+         (#%let-values ([(name ...) val] ...)
+                       (#%begin body ...))))])])
 
-(define-macro letrec
+(define-macro let
+  [(_ ([name val] ...)
+      body ...)
+   (syntax/loc this-syntax
+     (let-values ([(name) val] ...)
+       body ...))])
+
+(define-macro letrec-values
   [(_ _ ...)
    (syntax-parser/scope
     scope
-    [(_ ([name val] ...)
+    [(_ ([(name ...) val] ...)
         body ...)
 
-     (for ([name (in-list (attribute name))])
+     (for ([name (in-list (apply append (attribute name)))])
        (bind! name (r-lua-var) #:space r-lua-space))
 
      (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
                    [(body ...) (map r-lua/expr (attribute body))])
        (syntax/loc this-syntax
-         (#%letrec ([name val] ...)
-                   (#%begin body ...))))])])
+         (#%letrec-values ([(name ...) val] ...)
+                          (#%begin body ...))))])])
+
+(define-macro letrec
+  [(_ ([name val] ...)
+      body ...)
+
+   (syntax/loc this-syntax
+     (letrec-values ([(name) val] ...)
+       body ...))])
 
 (define-macro s-lua
   [(_ form)
