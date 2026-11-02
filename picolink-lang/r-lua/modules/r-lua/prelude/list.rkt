@@ -3,7 +3,8 @@
 (require (only lua
                tostring
                getmetatable
-               setmetatable)
+               setmetatable
+               error)
 
          (only lua/ext/table
                table-ref
@@ -17,8 +18,9 @@
 
          r-lua/prelude/arith
          r-lua/prelude/binding
-         r-lua/prelude/function
+         r-lua/prelude/conditional
          r-lua/prelude/equality
+         r-lua/prelude/function
          r-lua/prelude/hash
          r-lua/prelude/interface
          r-lua/prelude/logic
@@ -39,7 +41,9 @@
          cddr
 
          list?
-         list)
+         list
+
+         length)
 
 (define-struct %null []
   #:predicate-name null?)
@@ -106,3 +110,16 @@
                 (#%return
                  (#%call foldr-values
                          cons null #%vararg))))))
+
+(define length
+  (letrec ([%length
+            (λ (acc lst)
+              (if (pair? lst)
+                  (+ acc 1 (length (cdr lst)))
+                  acc))])
+    (λ (lst)
+
+      (unless (list? lst)
+        (error (format "value is not a list: %s" lst)))
+
+      (%length 0 lst))))
