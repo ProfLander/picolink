@@ -5,6 +5,7 @@ picolink/r-lua/base
          picolink/s-lua/ir
          (for-syntax racket/base
                      racket/syntax
+                     racket/function
                      syntax/parse
                      picolink/syntax
                      picolink/ee-lib
@@ -16,6 +17,7 @@ picolink/r-lua/base
                        picolink/s-lua/ir)
          (for-syntax (all-from-out racket/base
                                    racket/syntax
+                                   racket/function
                                    syntax/parse
                                    picolink/syntax
                                    picolink/ee-lib
