@@ -30,7 +30,9 @@
                    (member (attribute symbol) internal-names))]
 
            #:fail-when reserved-name
-           (format "reserved name: ~a" (car reserved-name))))
+           (format "reserved name: ~a" (car reserved-name))
+
+           #:attr lua (rewrite-name #'ident)))
 
 (define reserved-symbol->lua-name
   (hash
@@ -159,10 +161,10 @@
    "break"]
 
   [(#%label ~! name:name)
-   (format "::~a::" (rewrite-name #'name))]
+   (format "::~a::" (attribute name.lua))]
 
   [(#%goto ~! name:name)
-   (format "goto ~a" (rewrite-name #'name))]
+   (format "goto ~a" (attribute name.lua))]
 
   [(#%do ~! b:block)
    (format "do~a~aend"
@@ -206,7 +208,7 @@
           ~!
           b:block)
    (format "for ~a in ~a do~a~aend"
-           (string-join (map rewrite-name (attribute name)) ", ")
+           (string-join (attribute name.lua) ", ")
            (string-join (attribute exp.lua) ", ")
            (indent (format-block (attribute b.lua)))
            (current-separator))]
@@ -215,7 +217,7 @@
           ~!
           b:block)
    (format "for ~a = ~a, ~a~a do~a~aend"
-           (rewrite-name #'name)
+           (attribute name.lua)
            (attribute from.lua)
            (attribute to.lua)
            (if (attribute step)
@@ -277,9 +279,7 @@
                b:block)
    (format "function ~a(~a)~a~aend"
            (attribute name.lua)
-           (string-join (append (map (compose symbol->string
-                                              syntax-e)
-                                     (attribute arg))
+           (string-join (append (attribute arg.lua)
                                 (if (attribute vararg)
                                     (list "...")
                                     null))
@@ -292,16 +292,16 @@
   [(#%member ~! path:statement/function/path name:name)
    (string-append (attribute path.lua)
                   "."
-                  (rewrite-name #'name))]
+                  (attribute name.lua))]
   [name:name
-   (rewrite-name #'name)])
+   (attribute name.lua)])
 
 (define-lua-syntax-class statement/function/name
   #:literal-sets [s-lua-ir-literals]
   [(#%method ~! path:statement/function/path name:name)
    (string-append (attribute path.lua)
                   ":"
-                  (rewrite-name #'name))]
+                  (attribute name.lua))]
   [(~and path:statement/function/path)
    (attribute path.lua)])
 
@@ -320,10 +320,10 @@
   #:literal-sets [s-lua-ir-literals]
 
   [name:name
-   (rewrite-name #'name)]
+   (attribute name.lua)]
 
   [(#%member exp:expr field:name)
-   (format "~a.~a" (attribute exp.lua) (rewrite-name #'field))]
+   (format "~a.~a" (attribute exp.lua) (attribute field.lua))]
 
   [(#%member exp:prefix-expr (quote field:expr))
    (format "~a[~a]" (attribute exp.lua) (attribute field.lua))]
@@ -415,7 +415,7 @@
   [(#%method ~! prefix:prefix-expr name:name)
    (format "~a:~a"
            (attribute prefix.lua)
-           (rewrite-name #'name))]
+           (attribute name.lua))]
 
   [prefix:prefix-expr
    (attribute prefix.lua)])
@@ -429,7 +429,7 @@
                b:block)
 
    (format "function(~a)~a~aend"
-           (string-join (append (map rewrite-name (attribute arg))
+           (string-join (append (attribute arg.lua)
                                 (if (attribute vararg)
                                     (list "...")
                                     null))
@@ -448,7 +448,7 @@
 
   [(key:name ~! exp:expr)
    (format "~a = ~a"
-           (rewrite-name #'key)
+           (attribute key.lua)
            (attribute exp.lua))]
 
   [(key:expr ~! exp:expr)
