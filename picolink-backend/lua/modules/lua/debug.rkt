@@ -6,7 +6,6 @@
 
 (define-intrinsics
   #:template (#%member debug _)
-  debug
   getfenv
   gethook
   getinfo
@@ -19,4 +18,5 @@
   setlocal
   setmetatable
   setupvalue
-  traceback)
+  traceback
+  debug)
