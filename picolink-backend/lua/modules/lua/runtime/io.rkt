@@ -5,8 +5,10 @@
                stderr)
 
          (only lua/ext/table
-               table-ref
-               table-call)
+               table-ref)
+
+         (only lua/ext/object
+               send)
 
          r-lua/prelude/surface
          r-lua/prelude/print
@@ -15,6 +17,6 @@
 (provide (all-defined))
 
 (define (set-unbuffered-stdio!)
-  (table-call stdout "setvbuf" "no")
-  (table-call stderr "setvbuf" "no")
+  (send stdout "setvbuf" "no")
+  (send stderr "setvbuf" "no")
   (void))
