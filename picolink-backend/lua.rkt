@@ -63,6 +63,7 @@
 (define (lua-transform-module _lctx prog mod)
   (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
                                  'entry-point)]
+         [mod (splice-module-name mod)]
          [mod (splice-requires mod)]
          [mod (splice-lctx mod)]
          [mod (splice-provides mod)]
@@ -172,6 +173,21 @@
 
     (compiled-module-update mod #:stx stx)))
 
+(define (splice-module-name mod)
+
+  (let ([stx (compiled-module-stx mod)])
+
+    (compiled-module-update
+     mod
+     #:stx (s-lua-append
+            (in-s-lua
+             (with-syntax ([module-name (module-ident->lua-string
+                                         (compiled-module-ident mod))])
+               #'(#%chunk
+                  (#%block
+                   (#%local [_NAME] [module-name])))))
+            stx))))
+
 (define (splice-lctx mod)
 
   (define module-scope
@@ -187,9 +203,7 @@
      #:stx (s-lua-append
             stx
             (in-s-lua
-             (with-syntax ([module-name (module-ident->lua-string
-                                         (compiled-module-ident mod))]
-                           [(def ...) definitions])
+             (with-syntax ([(def ...) definitions])
                #'(#%chunk
                   (#%block
 
@@ -198,7 +212,7 @@
                           (#%block
                            (#%assign [lctx] [(#%table)]))))
 
-                   (#%assign [(#%member lctx module-name)]
+                   (#%assign [(#%member lctx '_NAME)]
                              [(#%call setmetatable
                                       (#%table [def def] ...)
                                       (#%table [__index _G]))])))))))))
@@ -272,14 +286,7 @@
   (in-s-lua
    #'(#%chunk
       (#%block
-
-       (#%call (#%method (#%member io stdout)
-                         setvbuf)
-               "no")
-
-       (#%call (#%method (#%member io stderr)
-                         setvbuf)
-               "no")))))
+       (#%call set-unbuffered-stdio!)))))
 
 (define (splice-unbuffered-stdio mod)
   (compiled-module-update
@@ -287,44 +294,43 @@
    #:stx (s-lua-append (compiled-module-stx mod)
                        stx-unbuffered-stdio)))
 
-(define (make-repl-stx mod)
-  (with-syntax ([module-name (module-ident->lua-string
-                              (compiled-module-ident mod))])
-    (in-s-lua
-     #'(#%chunk
+(define repl-stx
+  (in-s-lua
+   #'(#%chunk
+      (#%block
+
+       (#%local [repl-scope] ['_NAME])
+       (#%call repl repl-scope)
+
+       (#%while
+        #t
         (#%block
+         (#%local [input]   [(#%call (#%member io read))])
+         (#%local [res err] [(#%call loadstring
+                                     input
+                                     "repl")])
+         (#%if res
 
-         (#%local [repl-scope] [module-name])
+               (#%then
+                (#%block
+                 (#%call
+                  (#%call setfenv res
+                          (#%member lctx
+                                    'repl-scope)))))
 
-         (#%while
-          #t
-          (#%block
-           (#%local [input]   [(#%call (#%member io read))])
-           (#%local [res err] [(#%call loadstring
-                                       input
-                                       "repl")])
-           (#%if res
-
-                 (#%then
-                  (#%block
-                   (#%call
-                    (#%call setfenv res
-                            (#%member lctx
-                                      'repl-scope)))))
-
-                 (#%else
-                  (#%block
-                   (#%call
-                    (#%method (#%member io stderr)
-                              write)
-                    err)))))))))))
+               (#%else
+                (#%block
+                 (#%call
+                  (#%method (#%member io stderr)
+                            write)
+                  err))))))))))
 
 (define (splice-repl mod)
   (compiled-module-update
    mod
    #:stx
    (s-lua-append (compiled-module-stx mod)
-                 (make-repl-stx mod))))
+                 repl-stx)))
 
 (define (program-entry-point prog)
   (findf (λ (mod)
