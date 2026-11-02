@@ -8,7 +8,9 @@
 (define-macro define-intrinsics
   [(_ (~optional (~seq #:template template)
                  #:defaults ([template #'_]))
-      name:id ...)
+      (~or name:id
+           [from-name:id to-name:id])
+      ...)
 
    (define (replace name stx)
      (syntax-parse stx
@@ -25,9 +27,14 @@
 
        [_ this-syntax]))
 
-   (with-syntax ([(value ...) (map (λ (name)
-                                     (replace name #'template))
-                                   (attribute name))])
+   (with-syntax ([([name value] ...)
+                  (append (for/list ([name (attribute name)])
+                            (list name (replace name #'template)))
+
+                          (for/list ([from-name (attribute from-name)]
+                                     [to-name   (attribute to-name)])
+                            (list to-name
+                                  (replace from-name #'template))))])
      #'(begin
          (define name (s-lua value))
          ...))])
