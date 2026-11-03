@@ -133,7 +133,7 @@
   (table-set! handlers "threaderror"
               (or (table-ref handlers "threaderror")
                   (λ (_world t err)
-                    (error (format "thread error (%s)\\n\\n%s"
+                    (error (format "thread error (%s)\n\n%s"
                                    (tostring t)
                                    err)))))
 

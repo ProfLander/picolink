@@ -3,9 +3,8 @@
 (define collection "picolink")
 
 (define deps '["base"
-               "syntax-spec-v3"
                "ee-lib"
-               "picopass"
+               "string-tools"
                "picolink-lib"])
 
 (define build-deps '())

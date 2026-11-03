@@ -7,6 +7,8 @@
 
          syntax/parse
 
+         string-tools
+
          picolink/syntax
 
          (for-template racket/base
@@ -346,7 +348,7 @@
    (number->string (syntax-e #'num))]
 
   [str:string
-   (format "\"~a\"" (syntax-e #'str))]
+   (string-quote (string-escape-visible (syntax-e #'str)))]
 
   [#%vararg
    "..."]
