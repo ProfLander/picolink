@@ -393,7 +393,8 @@
                      (values (path-replace-extension path ".lua")
                              (compile (compiled-module-stx mod)))))]
 
-        [build-directory (build-path (current-build-directory)
+        [build-directory (build-path (current-config-directory)
+                                     (current-build-directory)
                                      (current-lua-build-subdir))])
 
     (delete-directory/files build-directory #:must-exist? #f)

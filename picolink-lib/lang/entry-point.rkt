@@ -47,6 +47,8 @@
                (find-relative-path (current-directory)
                                    (path->string source-path)))))
 
+    (current-config-directory (path-only config-path))
+
     (with-syntax* ([config-path (path->string config-path)]
 
                    [language-path language-path]
