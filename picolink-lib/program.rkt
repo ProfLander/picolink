@@ -2,12 +2,10 @@
 
 (require racket/function
          racket/match
-         racket/hash
 
          syntax/strip-context
 
          picolink/ee-lib
-         picolink/syntax
          picolink/output
          picolink/program/scope
          picolink/module/syntax
@@ -81,7 +79,10 @@
   (unless (= (length order)
              (length mod-idents))
 
-    (error "circular dependency"))
+    (displayln "circular dependency:" (current-error-port))
+    (eprintf "  order length: ~a\n" (length order))
+    (eprintf "  mod-idents length: ~a\n" (length mod-idents))
+    (error ""))
 
   order)
 
