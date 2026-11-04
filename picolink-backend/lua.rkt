@@ -455,6 +455,7 @@
                   (with-syntax ([runner (current-lua-runner)]
                                 [build-directory
                                  (build-path
+                                  (current-config-directory)
                                   (current-build-directory)
                                   (current-lua-build-subdir))])
                     #'(runner exe build-directory prog))])
