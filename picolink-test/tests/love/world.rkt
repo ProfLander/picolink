@@ -42,8 +42,10 @@
              (on-tick tick)
              (on-draw draw-world))))
 
-(letrec ([loop-a (λ (world)
-                   (loop-b (ping world)))]
-         [loop-b (λ (world)
-                   (loop-a (pong world)))])
-  (loop-a world))
+#;(letrec ([loop-a (λ (world)
+                     (loop-b (ping world)))]
+           [loop-b (λ (world)
+                     (loop-a (pong world)))])
+    (loop-a world))
+
+(pong (ping world))

@@ -11,12 +11,6 @@
          (only lua/io
                stderr)
 
-         (only lua/ext/module
-               _NAME)
-
-         (only lua/ext/lctx
-               lctx)
-
          (only lua/ext/table
                table-ref)
 
@@ -50,7 +44,7 @@
     (when input
       (let-values ([(res err) (loadstring input "repl")])
         (if res
-            (let ([f (setfenv res (table-ref lctx repl-scope))])
+            (let ([f (setfenv res (table-ref (s-lua lctx) repl-scope))])
               (let-values ([(res err) (pcall f)])
                 (unless res
                   (send stderr "write" (traceback err)))))

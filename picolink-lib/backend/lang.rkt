@@ -15,6 +15,8 @@
     [(_ (~or (~optional (~seq #:target       target))
              (~optional (~seq #:search-paths search-paths)
                         #:defaults ([search-paths #'(const null)]))
+             (~optional (~seq #:modules modules)
+                        #:defaults ([modules #'(const null)]))
              (~optional (~seq #:transform    transform)
                         #:defaults ([transform #'(λ (a b) b)]))
              (~optional (~seq #:link         link))
@@ -42,6 +44,7 @@
         (define #%backend
           (make-backend #:target       target
                         #:search-paths search-paths
+                        #:modules      modules
                         #:transform    transform
                         #:link         link
                         #:run          run

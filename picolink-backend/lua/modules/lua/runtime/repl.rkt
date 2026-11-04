@@ -15,9 +15,6 @@
          (only lua/ext/object
                send)
 
-         (only lua/ext/lctx
-               lctx)
-
          r-lua/prelude/binding
          r-lua/prelude/conditional
          r-lua/prelude/print
@@ -33,7 +30,7 @@
 
       (if res
 
-          (let ([f (setfenv res (table-ref lctx scope))])
+          (let ([f (setfenv res (table-ref (s-lua lctx) scope))])
             (let-values ([(res err) (pcall f)])
               (unless res
                 (send stderr "write" (traceback err 2)))))

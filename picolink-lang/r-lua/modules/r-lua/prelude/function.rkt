@@ -9,3 +9,8 @@
 
 (define (const x)
   (λ (_) x))
+
+(define-macro thunk
+  [(_ body ...)
+   #'(λ ()
+       body ...)])

@@ -25,24 +25,26 @@
                repl-init)
 
          r-lua/prelude/conditional
+         r-lua/prelude/function
          r-lua/prelude/logic
+         r-lua/prelude/print
          r-lua/prelude/surface
          r-lua/prelude/void)
 
 (provide (all-defined))
 
 (define (love-run entry-point)
+
+  (set-unbuffered-stdio!)
+  (repl-init)
+
   (table-set! love "run"
-              (λ ()
-
-                (set-unbuffered-stdio!)
-                (repl-init)
-
+              (thunk
                 (when load
                   (load (parse-game-arguments arg) arg))
 
                 (when timer
                   (step))
 
-                (λ ()
+                (thunk
                   (or (entry-point) 0)))))

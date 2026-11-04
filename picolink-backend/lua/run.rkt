@@ -1,6 +1,8 @@
 #lang racket/base
 
-(require racket/port
+(require racket/function
+         racket/port
+
          picolink/config)
 
 (provide (all-defined-out))
@@ -18,8 +20,7 @@
 
 (define (lua-listen exe-name sp out in err)
   (thread
-   (lambda ()
-     
+   (thunk
      (define ((writer port buffer) n)
        (cond
          [(eof-object? n) (void)]

@@ -1,59 +1,73 @@
 #lang picolink/backend
 
-(require syntax/parse
+(require racket/syntax
+
+         syntax/parse
 
          picolink/lua
          picolink/module/compiled
          (prefix-in s-lua: picolink/s-lua)
+         (only-in picolink/s-lua/lua rewrite-name)
+
          (for-template picolink/love/run
                        picolink/s-lua/ir))
 
 #:target       love-target
 #:search-paths love-search-paths
+#:modules      love-modules
 #:transform    love-transform
 #:link         love-link
 #:run          love-run
 #:interact     love-interact
 
-(define love-target    lua-target)
+(define love-target lua-target)
 
 (define (love-search-paths)
   (append (lua-search-paths)
           (list 'picolink/love/modules)))
 
+(define (love-modules)
+  (append (lua-modules)
+          (list #'love/runtime
+                #'love/runtime/stdin-thread)))
+
 (define love-transform lua-transform)
 
-(define (lift-love-runner mod)
+(define (lift-love-runtime mod)
   (compiled-module-update
    mod
    #:stx (syntax-parse (compiled-module-stx mod)
            #:literal-sets [s-lua-ir-literals]
 
-           [(#%chunk (#%block body ...))
+           [(#%chunk (#%block body ... tail))
+
             (in-s-lua
-             #'(#%chunk
-                (#%block
-                 (#%local [runner]
-                          [(#%call require "love.runtime.runner")])
+             (with-syntax ([tail (syntax-parse #'tail
+                                   #:literal-sets [s-lua-ir-literals]
+                                   [(#%call print tail)
+                                    #'tail]
+                                   [_ this-syntax])])
+               #'(#%chunk
+                  (#%block
+                   (#%local [runtime]
+                            [(#%call require "love.runtime")])
 
-                 (#%local [love__minus__run]
-                          [(#%member runner love__minus__run)])
-
-                 (#%call love__minus__run
-                         (#%function
-                          ()
-                          (#%block
-                           body ...))))))])))
+                   (#%call (#%member runtime love-run)
+                           (#%function
+                            ()
+                            (#%block
+                             body ...
+                             (#%return tail))))))))])))
 
 (define (love-transform-module _lctx prog mod)
   (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
                                  'entry-point)]
-         [mod (if is-entry-point
-                  (lift-love-runner mod)
-                  mod)]
-         [mod (splice-module-name mod)]
          [mod (splice-requires mod)]
          [mod (splice-lctx mod)]
+         [mod (if is-entry-point
+                  (lift-love-runtime mod)
+                  mod)]
+         [mod (splice-module-name mod)]
          [mod (splice-provides mod)])
 
     mod))

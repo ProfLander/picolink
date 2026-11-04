@@ -17,9 +17,11 @@
 (define-macro or
 
   [(_ a rest ...+)
-   #'(if a
-         a
-         (or rest ...))]
+   (with-syntax ([a* (generate-temporary)])
+     #'(let ([a* a])
+         (if a*
+             a*
+             (or rest ...))))]
 
   [(_ a)
    #'a])

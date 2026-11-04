@@ -23,8 +23,7 @@
 
          picolink/lang/source-module)
 
-(provide (all-defined-out)
-         (for-syntax #%entry-point-begin))
+(provide (for-syntax #%entry-point-begin))
 
 (begin-for-syntax
 
@@ -91,23 +90,73 @@
 
         (forward-macro
          this-syntax
-         #'(#%define-entry-point body ...))
+         #'(#%define-base-modules body ...))
 
         #f))]))
 
-(define-syntax #%define-entry-point
+(begin-for-syntax
+  (define (resolve-module-path search-paths path)
+    (for/fold ([acc #f])
+              ([search-path (in-list search-paths)]
+               #:break acc)
+
+      (cond
+        [(path? search-path)
+
+         (let* ([abs-path
+                 (build-path search-path path)]
+
+                [abs-path
+                 (path-replace-extension abs-path ".rkt")])
+
+           (and (file-exists? abs-path)
+                (with-syntax ([path (path->string abs-path)])
+                  #'(file path))))]
+
+        [(symbol? search-path)
+         (define mod-path
+           (string->symbol
+            (string-append (symbol->string search-path)
+                           "/"
+                           path)))
+
+         (and (with-handlers ([exn:fail? (const #f)])
+                (module-declared? mod-path #t))
+              (with-syntax ([mod-path mod-path])
+                #'mod-path))]
+
+        [else
+         (error (format "invalid search path: ~a"
+                        search-path))]))))
+
+(define-syntax #%define-base-modules
   (syntax-parser
     [(_ body ...)
 
      (when (current-debug)
-       (displayln "#%define-entry-point")
+       (displayln "#%define-base-modules")
        (println this-syntax))
+
+     (define backend (syntax-local-backend this-syntax))
+     (define backend-mods (backend-modules backend))
+     (define search-paths (backend-search-paths backend))
 
      (define mod (make-source-module-syntax this-syntax #'(body ...)))
      (define entry-point (datum->syntax this-syntax 'entry-point))
      (define entry-point-mod (module-ident this-syntax 'entry-point))
 
-     (with-syntax* ([mod mod]
+     (with-syntax* ([(backend-mod ...) backend-mods]
+
+                    [(backend-#%module ...)
+                     (for/list ([mod (in-list backend-mods)])
+                       (format-id mod "~a:#%module" mod))]
+
+                    [(backend-path ...)
+                     (for/list ([mod (in-list backend-mods)])
+                       (define mod-path (symbol->string (syntax-e mod)))
+                       (resolve-module-path search-paths mod-path))]
+
+                    [mod mod]
                     [entry-point entry-point]
                     [entry-point:#%module entry-point-mod]
 
@@ -115,12 +164,21 @@
                      (forward-macro
                       this-syntax
                       #'(#%require-dependencies
-                         (entry-point)
+                         (backend-mod ... entry-point)
                          ()))])
 
-       #`(begin
-           (define-for-syntax entry-point:#%module mod)
-           cont))]))
+       (syntax-local-lift-require
+
+        (syntax-local-introduce
+         #'(for-meta 0
+                     (rename backend-path backend-#%module #%module)
+                     ...))
+
+        #'(begin
+            (define-for-syntax entry-point:#%module mod)
+            cont)
+
+        #f))]))
 
 (define-syntax (#%require-dependencies stx)
 
@@ -159,41 +217,9 @@
      (define paths
        (for/list ([dependency (in-list dependencies)])
 
-         (define path
-           (for/fold ([acc #f])
-                     ([search-path (in-list search-paths)]
-                      #:break acc)
+         (define dep-path (symbol->string (syntax-e dependency)))
 
-             (define dep-path (symbol->string (syntax-e dependency)))
-
-             (cond
-               [(path? search-path)
-
-                (let* ([abs-path
-                        (build-path search-path dep-path)]
-
-                       [abs-path
-                        (path-replace-extension abs-path ".rkt")])
-
-                  (and (file-exists? abs-path)
-                       (with-syntax ([path (path->string abs-path)])
-                         #'(file path))))]
-
-               [(symbol? search-path)
-                (define mod-path
-                  (string->symbol
-                   (string-append (symbol->string search-path)
-                                  "/"
-                                  dep-path)))
-
-                (and (with-handlers ([exn:fail? (const #f)])
-                       (module-declared? mod-path #t))
-                     (with-syntax ([mod-path mod-path])
-                       #'mod-path))]
-
-               [else
-                (error (format "invalid search path: ~a"
-                               search-path))])))
+         (define path (resolve-module-path search-paths dep-path))
 
          (unless path
            (raise-syntax-error #f

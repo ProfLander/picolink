@@ -6,6 +6,7 @@
 
 (struct backend [target
                  %search-paths
+                 %modules
                  %transform
                  %link
                  %run
@@ -14,6 +15,7 @@
 
 (define (make-backend #:target       target
                       #:search-paths search-paths
+                      #:modules      modules
                       #:transform    transform
                       #:link         link
                       #:run          run
@@ -21,6 +23,7 @@
 
   (backend target
            search-paths
+           modules
            transform
            link
            run
@@ -34,6 +37,9 @@
 
 (define (backend-search-paths backend)
   ((backend-%search-paths backend)))
+
+(define (backend-modules backend)
+  ((backend-%modules backend)))
 
 (define (backend-transform backend lctx prog)
   ((backend-%transform backend) lctx prog))
