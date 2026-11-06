@@ -20,15 +20,19 @@
 
 (define-macro define-interface
   [(_ name ([from-name to-name] ...))
+
    (with-syntax ([(from-name ...)
                   (for/list ([ident (in-list (attribute from-name))])
                     (symbol->string (syntax-e ident)))]
+
                  [(to-name ...)
                   (for/list ([ident (in-list (attribute to-name))])
                     (symbol->string (syntax-e ident)))])
-     #'(define name
+
+     (syntax/loc this-syntax
+       (define name
          (setmetatable (s-lua (#%table [from-name to-name] ...))
-                       Interface)))])
+                       Interface))))])
 
 (define-interface Add       ([add        __add]))
 (define-interface Subtract  ([subtract   __sub]))

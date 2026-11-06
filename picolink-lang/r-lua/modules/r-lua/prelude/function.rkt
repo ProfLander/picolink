@@ -12,5 +12,6 @@
 
 (define-macro thunk
   [(_ body ...)
-   #'(λ ()
-       body ...)])
+   (syntax/loc this-syntax
+     (λ ()
+       body ...))])

@@ -4,7 +4,7 @@
 
          ee-lib
 
-         picolink/parser
+         picolink/binding
          picolink/language
 
          picolink/module/syntax

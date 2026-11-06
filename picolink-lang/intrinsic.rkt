@@ -24,7 +24,7 @@
       ...)
 
      (for ([prov (in-list (attribute prov))])
-       (bind-in-module! prov (intrinsic-var))
+       (bind! prov (intrinsic-var))
        (provide! prov prov))
 
      #f]))

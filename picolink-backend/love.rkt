@@ -1,13 +1,14 @@
 #lang picolink/backend
 
-(require racket/syntax
+(require racket/set
+         racket/function
+         racket/syntax
 
          syntax/parse
 
          picolink/lua
          picolink/module/compiled
          (prefix-in s-lua: picolink/s-lua)
-         (only-in picolink/s-lua/lua rewrite-name)
 
          (for-template picolink/love/run
                        picolink/s-lua/ir))
@@ -59,19 +60,6 @@
                              body ...
                              (#%return tail))))))))])))
 
-(define (love-transform-module _lctx prog mod)
-  (let* ([is-entry-point (equal? (syntax-e (compiled-module-ident mod))
-                                 'entry-point)]
-         [mod (splice-requires mod)]
-         [mod (splice-lctx mod)]
-         [mod (if is-entry-point
-                  (lift-love-runtime mod)
-                  mod)]
-         [mod (splice-module-name mod)]
-         [mod (splice-provides mod)])
-
-    mod))
-
 (define love-link      lua-link)
 
 (define love-run       lua-run)
@@ -83,4 +71,5 @@
 (current-lua-linker lua-link/collection)
 (current-lua-runner #'love-run)
 (current-lua-entry-point-name "main")
-(current-lua-transform-module love-transform-module)
+(current-lua-transform-module-body-pre identity)
+(current-lua-transform-module-body-post lift-love-runtime)

@@ -78,12 +78,12 @@
      (void)]
 
     [(define ident (~cata expr (dsl/expr _)))
-     (bind-in-module! #'ident (dsl-var))
+     (bind! #'ident (dsl-var))
      #'(#%define ident expr)]
 
     [(define-macro ident expr)
-     (bind-in-module! #'ident
-                      (dsl-syntax (eval-transformer (dsl/macro #'expr))))
+     (bind! #'ident
+            (dsl-syntax (eval-transformer (dsl/macro #'expr))))
      #'(#%define-macro ident expr)]
 
     [(~cata e dsl/expr)
@@ -96,7 +96,7 @@
 
   [ident:id
 
-   (unless (lookup-in-module #'ident dsl-var?)
+   (unless (lookup #'ident dsl-var?)
      (parameterize ([error-print-context-length 0])
        (raise-syntax-error #f
                            "unbound variable"
@@ -113,7 +113,7 @@
      #'(#%let ([ident expr]) body ...)])]
 
   [(ident arg ...)
-   #:do [(define mac (lookup-in-module #'ident dsl-syntax?))]
+   #:do [(define mac (lookup #'ident dsl-syntax?))]
    #:when mac
    (dsl/expr
     (apply-as-transformer (dsl-syntax-trx mac)

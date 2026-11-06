@@ -7,6 +7,7 @@
          r-lua/prelude/equality
          r-lua/prelude/function
          r-lua/prelude/interface
+         r-lua/prelude/logic
          r-lua/prelude/surface
          r-lua/prelude/print)
 
@@ -31,7 +32,8 @@
       ...)
 
    (with-syntax ([name-str (symbol->string (syntax-e #'printed-name))])
-     #'(begin
+     (syntax/loc this-syntax
+       (begin
          (define name
            (setmetatable (s-lua (#%table))
                          Type))
@@ -43,7 +45,7 @@
          (impl ToString name
                (let ([to-string (λ (self)
                                   name-str)])
-                 (s-lua (#%table ["to-string" to-string]))))))])
+                 (s-lua (#%table ["to-string" to-string])))))))])
 
 (define (ascribe type value)
   (setmetatable value type))

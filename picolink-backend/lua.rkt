@@ -12,6 +12,7 @@
          (except-in syntax/parse expr)
 
          picolink/ee-lib
+         picolink/binding
          picolink/config/parameters
          picolink/s-lua
          picolink/s-lua/lua
@@ -58,30 +59,96 @@
   (make-parameter 's-lua))
 
 (define (lua-transform lctx prog)
-  (let ([transform-mod (current-lua-transform-module)])
-    (for/list ([mod (in-list prog)]
-               #:when (compiled-module-stx mod))
 
-      (transform-mod lctx prog mod))))
+  (let ([transform-mod (current-lua-transform-module)])
+
+    (for/list ([mod (in-list prog)]
+
+               #:do [(define transformed
+                       (and (compiled-module-stx mod)
+                            (transform-mod lctx prog mod)))]
+
+               #:when (and transformed
+                           (compiled-module-stx transformed)))
+
+      transformed)))
 
 (define (entry-point-module? mod)
   (equal? (syntax-e (compiled-module-ident mod))
                                  'entry-point))
 
-(define (lua-transform-module _lctx prog mod)
-  (let* ([is-entry-point (entry-point-module? mod)]
-         [mod (if is-entry-point
-                  (splice-runtime-pre mod)
-                  mod)]
-         [mod (splice-requires mod)]
-         [mod (splice-lctx mod)]
-         [mod (if is-entry-point
-                  (splice-runtime-post mod)
-                  mod)]
-         [mod (splice-module-name mod)]
-         [mod (splice-provides mod)])
+(define (module-body-empty? mod)
+  (syntax-parse (compiled-module-stx mod)
+    [(#%chunk (#%block)) #t]
+    [_ #f]))
 
-    mod))
+(define (module-requires-empty? prog mod)
+  (null? (module-requires prog mod)))
+
+(define (module-provides-empty? mod)
+  (null? (module-provides mod)))
+
+(define (module-empty? prog mod)
+  (and (module-requires-empty? prog mod)
+       (module-provides-empty? mod)
+       (module-body-empty? mod)))
+
+(define stx-runtime-pre
+  (in-s-lua
+   #'(#%chunk
+      (#%block
+       (#%local [runtime]
+                [(#%call require "lua.runtime")])
+
+       (#%call (#%member runtime lua-pre) _NAME)))))
+
+(define stx-runtime-post
+  (in-s-lua
+   #'(#%chunk
+      (#%block
+       (#%call (#%member runtime lua-post) _NAME)))))
+
+(define (splice-runtime-pre mod)
+  (compiled-module-update
+   mod
+   #:stx (s-lua-append
+          stx-runtime-pre
+          (compiled-module-stx mod))))
+
+(define (splice-runtime-post mod)
+  (compiled-module-update
+   mod
+   #:stx (s-lua-append (compiled-module-stx mod)
+                       stx-runtime-post)))
+
+
+(define current-lua-transform-module-body-pre
+  (make-parameter splice-runtime-pre))
+
+(define current-lua-transform-module-body-post
+  (make-parameter splice-runtime-post))
+
+(define (lua-transform-module _lctx prog mod)
+  (if (module-empty? prog mod)
+
+      (compiled-module-update mod #:stx #f)
+
+      (let-values ([(hidden-imports mod) (rewrite-idents mod)])
+
+        (let* ([is-entry-point (entry-point-module? mod)]
+               [mod (if is-entry-point
+                        ((current-lua-transform-module-body-pre) mod)
+                        mod)]
+               [mod (splice-hidden-imports hidden-imports mod)]
+               [mod (splice-requires prog mod)]
+               [mod (splice-lctx mod)]
+               [mod (if is-entry-point
+                        ((current-lua-transform-module-body-post) mod)
+                        mod)]
+               [mod (splice-module-name mod)]
+               [mod (splice-provides mod)])
+
+          mod))))
 
 (define (lua-link lctx prog)
 
@@ -111,84 +178,137 @@
   (string-replace
    (symbol->string (syntax-e path)) "/" "."))
 
-(define (splice-requires mod)
+(define (make-hygienic-import-stx src-binds members)
 
-  (define require-scope (compiled-module-require-scope mod))
-
-  (define reqs
-    (reverse
-     (for*/list ([(mod-path imports) (in-scope require-scope)]
-                 [(_ import)         (in-dict imports)])
-       import)))
-
-  (define req-mods
-    (reverse (scope-idents require-scope)))
-
-  (define req-mod-syms
-    (set-map req-mods module-ident->lua-ident))
-
-  (define req-mod-strs
-    (set-map req-mods module-ident->lua-string))
-
-  (define module-bindings
-    (with-syntax ([(req-mod-sym ...) req-mod-syms]
-                  [(req-mod-str ...) req-mod-strs])
-
-      #'((#%local [req-mod-sym] [(#%call require req-mod-str)])
-         ...)))
-
-  (define mod-req-binds
-    (for*/fold ([acc null])
-               ([req (in-list reqs)])
-      (let ([src-mod-path (import-src-mod-path req)]
-            [from (import-src-sym req)]
-            [to (import-local-id req)])
-        (cons (list (module-ident->lua-ident src-mod-path)
-                    from
-                    to)
-              acc))))
+  (define source-bindings
+    (for/list ([pair (in-list src-binds)])
+      (with-syntax ([src-mod (car pair)]
+                    [binding (cdr pair)])
+        #'(#%local [src-mod] [binding]))))
 
   (define member-declarations
-    (with-syntax ([((_ _ req-bind-to) ...)
-                   mod-req-binds])
-
-      #'((#%local [req-bind-to])
-         ...)))
+    (for/list ([pair (in-list members)])
+      (with-syntax ([member (car pair)])
+        #'(#%local [member]))))
 
   (define member-assignments
-    (with-syntax ([((req-bind-mod req-bind-from req-bind-to) ...)
-                   mod-req-binds])
+    (for/list ([pair (in-list members)])
 
-      #'((#%assign [req-bind-to] [(#%member req-bind-mod req-bind-from)])
-         ...)))
+      (with-syntax ([member (car pair)]
+                    [value  (cdr pair)])
+
+        #'(#%assign [member] [value]))))
+
+  
+
+  (in-s-lua
+   (with-syntax
+     ([(bind ...)    source-bindings]
+      [(declare ...) member-declarations]
+      [(assign ...)  member-assignments])
+
+     #'(#%chunk
+        (#%block
+         declare ...
+         (#%do
+          (#%block
+           bind ...
+           assign ...)))))))
+
+(define (splice-hidden-imports hidden-imports mod)
+
+  (define scope-idents
+    (for/set ([pair (in-set hidden-imports)])
+      (car pair)))
+
+  (define scope-bindings
+    (for/list ([scope-ident (in-set scope-idents)])
+
+      (let* ([scope-ident (datum->syntax #f scope-ident)]
+             [scope-sym (module-ident->lua-ident scope-ident)])
+
+        (with-syntax ([scope-str (module-ident->lua-string scope-ident)])
+
+          (cons scope-sym #'(#%member lctx scope-str))))))
+
+  (define members
+    (for/list ([pair (in-set hidden-imports)])
+      (let* ([src-mod (car pair)]
+             [member  (cdr pair)]
+             [member*  (format-id #f "~a-~a" src-mod member)])
+
+        (with-syntax ([scope-sym (module-ident->lua-ident
+                                  (datum->syntax #f src-mod))]
+                      [member member])
+
+          (cons member* #'(#%member scope-sym member))))))
+
+  (if (pair? members)
+
+      (compiled-module-update
+       mod
+       #:stx
+       (s-lua-append
+        (make-hygienic-import-stx scope-bindings members)
+        (compiled-module-stx mod)))
+
+      mod))
+
+(define (splice-requires prog mod)
+
+  (define (not-empty? ident)
+    (not (module-empty? prog (program-module prog (syntax-e ident)))))
+
+  (define module-bindings
+    (for/list ([req-mod (in-list (reverse
+                                  (filter not-empty?
+                                          (scope-idents
+                                           (compiled-module-require-scope
+                                            mod)))))])
+
+      (let ([src-mod-sym (module-ident->lua-ident req-mod)])
+
+        (with-syntax ([src-mod-str (module-ident->lua-string req-mod)])
+
+          (cons src-mod-sym #'(#%call require src-mod-str))))))
+
+  (define members
+    (for*/list ([req (in-list (module-requires prog mod))])
+
+      (let ([to (import-local-id req)])
+
+        (with-syntax ([src-mod-path (import-src-mod-path req)]
+                      [from (import-src-sym req)])
+
+          (cons to #'(#%member src-mod-path from))))))
 
   (define scope-assignments
-    (with-syntax ([((req-bind-mod req-bind-from req-bind-to) ...)
-                   mod-req-binds])
+    (for/list ([pair (in-list members)])
 
-      #'((#%assign [(#%member scope req-bind-to)] [req-bind-to])
-         ...)))
+      (with-syntax ([to (car pair)])
+        #'(#%assign [(#%member scope to)] [to]))))
 
-  (let* ([stx (compiled-module-stx mod)]
+  (if (or (pair? module-bindings)
+          (pair? members))
+      
+      (compiled-module-update
+       mod
+       #:stx
+       (s-lua-append
 
-         [stx (s-lua-append
-               (in-s-lua
-                (with-syntax ([(declare-member ...) member-declarations]
-                              [(bind-module ...) module-bindings]
-                              [(assign-member ...) member-assignments]
-                              [(assign-scope ...) scope-assignments])
-                  #'(#%chunk
-                     (#%block
-                      declare-member ...
-                      (#%do
-                       (#%block
-                        bind-module ...
-                        (~@ assign-member
-                            assign-scope)
-                        ...))))))
-               stx)])
+        (make-hygienic-import-stx
+         module-bindings
+         members)
 
-    (compiled-module-update mod #:stx stx)))
+        (in-s-lua
+         (with-syntax ([(assign-scope ...)  scope-assignments])
+           #'(#%chunk
+              (#%block
+               assign-scope ...))))
+
+        (compiled-module-stx mod)))
+
+      mod))
 
 (define (splice-module-name mod)
 
@@ -256,15 +376,26 @@
 
           (splice stx))))
 
-(define (splice-provides mod)
+(define (module-provides mod)
 
   (define provide-scope
     (compiled-module-provide-scope mod))
 
-  (define prov-idents
-    (scope-idents provide-scope))
+  (for/list ([ident (in-list (scope-idents provide-scope))]
 
-  (if (pair? prov-idents)
+             #:do [(define mod-bind
+                     (module-binding mod (syntax-e ident)))]
+
+             #:when (not (macro? mod-bind)))
+
+    ident))
+
+(define (splice-provides mod)
+
+  (define provs
+    (module-provides mod))
+
+  (if (pair? provs)
 
       (let ([stx (compiled-module-stx mod)])
 
@@ -273,7 +404,7 @@
          #:stx (s-lua-append
                 stx
                 (in-s-lua
-                 (with-syntax ([(prov ...) prov-idents])
+                 (with-syntax ([(prov ...) provs])
                    #'(#%chunk
                       (#%block
                        (#%return (#%table [prov prov] ...)))))))))
@@ -294,67 +425,88 @@
             (#%block
              body ...))]))]))
 
-(define (s-lua-append a b)
-  (syntax-parse a
-    #:literal-sets [s-lua-ir-literals]
-    [(#%chunk (#%block (~and body-a (~not (#%return _))) ...
-                       (~optional (#%return ret-a))))
+(define (rewrite-idents mod)
+  (define (rewrite acc stx)
+    (syntax-parse stx
+      [(form ...)
 
-     (syntax-parse b
-       #:literal-sets [s-lua-ir-literals]
-       [(#%chunk (#%block (~and body-b (~not (#%return _))) ...
-                          (~optional (#%return ret-b))))
-        (when (and (attribute ret-a)
-                   (attribute ret-b))
-          (error "cannot append s-lua chunks with multiple returns"))
+       (let-values ([(acc forms)
+                     (for/fold ([acc acc]
+                                [forms null])
+                               ([form (in-list (attribute form))])
+                       (let-values ([(acc form) (rewrite acc form)])
+                         (values acc (cons form forms))))])
 
-        (in-s-lua
-         (with-syntax ([(ret ...) (cond
-                                    [(attribute ret-a)
-                                     (list #'(#%return ret-a))]
-                                    [(attribute ret-b)
-                                     (list #'(#%return ret-b))]
-                                    [else null])])
-           #'(#%chunk
-              (#%block
-               body-a ...
-               body-b ...
-               ret ...))))])]))
+         (values acc (datum->syntax this-syntax
+                                    (reverse forms)
+                                    this-syntax
+                                    this-syntax)))]
 
-(define stx-runtime-pre
-  (in-s-lua
-   #'(#%chunk
-      (#%block
-       (#%local [runtime]
-                [(#%call require "lua.runtime")])
+      [ident:id
 
-       (#%call (#%member runtime lua-pre) _NAME)))))
+       (define bound-from (syntax-property this-syntax 'bound-from))
 
-(define stx-runtime-post
-  (in-s-lua
-   #'(#%chunk
-      (#%block
-       (#%call (#%member runtime lua-post) _NAME)))))
+       (if bound-from
+           (values (set-add acc (cons (syntax-e bound-from)
+                                      (syntax-e this-syntax)))
+                   (format-id this-syntax "~a-~a" bound-from this-syntax))
+           (values acc this-syntax))]
 
-(define (splice-runtime-pre mod)
-  (compiled-module-update
-   mod
-   #:stx (s-lua-append
-          stx-runtime-pre
-          (compiled-module-stx mod))))
+      [_ (values acc this-syntax)]))
 
-(define (splice-runtime-post mod)
-  (compiled-module-update
-   mod
-   #:stx (s-lua-append (compiled-module-stx mod)
-                       stx-runtime-post)))
+  (define-values (acc stx)
+    (rewrite (set) (compiled-module-stx mod)))
 
-(define (program-entry-point prog)
+  (values acc (compiled-module-update mod #:stx stx)))
+
+(define (program-module prog sym)
   (findf (λ (mod)
-           (equal? 'entry-point
+           (equal? sym
                    (syntax-e
                     (compiled-module-ident mod))))
          prog))
+
+(define (program-entry-point prog)
+  (program-module prog 'entry-point))
+
+(define (module-requires prog mod)
+
+  (define require-scope (compiled-module-require-scope mod))
+
+  (reverse
+   (for*/list ([(mod-path imports) (in-scope require-scope)]
+               [(_ import)         (in-dict imports)]
+
+               #:do [(define mod-path (import-src-mod-path import))
+
+                     (define import-mod
+                       (program-module prog (syntax-e mod-path)))
+
+                     (define import-bind
+                       (module-binding import-mod
+                                       (import-src-sym import)))]
+
+               #:when (not (macro? import-bind)))
+
+     import)))
+
+(define (module-binding mod sym)
+
+  (define mod-scope
+    (compiled-module-module-scope mod))
+
+  (define tail
+    (member sym
+            (scope-idents mod-scope)
+            (λ (a b)
+              (equal? a (syntax-e b)))))
+
+  (define ident
+    (and tail (car tail )))
+
+  (and ident
+       (parameterize ([current-def-ctx mod-scope])
+         (lookup ident))))
 
 (define (lua-link/chunk _lctx prog)
 

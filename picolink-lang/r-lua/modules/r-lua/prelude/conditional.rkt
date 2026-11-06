@@ -1,20 +1,23 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/void)
+(require r-lua/prelude/surface
+         r-lua/prelude/void)
 
 (provide (all-defined))
 
 (define-macro when
   [(_ cond body ...)
-   #'(if cond
+   (syntax/loc this-syntax
+     (if cond
          (begin body ...)
-         (void))])
+         (void)))])
 
 (define-macro unless
   [(_ cond body ...)
-   #'(if cond
+   (syntax/loc this-syntax
+     (if cond
          (void)
-         (begin body ...))])
+         (begin body ...)))])
 
 (define-macro cond
   [(_ (~or (~optional [(~datum else) else-body ...+]
@@ -22,11 +25,14 @@
            [cond then-body ...+])
       ...)
 
-   (for/foldr ([acc #'(begin else-body ...)])
+   (for/foldr ([acc (syntax/loc this-syntax
+                      (begin else-body ...))])
+
               ([clause (in-list (syntax-e #'([cond then-body ...] ...)))])
 
      (syntax-parse clause
        [(cond body ...)
-        #`(if cond
+        (quasisyntax/loc this-syntax
+          (if cond
               (begin body ...)
-              #,acc)]))])
+              #,acc))]))])

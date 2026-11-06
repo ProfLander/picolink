@@ -1,20 +1,7 @@
 #lang picolink/r-lua
 
-(require (only lua
-               getmetatable
-               setmetatable
-               tostring
-               error)
-
-         (only lua/string
+(require (only lua/string
                format)
-
-         (only lua/ext/table
-               table-ref
-               table-set!)
-
-         (only lua/ext/type
-               nil?)
 
          (only lua/ext/nil
                nil))

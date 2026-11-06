@@ -1,5 +1,13 @@
 #lang picolink/r-lua/base
 
+(require (only lua/ext/table
+               table-ref
+               table-set!)
+
+         r-lua/prelude/arith
+         r-lua/prelude/surface
+         r-lua/prelude/type)
+
 (provide (all-defined))
 
 (define-macro define-struct
@@ -26,7 +34,8 @@
                  [name-set!
                   (format-id #'name "~a-set!" #'name)])
 
-     #'(begin
+     (syntax/loc this-syntax
+       (begin
          (define-type type-name
            #:printed-name printed-name
            #:predicate-name predicate-name)
@@ -39,4 +48,4 @@
            (table-ref self (+ idx 1)))
 
          (define (name-set! self idx val)
-           (table-set! self (+ idx 1) val))))])
+           (table-set! self (+ idx 1) val)))))])

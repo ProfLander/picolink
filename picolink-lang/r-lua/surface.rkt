@@ -4,12 +4,12 @@
          syntax/strip-context
          picolink/syntax
          picolink/ee-lib
-         picolink/parser
+         picolink/binding
+         picolink/module/parsed
          picolink/module/scopes
          picolink/intrinsic/var
          picolink/r-lua/space
-         (for-template picolink/r-lua/ir
-                       picolink/s-lua/ir))
+         (for-template picolink/r-lua/ir))
 
 (provide (all-defined-out))
 
@@ -21,7 +21,6 @@
   [])
 
 (struct/cross-phase r-lua-var [])
-(struct/cross-phase r-lua-macro [trx])
 
 (define (supported-var? binding)
   (or (r-lua-var? binding)
@@ -29,22 +28,62 @@
 
 (define (check-var ident)
 
-  (define binding (lookup-in-module ident #:space r-lua-space))
+  (let-values ([(ident binding)
+                (let ([lexical (lookup ident #:space r-lua-space)])
+                  (if lexical
+                      (values ident lexical)
 
-  (unless binding
-    (parameterize ([error-print-context-length 0])
-      (raise-syntax-error #f
-                          "unbound variable"
-                          ident)))
+                      (let ([pair (lookup-in-modules
+                                   ident
+                                   #:space r-lua-space)])
 
-  (unless (supported-var? binding)
-    (parameterize ([error-print-context-length 0])
-      (raise-syntax-error #f
-                          (format "unsupported variable binding: ~a"
-                                  binding)
-                          ident)))
+                        (if pair
+                            (values (syntax-property ident
+                                                     'bound-from
+                                                     (car pair)
+                                                     #t)
+                                    (cdr pair))
 
-  ident)
+                            (values ident #f)))))])
+
+    (unless binding
+      (parameterize ([error-print-context-length 0])
+        (raise-syntax-error #f
+                            "unbound variable"
+                            ident)))
+
+    (unless (supported-var? binding)
+      (parameterize ([error-print-context-length 0])
+        (raise-syntax-error #f
+                            (format "unsupported variable binding: ~a"
+                                    binding)
+                            ident)))
+
+    ident))
+
+(define (lookup-macro ident)
+  (or (lookup ident macro? #:space r-lua-space)
+      (let ([pair (lookup-in-modules ident macro? #:space r-lua-space)])
+        (and pair (cdr pair)))))
+
+(define (apply-macro mac ctx-type parser stx)
+
+  (let ([module-ident (macro-module-ident mac)]
+        [module-scope (macro-module-scope mac)])
+
+    (parameterize ([current-module-scopes
+                    (cons (cons module-ident module-scope)
+                          (current-module-scopes))])
+
+      (parser
+       (let ([scope (current-def-ctx)])
+
+         (apply-as-transformer (λ (stx)
+                                 (parameterize ([current-def-ctx scope])
+                                   ((macro-trx mac) stx)))
+                               #f
+                               ctx-type
+                               stx))))))
 
 (define/hygienic (r-lua/top-level stx)
   #:definition
@@ -84,26 +123,24 @@
      (void)]
 
     [(define-macro ~! name expr ...)
-     (bind-in-module! #'name
-                      (r-lua-macro
-                       (eval-transformer
-                        (r-lua/macro
-                         (datum->syntax this-syntax
-                                        (attribute expr)
-                                        this-syntax))))
-                      #:space r-lua-space)
-     (void)]
+     (void
+      (bind! #'name
+             (macro
+              (eval-transformer
+               (r-lua/macro
+                (datum->syntax this-syntax
+                               (attribute expr)
+                               this-syntax
+                               this-syntax)))
+              (current-module-ident)
+              (current-def-ctx))
+             #:space r-lua-space))]
 
-    [(ident:id arg ...)
-     #:do [(define mac (lookup-in-module #'ident r-lua-macro?
-                                         #:space r-lua-space))]
+    [(ident:id _ ...)
+     #:do [(define mac (lookup-macro #'ident))]
      #:when mac
      #:cut
-     (r-lua/top-level
-      (apply-as-transformer (r-lua-macro-trx mac)
-                            #f
-                            'definition
-                            this-syntax))]
+     (apply-macro mac 'definition r-lua/top-level this-syntax)]
 
     [(~cata e r-lua/expr)
      (syntax/loc this-syntax
@@ -137,26 +174,20 @@
     [(_:r-lua-ir-literal _ ...)
      this-syntax]
 
-    [(ident:id arg ...)
-     #:do [(define mac (lookup-in-module #'ident r-lua-macro?
-                                         #:space r-lua-space))]
+    [(ident:id _ ...)
+     #:do [(define mac (lookup-macro #'ident))]
      #:when mac
      #:cut
-     (r-lua/expr
-      (apply-as-transformer (r-lua-macro-trx mac)
-                            #f
-                            'expression
-                            this-syntax))]
+
+     (apply-macro mac 'definition r-lua/expr this-syntax)]
 
     [(~cata ident:id check-var)
-     (syntax/loc this-syntax
-       ident)]
+     #'ident]
 
     [(~or d:boolean
           d:number
           d:string)
-     (syntax/loc this-syntax
-       d)]
+     this-syntax]
 
     [((~cata expr r-lua/expr) ...+)
      #:cut

@@ -10,8 +10,7 @@
          r-lua/prelude/conditional
          r-lua/prelude/equality
          r-lua/prelude/logic
-         r-lua/prelude/surface
-         r-lua/prelude/void)
+         r-lua/prelude/surface)
 
 (provide (all-defined))
 

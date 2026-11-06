@@ -56,9 +56,7 @@
 
 (define (language-parse lang
                         stx)
-  (parameterize ([current-def-ctx (current-module-scope)])
-    ((language-%parse lang)
-     (syntax-local-introduce stx))))
+  ((language-%parse lang) (syntax-local-introduce stx)))
 
 (define (language-compiler lang backend)
   ((language-%compiler lang) ((backend-target backend))))

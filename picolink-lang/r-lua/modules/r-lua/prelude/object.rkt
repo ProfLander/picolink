@@ -1,5 +1,25 @@
 #lang picolink/r-lua/base
 
+(require (only lua
+               tostring
+               error)
+
+         (only lua/string
+               format)
+
+         (only lua/ext/nil
+               nil)
+
+         (only lua/ext/type
+               nil?)
+
+         r-lua/prelude/equality
+         r-lua/prelude/list
+         r-lua/prelude/string
+         r-lua/prelude/struct
+         r-lua/prelude/interface
+         r-lua/prelude/vector)
+
 (provide (all-defined))
 
 (define-macro define-object
@@ -55,7 +75,8 @@
                  [name-handle-index
                   (format-id #'name "~a-handle-index" #'name)])
 
-     #'(begin
+     (syntax/loc this-syntax
+       (begin
          (define-struct name [field ...]
            #:constructor-name %name)
 
@@ -167,4 +188,4 @@
              (vector-set! %names-active index (void))
              (%set-name-field! inst (void))
              ...
-             (set! %names-inactive (cons pair %names-inactive))))))])
+             (set! %names-inactive (cons pair %names-inactive)))))))])

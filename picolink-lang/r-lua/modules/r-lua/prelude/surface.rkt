@@ -23,7 +23,9 @@
      (define name (λ tail body ...)))]
 
   [(_ name:id expr)
-   (bind-in-module! #'name (r-lua-var) #:space r-lua-space)
+
+   (bind! #'name (r-lua-var) #:space r-lua-space)
+
    (with-syntax ([expr (r-lua/expr #'expr)])
      (syntax/loc this-syntax
        (#%define name expr)))])
@@ -45,7 +47,6 @@
      (with-syntax* ([args
                      (syntax-parse #'args
                        [arg:id
-
                         (bind! #'arg (r-lua-var) #:space r-lua-space)]
 
                        [(arg:id ... . tail:id)
@@ -95,6 +96,7 @@
 (define-macro let
   [(_ ([name val] ...)
       body ...)
+
    (syntax/loc this-syntax
      (let-values ([(name) val] ...)
        body ...))])
@@ -111,6 +113,7 @@
 
      (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
                    [(body ...) (map r-lua/expr (attribute body))])
+
        (syntax/loc this-syntax
          (#%letrec-values ([(name ...) val] ...)
                           (#%begin body ...))))])])
@@ -125,6 +128,7 @@
 
 (define-macro s-lua
   [(_ form)
+
    (with-syntax ([form (in-s-lua #'form)])
      (syntax/loc this-syntax
        (#%s-lua form)))])

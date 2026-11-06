@@ -18,6 +18,8 @@
 
 (provide (all-defined-out))
 
+(struct/cross-phase macro [trx module-ident module-scope])
+
 (define current-debug
   (make-parameter #f))
 
@@ -73,7 +75,7 @@
     (println local-id))
 
   (define binding
-    (lookup-in-module local-id #:space space))
+    (lookup local-id #:space space))
 
   (unless binding
     (raise-syntax-error
@@ -122,7 +124,7 @@
 
   (emplace-require! lctx mod local-id src-sym #:space space)
 
-  (bind-in-module! local-id binding #:space space))
+  (bind! local-id binding #:space space))
 
 (define (require! lctx src-mod-path #:space [space #f])
 
@@ -302,7 +304,7 @@
     (println prefix)
     (println exceptions))
 
-  (define module-scope (current-module-scope))
+  (define module-scope (current-def-ctx))
   (define require-scope (current-require-scope))
 
   (define requires

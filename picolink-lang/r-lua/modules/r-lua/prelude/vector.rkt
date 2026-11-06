@@ -1,8 +1,6 @@
 #lang picolink/r-lua/base
 
 (require (only lua
-               setmetatable
-               getmetatable
                tostring)
 
          (only lua/table
@@ -18,12 +16,10 @@
          r-lua/prelude/equality
          r-lua/prelude/for
          r-lua/prelude/interface
-         r-lua/prelude/logic
          r-lua/prelude/print
          r-lua/prelude/surface
          r-lua/prelude/string
-         r-lua/prelude/type
-         r-lua/prelude/void)
+         r-lua/prelude/type)
 
 (provide (all-defined))
 

@@ -2,13 +2,7 @@
 
 (require (only lua
                tostring
-               getmetatable
-               setmetatable
                error)
-
-         (only lua/ext/table
-               table-ref
-               table-set!)
 
          (only lua/ext/values
                foldr-values)
@@ -17,18 +11,12 @@
                format)
 
          r-lua/prelude/arith
-         r-lua/prelude/binding
          r-lua/prelude/conditional
-         r-lua/prelude/equality
          r-lua/prelude/function
-         r-lua/prelude/hash
          r-lua/prelude/interface
-         r-lua/prelude/logic
          r-lua/prelude/print
          r-lua/prelude/struct
-         r-lua/prelude/surface
-         r-lua/prelude/type
-         r-lua/prelude/void)
+         r-lua/prelude/surface)
 
 (provide null?
          null

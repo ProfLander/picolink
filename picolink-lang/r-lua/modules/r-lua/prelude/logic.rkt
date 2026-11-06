@@ -7,9 +7,10 @@
 (define-macro and
 
   [(_ a rest ...+)
-   #'(if a
+   (syntax/loc this-syntax
+     (if a
          (and rest ...)
-         #f)]
+         #f))]
 
   [(_ a)
    #'a])
@@ -18,10 +19,11 @@
 
   [(_ a rest ...+)
    (with-syntax ([a* (generate-temporary)])
-     #'(let ([a* a])
+     (syntax/loc this-syntax
+       (let ([a* a])
          (if a*
              a*
-             (or rest ...))))]
+             (or rest ...)))))]
 
   [(_ a)
    #'a])

@@ -1,5 +1,9 @@
 #lang picolink/r-lua/base
 
+(require r-lua/prelude/arith
+         r-lua/prelude/surface
+         r-lua/prelude/void)
+
 (provide (all-defined))
 
 (define-macro for

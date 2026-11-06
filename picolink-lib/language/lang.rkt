@@ -6,13 +6,13 @@
          racket/function
 
          picolink/ee-lib
-         picolink/parser
+         picolink/binding
          picolink/module/scopes
          picolink/language)
 
 (provide (all-from-out racket/base
                        picolink/ee-lib
-                       picolink/parser
+                       picolink/binding
                        picolink/module/scopes)
          #%module-begin)
 

@@ -1,9 +1,10 @@
 #lang picolink/r-lua
 
-(require tests/define
-         tests/begin
+(require tests/begin
+         tests/define
          tests/let
          tests/letrec
-         tests/void
+         tests/macro-hygiene
+         tests/prelude
          tests/string
-         tests/prelude)
+         tests/void)

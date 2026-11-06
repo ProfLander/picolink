@@ -1,8 +1,6 @@
 #lang picolink/r-lua/base
 
 (require (only lua
-               getmetatable
-               setmetatable
                collectgarbage
                tostring
                error)
@@ -40,19 +38,12 @@
          (only love/runtime/repl
                repl-read)
 
-         r-lua/prelude/arith
          r-lua/prelude/binding
          r-lua/prelude/conditional
-         r-lua/prelude/equality
-         r-lua/prelude/function
-         r-lua/prelude/interface
          r-lua/prelude/logic
          r-lua/prelude/print
-         r-lua/prelude/string
          r-lua/prelude/struct
-         r-lua/prelude/surface
-         r-lua/prelude/type
-         r-lua/prelude/void)
+         r-lua/prelude/surface)
 
 (provide quit-with
          %love-runner
