@@ -4,15 +4,16 @@
          (only lua/string format)
          (only lua/ext/type table?)
 
-         r-lua/prelude/conditional
-         r-lua/prelude/surface
-         r-lua/prelude/void)
+         r-lua/prelude/definition
+         r-lua/prelude/if
+         r-lua/prelude/s-lua)
 
 (provide (all-defined))
 
 (define (check-table t)
-  (unless (table? t)
-    (error (format "%s is not a table" t))))
+  (if (table? t)
+      t
+      (error (format "%s is not a table" t))))
 
 (define (table-ref t k)
   (check-table t)

@@ -16,9 +16,11 @@
                send)
 
          r-lua/prelude/binding
-         r-lua/prelude/conditional
+         r-lua/prelude/condition
+         r-lua/prelude/definition
+         r-lua/prelude/if
          r-lua/prelude/print
-         r-lua/prelude/surface
+         r-lua/prelude/s-lua
          r-lua/prelude/void)
 
 (provide (all-defined))

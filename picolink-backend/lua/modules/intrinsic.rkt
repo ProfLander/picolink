@@ -1,9 +1,10 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/surface)
+(require r-lua/prelude/definition
+         r-lua/prelude/sequencing
+         r-lua/prelude/s-lua)
 
-(provide (all-defined)
-         (all-from r-lua/prelude/surface))
+(provide (all-defined))
 
 (define-macro define-intrinsics
   [(_ (~optional (~seq #:template template)

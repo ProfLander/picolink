@@ -3,7 +3,9 @@
 (require (only lua/io read)
          (only lua/ext/object send)
          (only love/ext/thread get-channel)
-         r-lua/prelude/surface)
+         
+         r-lua/prelude/binding
+         r-lua/prelude/definition)
 
 (define channel (get-channel "stdin"))
 

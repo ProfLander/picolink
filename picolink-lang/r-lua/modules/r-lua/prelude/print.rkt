@@ -1,9 +1,9 @@
 #lang picolink/r-lua/base
 
 (require (rename lua print %print)
-         r-lua/prelude/conditional
+         r-lua/prelude/condition
+         r-lua/prelude/definition
          r-lua/prelude/equality
-         r-lua/prelude/surface
          r-lua/prelude/void)
 
 (provide (all-defined))

@@ -24,11 +24,11 @@
          (only love/runtime/repl
                repl-init)
 
-         r-lua/prelude/conditional
+         r-lua/prelude/condition
+         r-lua/prelude/definition
          r-lua/prelude/function
          r-lua/prelude/logic
          r-lua/prelude/print
-         r-lua/prelude/surface
          r-lua/prelude/void)
 
 (provide (all-defined))

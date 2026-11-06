@@ -39,11 +39,14 @@
                repl-read)
 
          r-lua/prelude/binding
-         r-lua/prelude/conditional
+         r-lua/prelude/condition
+         r-lua/prelude/definition
+         r-lua/prelude/if
+         r-lua/prelude/lambda
          r-lua/prelude/logic
          r-lua/prelude/print
          r-lua/prelude/struct
-         r-lua/prelude/surface)
+         r-lua/prelude/s-lua)
 
 (provide quit-with
          %love-runner

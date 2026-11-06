@@ -6,7 +6,7 @@
          (only lua/runtime/repl
                repl)
 
-         r-lua/prelude/surface
+         r-lua/prelude/definition
          r-lua/prelude/print)
 
 (provide (all-defined))

@@ -1,6 +1,9 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/surface)
+(require r-lua/prelude/binding
+         r-lua/prelude/definition
+         r-lua/prelude/if
+         r-lua/prelude/s-lua)
 
 (provide (all-defined))
 

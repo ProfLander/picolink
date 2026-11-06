@@ -4,11 +4,14 @@
                getmetatable
                setmetatable)
 
+         r-lua/prelude/binding
+         r-lua/prelude/definition
          r-lua/prelude/equality
          r-lua/prelude/function
          r-lua/prelude/interface
+         r-lua/prelude/lambda
          r-lua/prelude/logic
-         r-lua/prelude/surface
+         r-lua/prelude/s-lua
          r-lua/prelude/print)
 
 (provide (all-defined))

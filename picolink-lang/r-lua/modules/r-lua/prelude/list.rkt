@@ -11,12 +11,16 @@
                format)
 
          r-lua/prelude/arith
-         r-lua/prelude/conditional
+         r-lua/prelude/binding
+         r-lua/prelude/condition
+         r-lua/prelude/definition
          r-lua/prelude/function
+         r-lua/prelude/if
          r-lua/prelude/interface
+         r-lua/prelude/lambda
          r-lua/prelude/print
          r-lua/prelude/struct
-         r-lua/prelude/surface)
+         r-lua/prelude/s-lua)
 
 (provide null?
          null

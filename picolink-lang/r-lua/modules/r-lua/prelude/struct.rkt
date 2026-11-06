@@ -5,7 +5,8 @@
                table-set!)
 
          r-lua/prelude/arith
-         r-lua/prelude/surface
+         r-lua/prelude/definition
+         r-lua/prelude/s-lua
          r-lua/prelude/type)
 
 (provide (all-defined))

@@ -10,7 +10,7 @@
          (only lua/ext/object
                send)
 
-         r-lua/prelude/surface
+         r-lua/prelude/definition
          r-lua/prelude/print
          r-lua/prelude/void)
 

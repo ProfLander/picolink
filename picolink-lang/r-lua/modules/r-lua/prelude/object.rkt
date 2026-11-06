@@ -13,11 +13,15 @@
          (only lua/ext/type
                nil?)
 
+         r-lua/prelude/assignment
+         r-lua/prelude/definition
          r-lua/prelude/equality
+         r-lua/prelude/interface
          r-lua/prelude/list
+         r-lua/prelude/sequencing
          r-lua/prelude/string
          r-lua/prelude/struct
-         r-lua/prelude/interface
+         r-lua/prelude/s-lua
          r-lua/prelude/vector)
 
 (provide (all-defined))

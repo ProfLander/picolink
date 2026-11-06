@@ -13,12 +13,15 @@
 
          r-lua/prelude/arith
          r-lua/prelude/binding
+         r-lua/prelude/definition
          r-lua/prelude/equality
          r-lua/prelude/for
+         r-lua/prelude/if
          r-lua/prelude/interface
+         r-lua/prelude/lambda
          r-lua/prelude/print
-         r-lua/prelude/surface
          r-lua/prelude/string
+         r-lua/prelude/s-lua
          r-lua/prelude/type)
 
 (provide (all-defined))

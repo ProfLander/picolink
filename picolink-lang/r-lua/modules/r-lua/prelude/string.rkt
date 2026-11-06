@@ -7,10 +7,11 @@
          (only lua/string sub)
 
          r-lua/prelude/arith
-         r-lua/prelude/conditional
+         r-lua/prelude/condition
+         r-lua/prelude/definition
          r-lua/prelude/equality
          r-lua/prelude/logic
-         r-lua/prelude/surface)
+         r-lua/prelude/s-lua)
 
 (provide (all-defined))
 

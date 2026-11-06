@@ -3,13 +3,11 @@
 (require (only r-lua/prelude/equality
                eq?)
 
-         (only lua
-               print)
-
          (only lua/ext/values
                foldl-values)
 
-         r-lua/prelude/surface)
+         r-lua/prelude/definition
+         r-lua/prelude/s-lua)
 
 (provide (all-defined))
 
