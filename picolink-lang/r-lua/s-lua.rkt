@@ -209,14 +209,11 @@
 (define-s-lua-syntax-class val
   #:literal-sets [r-lua-ir-literals]
 
-  [(~and datum
-         (~or _:boolean
-              _:number
-              _:string
-              _:id))
-   (in-s-lua
-    (syntax/loc this-syntax
-      datum))]
+  [(~or _:boolean
+        _:number
+        _:string
+        _:id)
+   (in-s-lua this-syntax)]
 
   [(#%abs ~! args:formals body:expr)
 
