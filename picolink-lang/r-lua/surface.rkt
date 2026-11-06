@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require syntax/parse
+         syntax/strip-context
          picolink/syntax
          picolink/ee-lib
          picolink/parser
@@ -124,10 +125,7 @@
          [pat
           body ...
           (in-r-lua
-           (datum->syntax this-syntax
-                          (syntax->datum tail)
-                          this-syntax
-                          this-syntax))]
+           (replace-context this-syntax tail))]
          ...))]))
 
 (define/hygienic (r-lua/expr stx)
