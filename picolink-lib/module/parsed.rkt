@@ -13,41 +13,43 @@
 
 (provide (all-defined-out))
 
+(define current-module-ident
+  (make-parameter #f))
+
 (struct/cross-phase parsed-module [ident
                                    language
                                    require-scope
-                                   module-scope
                                    provide-scope
+                                   module-scope
                                    stx])
 
 (define (make-parsed-module ident lang stx)
   (parsed-module ident
                  lang
                  (current-require-scope)
-                 (current-module-scope)
                  (current-provide-scope)
+                 (current-def-ctx)
                  (and stx (syntax-local-introduce stx))))
 
 (define (parse-module ident mod)
 
-  (with-module-scopes
+  (parameterize ([current-module-ident ident])
+    (with-module-scopes
 
-    (let ([lang (source-module-language mod)])
+      (let ([lang (source-module-language mod)])
 
-      (language-inject lang)
+        (language-inject lang)
 
-      (let* ([stx (source-module-stx mod)]
-             [stx (language-parse lang stx)])
+        (let* ([stx (source-module-stx mod)]
+               [stx (language-parse lang stx)])
 
-        (make-parsed-module ident lang stx)))))
+          (make-parsed-module ident lang stx))))))
 
 (define (compile-module-syntax lang backend stx)
 
   (let ([compiler (language-compiler lang backend)])
 
-    (parameterize ([current-def-ctx (current-module-scope)])
-
-      (compiler stx))))
+    (compiler stx)))
 
 (define (compile-parsed-module ident backend parsed)
 
@@ -59,8 +61,8 @@
       (compiled-module ident
                        lang
                        (current-require-scope)
-                       (current-module-scope)
                        (current-provide-scope)
+                       (current-def-ctx)
                        (and stx (compile-module-syntax lang
                                                        backend
                                                        stx))))))
@@ -70,8 +72,9 @@
     [(_ parsed body ...)
      #'(parameterize ([current-require-scope
                        (parsed-module-require-scope parsed)]
-                      [current-module-scope
-                       (parsed-module-module-scope  parsed)]
                       [current-provide-scope
-                       (parsed-module-provide-scope parsed)])
+                       (parsed-module-provide-scope parsed)]
+                      [current-module-scopes null]
+                      [current-def-ctx
+                       (parsed-module-module-scope  parsed)])
          body ...)]))

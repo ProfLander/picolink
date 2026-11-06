@@ -27,8 +27,8 @@
 
       (define mod-id (compiled-module-ident mod))
       (define require-scope (compiled-module-require-scope mod))
-      (define module-scope (compiled-module-module-scope mod))
       (define provide-scope (compiled-module-provide-scope mod))
+      (define module-scope (compiled-module-module-scope mod))
       (define stx (compiled-module-stx mod))
 
       (let* ([reqs

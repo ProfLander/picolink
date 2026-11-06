@@ -25,8 +25,8 @@
 
     (define ident         (compiled-module-ident mod))
     (define require-scope (compiled-module-require-scope mod))
-    (define module-scope  (compiled-module-module-scope mod))
     (define provide-scope (compiled-module-provide-scope mod))
+    (define module-scope  (compiled-module-module-scope mod))
 
     (define (print-binding ident)
       (define binding (lookup ident))
@@ -43,16 +43,16 @@
 
     (displayln "")
 
-    (displayln " defines:")
-    (parameterize ([current-def-ctx module-scope])
-      (for ([ident (in-list (scope-idents module-scope))])
+    (displayln " provides:")
+    (parameterize ([current-def-ctx provide-scope])
+      (for ([ident (in-list (scope-idents provide-scope))])
         (print-binding ident)))
 
     (displayln "")
 
-    (displayln " provides:")
-    (parameterize ([current-def-ctx provide-scope])
-      (for ([ident (in-list (scope-idents provide-scope))])
+    (displayln " defines:")
+    (parameterize ([current-def-ctx module-scope])
+      (for ([ident (in-list (scope-idents module-scope))])
         (print-binding ident)))))
 
 (define (debug-run _lctx _linked)
