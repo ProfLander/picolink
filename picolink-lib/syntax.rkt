@@ -21,11 +21,13 @@
              #:with ident (datum->syntax #'%pat
                                          (string->symbol
                                           (substring str 0 idx))
+                                         #'%pat
                                          #'%pat)
 
              #:attr class (datum->syntax #'%pat
                                          (string->symbol
                                           (substring str (+ 1 idx)))
+                                         #'%pat
                                          #'%pat))
     (pattern ident:id
              #:attr class #f)))
