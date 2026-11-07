@@ -19,6 +19,7 @@
          r-lua/prelude/object
          r-lua/prelude/print
          r-lua/prelude/procedure
+         r-lua/prelude/sequence
          r-lua/prelude/sequencing
          r-lua/prelude/string
          r-lua/prelude/struct
@@ -46,6 +47,7 @@
          (all-from r-lua/prelude/object)
          (all-from r-lua/prelude/print)
          (all-from r-lua/prelude/procedure)
+         (all-from r-lua/prelude/sequence)
          (all-from r-lua/prelude/sequencing)
          (all-from r-lua/prelude/string)
          (all-from r-lua/prelude/struct)

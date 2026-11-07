@@ -2,32 +2,48 @@
 
 (require r-lua/prelude/arith
          r-lua/prelude/lambda
+         r-lua/prelude/logic
          r-lua/prelude/sequencing
+         (only r-lua/prelude/sequence sequence-null?)
+         r-lua/prelude/values
          r-lua/prelude/void)
 
 (provide (all-defined))
 
 (define-macro for
-  [(_ ([i ((~datum in-range) from to)])
+  [(_ ([seq-id sequence] ...)
       body ...)
 
-   (syntax/loc this-syntax
-     (letrec ([body* (λ (i)
-                       body ...
-                       (if (< i to)
-                           (body* (+ i 1))
-                           (void)))])
-       (body* from)))])
+   (with-syntax ([(seq-id* ...)
+                  (generate-temporaries (attribute seq-id))])
+
+     (syntax/loc this-syntax
+       (let ([seq-id* sequence] ...)
+         (let loop ([seq-id (seq-id*)] ...)
+           (if (or (sequence-null? seq-id) ...)
+               (void)
+               (begin
+                 body ...
+                 (loop (seq-id*) ...)))))))])
 
 (define-macro for/fold
-  [(_ ([acc-id acc])
-      ([next-id ((~datum in-range) from to)])
+  [(_ ([acc-id acc] ...)
+      ([seq-id sequence] ...)
       body ...)
 
-   (syntax/loc this-syntax
-     (letrec ([body* (λ (acc-id next-id)
-                       (let ([acc-id (begin body ...)])
-                         (if (= next-id to)
-                             acc-id
-                             (body* acc-id (+ next-id 1)))))])
-       (body* acc from)))])
+   (with-syntax ([(seq-id* ...)
+                  (generate-temporaries (attribute seq-id))])
+
+     (syntax/loc this-syntax
+       (let ([seq-id* sequence] ...)
+
+         (let loop ([acc-id acc]
+                    ...
+                    [seq-id (seq-id*)]
+                    ...)
+
+           (if (or (sequence-null? seq-id) ...)
+               (values acc-id ...)
+               (let-values ([(acc-id ...) (begin body ...)])
+                 (loop acc-id ...
+                       (seq-id*) ...)))))))])

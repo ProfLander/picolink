@@ -11,6 +11,7 @@
                format)
 
          r-lua/prelude/arith
+         r-lua/prelude/assignment
          r-lua/prelude/binding
          r-lua/prelude/condition
          r-lua/prelude/definition
@@ -20,6 +21,8 @@
          r-lua/prelude/lambda
          r-lua/prelude/print
          r-lua/prelude/struct
+         (only r-lua/prelude/sequence
+               sequence-null)
          r-lua/prelude/s-lua)
 
 (provide null?
@@ -35,7 +38,11 @@
          list?
          list
 
-         length)
+         length
+         reverse
+
+         in-list
+         for/list)
 
 (define-struct %null []
   #:predicate-name null?)
@@ -115,3 +122,30 @@
         (error (format "value is not a list: %s" lst)))
 
       (%length 0 lst))))
+
+(define (reverse lst)
+  (let loop ([acc null]
+             [lst lst])
+    (if (null? lst)
+        acc
+        (loop (cons (car lst) acc)
+              (cdr lst)))))
+
+(define (in-list lst)
+  (let ([acc lst])
+    (thunk
+     (if (null? acc)
+         (sequence-null)
+         (begin
+           (let ([out (car acc)])
+             (set! acc (cdr acc))
+             out))))))
+
+(define-macro for/list
+  [(_ (for-clause ...) body ...)
+
+   (syntax/loc this-syntax
+     (reverse
+      (for/fold ([acc null])
+                (for-clause ...)
+        (cons (begin body ...) acc))))])

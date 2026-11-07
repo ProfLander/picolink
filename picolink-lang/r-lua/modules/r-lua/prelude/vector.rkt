@@ -19,7 +19,9 @@
          r-lua/prelude/if
          r-lua/prelude/interface
          r-lua/prelude/lambda
+         r-lua/prelude/list
          r-lua/prelude/print
+         r-lua/prelude/sequence
          r-lua/prelude/string
          r-lua/prelude/s-lua
          r-lua/prelude/type)
@@ -46,7 +48,9 @@
 
 (define vector-length table-length)
 
-(define vector-push insert)
+(define (vector-push vec val)
+  (insert vec val)
+  vec)
 
 (impl ToString vector:type
 
@@ -54,7 +58,7 @@
              (λ (self)
                (string-append
                 (for/fold ([acc "#("])
-                          ([i (in-range 0 (- (vector-length self) 1))])
+                          ([i (in-range 0 (vector-length self))])
                   (let* ([val (vector-ref self i)]
                          [str (tostring val)])
                     (if (eq? i 0)
@@ -63,3 +67,24 @@
                 ")"))])
 
         (s-lua (#%table ["to-string" to-string]))))
+
+(define (in-vector vec)
+  (sequence-map (in-range 0 (vector-length vec))
+                (λ (idx)
+                  (vector-ref vec idx))))
+
+(define-macro for/vector
+  [(_ (for-clause ...) body ...)
+
+   (syntax/loc this-syntax
+     (for/fold ([acc (vector)])
+               (for-clause ...)
+       (vector-push acc (begin body ...))))])
+
+(define (list->vector lst)
+  (for/vector ([v (in-list lst)])
+    v))
+
+(define (vector->list vec)
+  (for/list ([v (in-vector vec)])
+    v))
