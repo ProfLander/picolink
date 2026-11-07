@@ -25,7 +25,15 @@
 
    (syntax/loc this-syntax
      (let-values ([(name) val] ...)
-       body ...))])
+       body ...))]
+
+  [(_ name ([ident val] ...)
+      body ...)
+
+   (syntax/loc this-syntax
+     (letrec ([name (λ (ident ...)
+                      body ...)])
+       (name val ...)))])
 
 (define-macro letrec-values
   [(_ _ ...)
