@@ -8,34 +8,54 @@
     scope
     [(_ args body ...)
 
-     (with-syntax* ([args
-                     (syntax-parse #'args
-                       [arg:id
-                        (bind! #'arg (r-lua-var) #:space r-lua-space)]
+     (define parse-args
+       (syntax-parser
+         [arg:id
+          (cons (list (bind! #'arg (r-lua-var) #:space r-lua-space))
+                null)]
 
-                       [(arg:id ... . tail:id)
+         [(arg:id ... [opt-arg opt-val] ... . tail:id)
 
-                        (let ([args
-                               (for/list ([arg (in-list (attribute arg))])
-                                 (bind! arg (r-lua-var)
-                                        #:space r-lua-space))]
+          (let ([args
+                 (for/list ([arg (in-list (attribute arg))])
+                   (bind! arg (r-lua-var)
+                          #:space r-lua-space))]
 
-                              [tail
-                               (bind! #'tail (r-lua-var)
-                                      #:space r-lua-space)])
+                [opt-args
+                 (for/list ([arg (in-list (attribute opt-arg))])
+                   (bind! arg (r-lua-var)
+                          #:space r-lua-space))]
 
-                          (append args tail))]
-                       
-                       [(arg:id ...)
+                [tail
+                 (bind! #'tail (r-lua-var)
+                        #:space r-lua-space)])
 
-                        (for/list ([arg (in-list (attribute arg))])
-                          (bind! arg (r-lua-var) #:space r-lua-space))])]
+            (cons (append args opt-args tail)
+                  #'([(opt-arg) (#%if (#%s-lua (#%eq opt-arg nil))
+                                      opt-val
+                                      opt-arg)]
+                     ...)))]
+         
+         [(arg:id ... [opt-arg opt-val] ...)
 
+          (let ([args (for/list ([arg (in-list (attribute arg))])
+                        (bind! arg (r-lua-var) #:space r-lua-space))]
+                [opt-args (for/list ([arg (in-list (attribute opt-arg))])
+                            (bind! arg (r-lua-var) #:space r-lua-space))])
+
+            (cons (append args opt-args)
+                  #'([(opt-arg) (#%if (#%s-lua (#%eq opt-arg nil))
+                                      opt-val
+                                      opt-arg)]
+                     ...)))]))
+
+     (with-syntax* ([(args . (bind ...)) (parse-args #'args)]
                     [(body ...) (map r-lua/expr (attribute body))])
 
        (syntax/loc this-syntax
          (#%abs args
-                (#%begin body ...))))])])
+                (#%let-values (bind ...)
+                              (#%begin body ...)))))])])
 
 (define-macro lambda
   [(_ form ...)
