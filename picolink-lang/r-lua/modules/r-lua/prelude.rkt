@@ -8,6 +8,7 @@
          r-lua/prelude/definition
          r-lua/prelude/equality
          r-lua/prelude/for
+         r-lua/prelude/format
          r-lua/prelude/function
          r-lua/prelude/if
          r-lua/prelude/interface
@@ -39,6 +40,7 @@
          (all-from r-lua/prelude/definition)
          (all-from r-lua/prelude/equality)
          (all-from r-lua/prelude/for)
+         (all-from r-lua/prelude/format)
          (all-from r-lua/prelude/function)
          (all-from r-lua/prelude/if)
          (all-from r-lua/prelude/interface)
