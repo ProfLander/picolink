@@ -120,7 +120,8 @@
                            "/"
                            path)))
 
-         (and (with-handlers ([exn:fail? (const #f)])
+         (and (with-handlers ([exn:fail:filesystem:missing-module?
+                               (const #f)])
                 (module-declared? mod-path #t))
               (with-syntax ([mod-path mod-path])
                 #'mod-path))]
