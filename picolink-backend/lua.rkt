@@ -18,6 +18,7 @@
          picolink/s-lua/lua
          picolink/module/compiled
          picolink/module/import
+         picolink/module/export
 
          (for-template racket/base
                        picolink/s-lua/ir
@@ -381,14 +382,15 @@
   (define provide-scope
     (compiled-module-provide-scope mod))
 
-  (for/list ([ident (in-list (scope-idents provide-scope))]
-
+  (for/list ([(ident export) (in-scope provide-scope)]
+             
              #:do [(define mod-bind
                      (module-binding mod (syntax-e ident)))]
 
              #:when (not (macro? mod-bind)))
 
-    ident))
+    (cons (export-local-id export)
+          (export-out-id export))))
 
 (define (splice-provides mod)
 
@@ -404,10 +406,10 @@
          #:stx (s-lua-append
                 stx
                 (in-s-lua
-                 (with-syntax ([(prov ...) provs])
+                 (with-syntax ([((prov-from . prov-to) ...) provs])
                    #'(#%chunk
                       (#%block
-                       (#%return (#%table [prov prov] ...)))))))))
+                       (#%return (#%table [prov-to prov-from] ...)))))))))
 
       mod))
 
