@@ -1,8 +1,8 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               getmetatable
-               setmetatable)
+(require (only lua/ext/metatable
+               get-metatable
+               set-metatable!)
 
          r-lua/prelude/binding
          r-lua/prelude/definition
@@ -19,7 +19,7 @@
 (define Type (s-lua (#%table)))
 
 (define (Type? v)
-  (eq? (getmetatable v) Type))
+  (eq? (get-metatable v) Type))
 
 (impl ToString Type
       (let ([to-string (const "Type")])
@@ -38,12 +38,12 @@
      (syntax/loc this-syntax
        (begin
          (define name
-           (setmetatable (s-lua (#%table))
-                         Type))
+           (set-metatable! (s-lua (#%table))
+                           Type))
 
          (define (predicate-name v)
            (and v
-                (eq? (getmetatable v) name)))
+                (eq? (get-metatable v) name)))
 
          (impl ToString name
                (let ([to-string (λ (self)
@@ -51,4 +51,4 @@
                  (s-lua (#%table ["to-string" to-string])))))))])
 
 (define (ascribe type value)
-  (setmetatable value type))
+  (set-metatable! value type))

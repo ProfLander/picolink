@@ -1,8 +1,8 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               getmetatable
-               setmetatable)
+(require (only lua/ext/metatable
+               get-metatable
+               set-metatable!)
 
          r-lua/prelude/binding
          r-lua/prelude/definition
@@ -18,7 +18,7 @@
 (define Interface (s-lua (#%table)))
 
 (define (Interface? v)
-  (and v (eq? (getmetatable v) Interface)))
+  (and v (eq? (get-metatable v) Interface)))
 
 (define-macro define-interface
   [(_ name ([from-name to-name] ...))
@@ -33,8 +33,8 @@
 
      (syntax/loc this-syntax
        (define name
-         (setmetatable (s-lua (#%table [from-name to-name] ...))
-                       Interface))))])
+         (set-metatable! (s-lua (#%table [from-name to-name] ...))
+                         Interface))))])
 
 (define-interface Add       ([add        __add]))
 (define-interface Subtract  ([subtract   __sub]))
