@@ -11,7 +11,6 @@
 
 (require r-lua/prelude/binding
          r-lua/prelude/definition
-         r-lua/prelude/equality
          r-lua/prelude/function
          r-lua/prelude/s-lua)
 
@@ -34,4 +33,4 @@
      (#%return %void)))))
 
 (define (void? v)
-  (eq? v %void))
+  (s-lua (#%eq v %void)))
