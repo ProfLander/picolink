@@ -1,8 +1,8 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/definition
-         r-lua/prelude/interface
-         r-lua/prelude/s-lua)
+(require (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/interface   define-interface)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 

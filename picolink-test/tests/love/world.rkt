@@ -1,11 +1,10 @@
 #lang picolink/r-lua
 
-(require (only lua/string format)
-         (only lua/ext/table table-set!)
+(require (only lua/ext/table table-set!)
 
          (rename love/ext/graphics print graphics-print)
 
-         love/runtime/world)
+         (only love/runtime/world  genesis quit-with))
 
 (define world "hello, world")
 

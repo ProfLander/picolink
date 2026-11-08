@@ -1,36 +1,27 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/metatable
-               get-metatable
-               set-metatable!)
+(require (only lua/ext/metatable  get-metatable set-metatable!)
 
-         r-lua/prelude/binding
-         r-lua/prelude/definition
-         r-lua/prelude/equality
-         r-lua/prelude/function
-         r-lua/prelude/interface
-         r-lua/prelude/lambda
-         r-lua/prelude/logic
-         r-lua/prelude/string
-         r-lua/prelude/s-lua
-         r-lua/prelude/print)
+         (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/equality    equal?)
+         (only r-lua/prelude/function    const)
+         (only r-lua/prelude/interface   impl)
+         (only r-lua/prelude/lambda      λ)
+         (only r-lua/prelude/logic       and)
+         (only r-lua/prelude/print       print)
+         (only r-lua/prelude/string      ToString to-string)
+         (only r-lua/prelude/table       table))
 
 (provide (all-defined))
 
 (define Type
   (set-metatable!
-   (s-lua (#%table))
-   (s-lua (#%table ["__tostring"
-                    (#%function ()
-                                (#%block
-                                 (#%return "#<Type>")))]))))
+   (table)
+   (table [__tostring (const "#<Type>")])))
 
 (define (Type? v)
-  (eq? (get-metatable v) Type))
-
-(impl ToString Type
-      (let ([to-string (const "Type")])
-        (s-lua (#%table ["to-string" to-string]))))
+  (equal? (get-metatable v) Type))
 
 (define-macro define-type
   [(_ name
@@ -45,17 +36,15 @@
      (syntax/loc this-syntax
        (begin
          (define name
-           (set-metatable! (s-lua (#%table))
+           (set-metatable! (table)
                            Type))
 
          (define (predicate-name v)
            (and v
-                (eq? (get-metatable v) name)))
+                (equal? (get-metatable v) name)))
 
          (impl ToString name
-               (let ([to-string (λ (self)
-                                  name-str)])
-                 (s-lua (#%table ["to-string" to-string])))))))])
+               (table [to-string (const name-str)])))))])
 
 (define (ascribe type value)
   (set-metatable! value type))

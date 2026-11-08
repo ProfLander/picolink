@@ -1,31 +1,26 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               tostring
-               error)
+(require (only lua error)
 
-         (only lua/ext/values
-               foldr-values)
+         (only lua/ext/values foldr-values)
 
-         (only lua/string
-               format)
-
-         r-lua/prelude/arith
-         r-lua/prelude/assignment
-         r-lua/prelude/binding
-         r-lua/prelude/condition
-         r-lua/prelude/definition
-         r-lua/prelude/function
-         r-lua/prelude/if
-         r-lua/prelude/interface
-         r-lua/prelude/interface/length
-         r-lua/prelude/lambda
-         r-lua/prelude/print
-         r-lua/prelude/string
-         r-lua/prelude/struct
-         (only r-lua/prelude/sequence
-               sequence-null)
-         r-lua/prelude/s-lua)
+         (only r-lua/prelude/arith             +)
+         (only r-lua/prelude/assignment        set!)
+         (only r-lua/prelude/binding           let letrec)
+         (only r-lua/prelude/condition         unless)
+         (only r-lua/prelude/definition        define)
+         (only r-lua/prelude/format            format)
+         (only r-lua/prelude/function          const thunk)
+         (only r-lua/prelude/if                if)
+         (only r-lua/prelude/interface         impl)
+         (only r-lua/prelude/interface/length  Length length)
+         (only r-lua/prelude/lambda            λ)
+         (only r-lua/prelude/print             print)
+         (only r-lua/prelude/string            ToString to-string)
+         (only r-lua/prelude/struct            define-struct)
+         (only r-lua/prelude/sequence          sequence-null)
+         (only r-lua/prelude/s-lua             s-lua)
+         (only r-lua/prelude/table             table))
 
 (provide null?
          null
@@ -49,12 +44,10 @@
   #:predicate-name null?)
 
 (impl ToString %null:type
-      (let ([to-string (const "()")])
-        (s-lua (#%table ["to-string" to-string]))))
+      (table [to-string (const "()")]))
 
 (impl Length %null:type
-      (let ([length (const 0)])
-        (s-lua (#%table ["length" length]))))
+      (table [length (const 0)]))
 
 (define null (%null))
 
@@ -84,10 +77,10 @@
               (let ([lhs (car self)]
                     [rhs (cdr self)])
                 (if (null? rhs)
-                    (tostring lhs)
-                    (format "%s %s" lhs (%print-list rhs)))))])
+                    (to-string lhs)
+                    (format "~a ~a" lhs (%print-list rhs)))))])
 
-    (format "(%s)" (%print-list self))))
+    (format "(~a)" (%print-list self))))
 
 (define (print-pair self)
   (letrec ([%print-pair
@@ -95,35 +88,34 @@
               (let ([lhs (car self)]
                     [rhs (cdr self)])
                 (if (pair? rhs)
-                    (format "%s %s" lhs (%print-pair rhs))
-                    (format "%s . %s" lhs rhs))))])
+                    (format "~a ~a" lhs (%print-pair rhs))
+                    (format "~a . ~a" lhs rhs))))])
 
-    (format "(%s)" (%print-pair self))))
+    (format "(~a)" (%print-pair self))))
 
 (impl ToString pair:type
-      (let ([to-string (λ (self)
-                         (if (list? self)
-                             (print-list self)
-                             (print-pair self)))])
-        (s-lua (#%table ["to-string" to-string]))))
+      (table [to-string (λ (self)
+                          (if (list? self)
+                              (print-list self)
+                              (print-pair self)))]))
 
 (impl Length pair:type
 
-      (letrec ([%length
-                (λ (acc lst)
-                  (if (pair? lst)
-                      (+ acc 1 (length* (cdr lst)))
-                      acc))]
-
-               [length*
+      (letrec ([length
                 (λ (lst)
 
                   (unless (list? lst)
-                    (error (format "value is not a list: %s" lst)))
+                    (error (format "value is not a list: ~a" lst)))
 
-                  (%length 0 lst))])
+                  (%length 0 lst))]
 
-        (s-lua (#%table ["length" length*]))))
+               [%length
+                (λ (acc lst)
+                  (if (pair? lst)
+                      (+ acc 1 (length (cdr lst)))
+                      acc))])
+
+        (table [length length])))
 
 (define list
   (s-lua

@@ -1,8 +1,8 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/if
-         r-lua/prelude/sequencing
-         r-lua/prelude/void)
+(require (only r-lua/prelude/if          if)
+         (only r-lua/prelude/sequencing  begin)
+         (only r-lua/prelude/void        void))
 
 (provide (all-defined))
 

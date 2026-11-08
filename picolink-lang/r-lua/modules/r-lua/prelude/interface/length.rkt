@@ -1,7 +1,7 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/metatable metatable-send)
-         r-lua/prelude/interface)
+(require (only lua/ext/metatable        metatable-send)
+         (only r-lua/prelude/interface  define-interface))
 
 (provide (all-defined))
 

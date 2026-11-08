@@ -1,18 +1,14 @@
 #lang picolink/r-lua/base
 
-(require (only lua/io
-               stdout
-               stderr)
+(require (only lua/io  stdout stderr)
 
-         (only lua/ext/table
-               table-ref)
+         (only lua/ext/table  table-ref)
 
-         (only lua/ext/object
-               send)
+         (only lua/ext/object  send)
 
-         r-lua/prelude/definition
-         r-lua/prelude/print
-         r-lua/prelude/void)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/print       print)
+         (only r-lua/prelude/void        void))
 
 (provide (all-defined))
 

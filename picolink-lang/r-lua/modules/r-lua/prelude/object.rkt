@@ -1,28 +1,26 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               tostring
-               error)
+(require (only lua         error)
 
-         (only lua/string
-               format)
+         (only lua/ext/nil   nil)
+         (only lua/ext/type  nil?)
 
-         (only lua/ext/nil
-               nil)
-
-         (only lua/ext/type
-               nil?)
-
-         r-lua/prelude/assignment
-         r-lua/prelude/definition
-         r-lua/prelude/equality
-         r-lua/prelude/interface
-         r-lua/prelude/list
-         r-lua/prelude/sequencing
-         r-lua/prelude/string
-         r-lua/prelude/struct
-         r-lua/prelude/s-lua
-         r-lua/prelude/vector)
+         (only r-lua/prelude/assignment  set!)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/equality    equal?)
+         (only r-lua/prelude/format      format)
+         (only r-lua/prelude/interface   impl)
+         (only r-lua/prelude/list        null pair? cons car cdr)
+         (only r-lua/prelude/sequencing  begin)
+         (only r-lua/prelude/string      ToString to-string string-append)
+         (only r-lua/prelude/struct      define-struct)
+         (only r-lua/prelude/table       table)
+         (only r-lua/prelude/vector
+               vector
+               vector-length
+               vector-ref
+               vector-set!
+               vector-push))
 
 (provide (all-defined))
 
@@ -85,15 +83,15 @@
            #:constructor-name %name)
 
          (impl ToString name:type
-               (let ([to-string
-                      (λ (self)
-                        (string-append "#<actor"
-                                       (string-append
-                                        " " (tostring
-                                             (name-ref self field-index)))
-                                       ...
-                                       ">"))])
-                 (s-lua (#%table ["to-string" to-string]))))
+               (table [to-string
+                       (λ (self)
+                         (string-append "#<actor"
+                                        (string-append
+                                         " " (to-string
+                                              (name-ref self
+                                                        field-index)))
+                                        ...
+                                        ">"))]))
 
          (define-struct name-handle [index]
            #:constructor-name %name-handle)
@@ -102,18 +100,18 @@
            (name-handle-ref self 0))
 
          (impl ToString name-handle:type
-               (let ([to-string (λ (self)
-                                  (format "#<actor-handle %s>"
-                                          (name-handle-index self)))])
-                 (s-lua (#%table ["to-string" to-string]))))
+               (table [to-string
+                       (λ (self)
+                         (format "#<actor-handle ~a>"
+                                 (name-handle-index self)))]))
 
          (define (%check-name self)
            (unless (name? self)
-             (error (format "%s is not a %s" self name-str))))
+             (error (format "~a is not a ~a" self name-str))))
 
          (define (%check-name-handle self)
            (unless (name-handle? self)
-             (error (format "%s is not a %s handle" self name-str))))
+             (error (format "~a is not a ~a handle" self name-str))))
 
          (define (%name-field self)
            (%check-name self)
@@ -154,7 +152,7 @@
          
          (define (%name-update self field ...)
            (%check-name self)
-           (let ([field (if (eq? field nil)
+           (let ([field (if (equal? field nil)
                             (%name-field self)
                             field)]
                  ...)
@@ -167,7 +165,7 @@
                   [inst (vector-ref %names-active index)])
 
              (when (nil? inst)
-               (error (format "invalid handle: %s" handle)))
+               (error (format "invalid handle: ~a" handle)))
 
              (%name-field inst)))
          ...
@@ -179,7 +177,7 @@
                   [inst (vector-ref %names-active index)])
 
              (when (nil? inst)
-               (error (format "invalid handle: %s" handle)))
+               (error (format "invalid handle: ~a" handle)))
 
              (%name-update inst field ...)))
 

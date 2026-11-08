@@ -1,9 +1,6 @@
 #lang picolink/r-lua
 
-(require (only lua/string
-               format)
-
-         (only lua/ext/nil
+(require (only lua/ext/nil
                nil))
 
 (define-object actor [name position])

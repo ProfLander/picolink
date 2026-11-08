@@ -1,34 +1,22 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               loadstring
-               setfenv
-               pcall)
+(require (only lua        loadstring setfenv pcall)
+         (only lua/debug  traceback)
+         (only lua/io     stderr)
 
-         (only lua/debug
-               traceback)
+         (only lua/ext/table   table-ref)
+         (only lua/ext/object  send)
 
-         (only lua/io
-               stderr)
+         (only love/ext/thread  new-thread get-channel)
 
-         (only lua/ext/table
-               table-ref)
-
-         (only lua/ext/object
-               send)
-
-         (only love/ext/thread
-               new-thread
-               get-channel)
-
-         r-lua/prelude/assignment
-         r-lua/prelude/binding
-         r-lua/prelude/condition
-         r-lua/prelude/definition
-         r-lua/prelude/if
-         r-lua/prelude/print
-         r-lua/prelude/s-lua
-         r-lua/prelude/void)
+         (only r-lua/prelude/assignment  set!)
+         (only r-lua/prelude/binding     let let-values)
+         (only r-lua/prelude/condition   when unless)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/if          if)
+         (only r-lua/prelude/print       print)
+         (only r-lua/prelude/s-lua       s-lua)
+         (only r-lua/prelude/void        void))
 
 (provide repl-init
          repl-read)

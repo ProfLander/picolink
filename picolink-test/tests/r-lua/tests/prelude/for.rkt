@@ -1,7 +1,5 @@
 #lang picolink/r-lua
 
-(require (only lua/string format))
-
 (for ([i (in-naturals)]
       [j (in-list (list 3 2 1))])
   (print (format "%s: %s" i j)))

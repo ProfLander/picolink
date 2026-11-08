@@ -1,18 +1,15 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/equality
-               eq?)
+(require (only lua/ext/values foldl-values)
 
-         (only lua/ext/values
-               foldl-values)
-
-         r-lua/prelude/definition
-         r-lua/prelude/interface
-         r-lua/prelude/s-lua)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/equality    equal?)
+         (only r-lua/prelude/interface   define-interface)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 
-(define = eq?)
+(define = equal?)
 
 (define-interface Add
   [add __add
@@ -27,14 +24,14 @@
                  (#%call foldl-values add #%vararg))))))
 
 (define-interface Subtract
-  [sub __sub
-       (λ (a b)
-         (s-lua (#%sub a b)))])
+  [subtract __sub
+            (λ (a b)
+              (s-lua (#%sub a b)))])
 
 (define-interface Negate
-  [neg __unm
-       (λ (a)
-         (s-lua (#%neg a)))])
+  [negate __unm
+          (λ (a)
+            (s-lua (#%neg a)))])
 
 (define -
   (s-lua
@@ -45,38 +42,38 @@
                       (#%then
                        (#%block
                         (#%return
-                         (#%call neg #%vararg))))
+                         (#%call negate #%vararg))))
 
                       (#%else
                        (#%block
                         (#%return
-                         (#%call foldl-values sub #%vararg)))))))))
+                         (#%call foldl-values subtract #%vararg)))))))))
 
 (define-interface Multiply
-  [mul __mul
-       (λ (a b)
-         (s-lua (#%mul a b)))])
+  [multiply __mul
+            (λ (a b)
+              (s-lua (#%mul a b)))])
 
 (define *
   (s-lua
    (#%function (#%vararg)
                (#%block
                 (#%return
-                 (#%call foldl-values mul #%vararg))))))
+                 (#%call foldl-values multiply #%vararg))))))
 
 (define-interface Divide
-  [div __div
-       (λ (a b)
-         (s-lua (#%div a b)))])
+  [divide __div
+          (λ (a b)
+            (s-lua (#%div a b)))])
 
 (define /
   (s-lua
    (#%function (#%vararg)
                (#%block
                 (#%return
-                 (#%call foldl-values div #%vararg))))))
+                 (#%call foldl-values divide #%vararg))))))
 
-(define-interface Power
+(define-interface Exponent
   [expt __pow
         (λ (a b)
           (s-lua (#%exp a b)))])

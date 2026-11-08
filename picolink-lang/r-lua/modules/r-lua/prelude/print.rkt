@@ -1,16 +1,17 @@
 #lang picolink/r-lua/base
 
-(require (rename lua print %print)
-         r-lua/prelude/condition
-         r-lua/prelude/definition
-         r-lua/prelude/equality
-         r-lua/prelude/void)
+(require (rename lua print lua-print)
+
+         (only r-lua/prelude/condition   cond)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/equality    equal?)
+         (only r-lua/prelude/void        void void?))
 
 (provide (all-defined))
 
 (define (print v)
   (cond
-    [(eq? v #f) (void (%print "#f"))]
-    [(eq? v #t) (void (%print "#t"))]
-    [(void? v)  (void)]
-    [else       (void (%print v))]))
+    [(equal? v #f) (void (lua-print "#f"))]
+    [(equal? v #t) (void (lua-print "#t"))]
+    [(void? v)     (void)]
+    [else          (void (lua-print v))]))

@@ -2,10 +2,9 @@
 
 (require (only lua/string
                upper
-               lower
-               format))
+               lower))
 
 (define hello (upper "hello"))
 (define world (lower "WORLD"))
 
-(format "%s %s" hello world)
+(format "~a ~a" hello world)

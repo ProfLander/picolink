@@ -1,11 +1,10 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/values
-               foldl-values)
+(require (only lua/ext/values  foldl-values)
 
-         r-lua/prelude/definition
-         r-lua/prelude/interface
-         r-lua/prelude/s-lua)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/interface   define-interface)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 

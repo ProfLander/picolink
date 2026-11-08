@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require intrinsic)
+(require (only intrinsic  define-intrinsics))
 
 (provide (all-defined))
 

@@ -1,30 +1,24 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               tostring)
+(require (only lua/table  insert)
 
-         (only lua/table
-               insert)
+         (only lua/ext/table  table-ref table-set! table-length)
 
-         (only lua/ext/table
-               table-ref
-               table-set!
-               table-length)
-
-         r-lua/prelude/arith
-         r-lua/prelude/binding
-         r-lua/prelude/definition
-         r-lua/prelude/equality
-         r-lua/prelude/for
-         r-lua/prelude/if
-         r-lua/prelude/interface
-         r-lua/prelude/lambda
-         r-lua/prelude/list
-         r-lua/prelude/print
-         r-lua/prelude/sequence
-         r-lua/prelude/string
-         r-lua/prelude/s-lua
-         r-lua/prelude/type)
+         (only r-lua/prelude/arith      +)
+         (only r-lua/prelude/binding    let*)
+         (only r-lua/prelude/definition define)
+         (only r-lua/prelude/equality   equal?)
+         (only r-lua/prelude/for        for/fold)
+         (only r-lua/prelude/if         if)
+         (only r-lua/prelude/interface  impl)
+         (only r-lua/prelude/lambda     λ)
+         (only r-lua/prelude/list       for/list in-list)
+         (only r-lua/prelude/print      print)
+         (only r-lua/prelude/sequence   sequence-map in-range)
+         (only r-lua/prelude/string     ToString to-string string-append)
+         (only r-lua/prelude/s-lua      s-lua)
+         (only r-lua/prelude/table      table)
+         (only r-lua/prelude/type       define-type ascribe))
 
 (provide (all-defined))
 
@@ -53,20 +47,17 @@
   vec)
 
 (impl ToString vector:type
-
-      (let ([to-string
-             (λ (self)
-               (string-append
-                (for/fold ([acc "#("])
-                          ([i (in-range 0 (vector-length self))])
-                  (let* ([val (vector-ref self i)]
-                         [str (tostring val)])
-                    (if (eq? i 0)
-                        (string-append acc str)
-                        (string-append acc " " str))))
-                ")"))])
-
-        (s-lua (#%table ["to-string" to-string]))))
+      (table [to-string
+              (λ (self)
+                (string-append
+                 (for/fold ([acc "#("])
+                           ([i (in-range 0 (vector-length self))])
+                   (let* ([val (vector-ref self i)]
+                          [str (to-string val)])
+                     (if (equal? i 0)
+                         (string-append acc str)
+                         (string-append acc " " str))))
+                 ")"))]))
 
 (define (in-vector vec)
   (sequence-map (in-range 0 (vector-length vec))

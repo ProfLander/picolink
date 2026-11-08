@@ -1,9 +1,9 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/binding
-         r-lua/prelude/definition
-         r-lua/prelude/if
-         r-lua/prelude/s-lua)
+(require (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/if          if)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 

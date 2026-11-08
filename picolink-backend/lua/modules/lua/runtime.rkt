@@ -1,13 +1,9 @@
 #lang picolink/r-lua/base
 
-(require (only lua/runtime/io
-               set-unbuffered-stdio!)
+(require (only lua/runtime/io    set-unbuffered-stdio!)
+         (only lua/runtime/repl  repl)
 
-         (only lua/runtime/repl
-               repl)
-
-         r-lua/prelude/definition
-         r-lua/prelude/print)
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 

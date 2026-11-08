@@ -1,19 +1,19 @@
 #lang picolink/r-lua/base
 
 (require (only lua error)
-         (only lua/string format)
          (only lua/ext/type table?)
 
-         r-lua/prelude/definition
-         r-lua/prelude/if
-         r-lua/prelude/s-lua)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/format      format)
+         (only r-lua/prelude/if          if)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 
 (define (check-table t)
   (if (table? t)
       t
-      (error (format "%s is not a table" t))))
+      (error (format "~a is not a table" t))))
 
 (define (table-ref t k)
   (check-table t)

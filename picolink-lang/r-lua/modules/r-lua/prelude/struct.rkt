@@ -1,13 +1,11 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table
-               table-ref
-               table-set!)
+(require (only lua/ext/table  table-ref table-set!)
 
-         r-lua/prelude/arith
-         r-lua/prelude/definition
-         r-lua/prelude/s-lua
-         r-lua/prelude/type)
+         (only r-lua/prelude/arith       +)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/table       table)
+         (only r-lua/prelude/type        define-type ascribe))
 
 (provide (all-defined))
 
@@ -43,7 +41,7 @@
 
          (define (constructor-name field ...)
            (ascribe type-name
-                    (s-lua (#%table field ...))))
+                    (table field ...)))
 
          (define (name-ref self idx)
            (table-ref self (+ idx 1)))

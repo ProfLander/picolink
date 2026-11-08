@@ -1,33 +1,13 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               collectgarbage
-               tostring
-               error)
+(require (only lua            collectgarbage error)
+         (only lua/coroutine  yield)
 
-         (only lua/coroutine
-               yield)
+         (only lua/ext/table  table-ref table-set!)
 
-         (only lua/ext/table
-               table-ref
-               table-set!)
-
-         (only lua/string
-               format)
-
-         (only love/ext
-               timer
-               event
-               graphics)
-
-         (only love/ext/timer
-               step
-               sleep)
-
-         (only love/ext/event
-               pump
-               poll)
-
+         (only love/ext        timer event graphics)
+         (only love/ext/timer  step sleep)
+         (only love/ext/event  pump poll)
          (only love/ext/graphics
                is-active
                origin
@@ -35,18 +15,18 @@
                get-background-color
                present)
 
-         (only love/runtime/repl
-               repl-read)
+         (only love/runtime/repl  repl-read)
 
-         r-lua/prelude/binding
-         r-lua/prelude/condition
-         r-lua/prelude/definition
-         r-lua/prelude/if
-         r-lua/prelude/lambda
-         r-lua/prelude/logic
-         r-lua/prelude/print
-         r-lua/prelude/struct
-         r-lua/prelude/s-lua)
+         (only r-lua/prelude/binding     let let* let-values letrec)
+         (only r-lua/prelude/condition   when unless)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/format      format)
+         (only r-lua/prelude/if          if)
+         (only r-lua/prelude/lambda      λ)
+         (only r-lua/prelude/logic       and or)
+         (only r-lua/prelude/struct      define-struct)
+         (only r-lua/prelude/string      to-string)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide quit-with
          %love-runner
@@ -59,7 +39,7 @@
 
 (define (quit-with-world self)
   (unless (quit-with? self)
-    (error (format "%s is not a quit-with" self)))
+    (error (format "~a is not a quit-with" self)))
   (quit-with-ref self 0))
 
 (define (update-with-then world f)
@@ -127,8 +107,8 @@
   (table-set! handlers "threaderror"
               (or (table-ref handlers "threaderror")
                   (λ (_world t err)
-                    (error (format "thread error (%s)\n\n%s"
-                                   (tostring t)
+                    (error (format "thread error (~a)\n\n~a"
+                                   (to-string t)
                                    err)))))
 
   (table-set! handlers "quit"

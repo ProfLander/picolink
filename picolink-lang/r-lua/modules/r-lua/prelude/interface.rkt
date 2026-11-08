@@ -1,20 +1,15 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/metatable
-               get-metatable
-               set-metatable!
-               metatable-send)
+(require (only lua/ext/metatable  get-metatable set-metatable! metatable-send)
 
-         (only lua/ext/object
-               send)
+         (only lua/ext/object  send)
 
-         r-lua/prelude/binding
-         r-lua/prelude/definition
-         r-lua/prelude/function
-         r-lua/prelude/lambda
-         r-lua/prelude/logic
-         r-lua/prelude/s-lua
-         r-lua/prelude/void)
+         (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/lambda      λ)
+         (only r-lua/prelude/logic       and)
+         (only r-lua/prelude/s-lua       s-lua)
+         (only r-lua/prelude/void        %void))
 
 (provide (all-defined))
 

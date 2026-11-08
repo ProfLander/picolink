@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/lambda)
+(require (only r-lua/prelude/lambda  λ))
 
 (provide (all-defined))
 

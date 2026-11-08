@@ -1,11 +1,13 @@
 #lang picolink/r-lua/base
 
-(require (only lua/io read)
-         (only lua/ext/object send)
-         (only love/ext/thread get-channel)
+(require (only lua/io  read)
          
-         r-lua/prelude/binding
-         r-lua/prelude/definition)
+         (only lua/ext/object  send)
+
+         (only love/ext/thread  get-channel)
+         
+         (only r-lua/prelude/binding    let)
+         (only r-lua/prelude/definition  define))
 
 (define channel (get-channel "stdin"))
 

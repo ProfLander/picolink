@@ -1,5 +1,5 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/type boolean?))
+(require (only lua/ext/type  boolean?))
 
 (provide boolean?)
