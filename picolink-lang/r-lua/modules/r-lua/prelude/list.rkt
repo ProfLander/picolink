@@ -18,8 +18,10 @@
          r-lua/prelude/function
          r-lua/prelude/if
          r-lua/prelude/interface
+         r-lua/prelude/interface/length
          r-lua/prelude/lambda
          r-lua/prelude/print
+         r-lua/prelude/string
          r-lua/prelude/struct
          (only r-lua/prelude/sequence
                sequence-null)
@@ -38,7 +40,6 @@
          list?
          list
 
-         length
          reverse
 
          in-list
@@ -50,6 +51,10 @@
 (impl ToString %null:type
       (let ([to-string (const "()")])
         (s-lua (#%table ["to-string" to-string]))))
+
+(impl Length %null:type
+      (let ([length (const 0)])
+        (s-lua (#%table ["length" length]))))
 
 (define null (%null))
 
@@ -102,6 +107,24 @@
                              (print-pair self)))])
         (s-lua (#%table ["to-string" to-string]))))
 
+(impl Length pair:type
+
+      (letrec ([%length
+                (λ (acc lst)
+                  (if (pair? lst)
+                      (+ acc 1 (length* (cdr lst)))
+                      acc))]
+
+               [length*
+                (λ (lst)
+
+                  (unless (list? lst)
+                    (error (format "value is not a list: %s" lst)))
+
+                  (%length 0 lst))])
+
+        (s-lua (#%table ["length" length*]))))
+
 (define list
   (s-lua
    (#%function (#%vararg)
@@ -109,19 +132,6 @@
                 (#%return
                  (#%call foldr-values
                          cons null #%vararg))))))
-
-(define length
-  (letrec ([%length
-            (λ (acc lst)
-              (if (pair? lst)
-                  (+ acc 1 (length (cdr lst)))
-                  acc))])
-    (λ (lst)
-
-      (unless (list? lst)
-        (error (format "value is not a list: %s" lst)))
-
-      (%length 0 lst))))
 
 (define (reverse lst)
   (let loop ([acc null]

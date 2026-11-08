@@ -11,12 +11,19 @@
          r-lua/prelude/interface
          r-lua/prelude/lambda
          r-lua/prelude/logic
+         r-lua/prelude/string
          r-lua/prelude/s-lua
          r-lua/prelude/print)
 
 (provide (all-defined))
 
-(define Type (s-lua (#%table)))
+(define Type
+  (set-metatable!
+   (s-lua (#%table))
+   (s-lua (#%table ["__tostring"
+                    (#%function ()
+                                (#%block
+                                 (#%return "#<Type>")))]))))
 
 (define (Type? v)
   (eq? (get-metatable v) Type))

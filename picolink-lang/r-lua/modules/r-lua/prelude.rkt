@@ -11,12 +11,15 @@
          r-lua/prelude/function
          r-lua/prelude/if
          r-lua/prelude/interface
+         r-lua/prelude/interface/length
+         r-lua/prelude/interface/monoid
          r-lua/prelude/lambda
          r-lua/prelude/list
          r-lua/prelude/logic
          r-lua/prelude/number
          r-lua/prelude/object
          r-lua/prelude/print
+         r-lua/prelude/ordering
          r-lua/prelude/procedure
          r-lua/prelude/sequence
          r-lua/prelude/sequencing
@@ -39,11 +42,14 @@
          (all-from r-lua/prelude/function)
          (all-from r-lua/prelude/if)
          (all-from r-lua/prelude/interface)
+         (all-from r-lua/prelude/interface/length)
+         (all-from r-lua/prelude/interface/monoid)
          (all-from r-lua/prelude/lambda)
          (all-from r-lua/prelude/list)
          (all-from r-lua/prelude/logic)
          (all-from r-lua/prelude/number)
          (all-from r-lua/prelude/object)
+         (all-from r-lua/prelude/ordering)
          (all-from r-lua/prelude/print)
          (all-from r-lua/prelude/procedure)
          (all-from r-lua/prelude/sequence)

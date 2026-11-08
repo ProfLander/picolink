@@ -2,56 +2,53 @@
 
 (require (only lua/ext/metatable
                get-metatable
-               set-metatable!)
+               set-metatable!
+               metatable-send)
+
+         (only lua/ext/object
+               send)
 
          r-lua/prelude/binding
          r-lua/prelude/definition
-         r-lua/prelude/equality
          r-lua/prelude/function
+         r-lua/prelude/lambda
          r-lua/prelude/logic
-         r-lua/prelude/print
          r-lua/prelude/s-lua
          r-lua/prelude/void)
 
 (provide (all-defined))
 
-(define Interface (s-lua (#%table)))
+(define Interface
+  (set-metatable!
+   (s-lua (#%table))
+   (s-lua (#%table ["__tostring"
+                    (#%function ()
+                                (#%block
+                                 (#%return "#<Interface>")))]))))
 
 (define (Interface? v)
-  (and v (eq? (get-metatable v) Interface)))
+  (and v
+       (let ([mt (get-metatable v)])
+         (s-lua (#%eq mt Interface)))))
 
 (define-macro define-interface
-  [(_ name ([from-name to-name] ...))
+  [(_ name [(~and function
+                  (~parse function-str (symbol->string (syntax-e #'function))))
+            (~and metamethod
+                  (~parse metamethod-str (symbol->string (syntax-e #'metamethod))))
+            (~optional dispatcher
+                       #:defaults ([dispatcher
+                                    #'(λ (self)
+                                        (metatable-send self metamethod-str))]))] ...)
 
-   (with-syntax ([(from-name ...)
-                  (for/list ([ident (in-list (attribute from-name))])
-                    (symbol->string (syntax-e ident)))]
-
-                 [(to-name ...)
-                  (for/list ([ident (in-list (attribute to-name))])
-                    (symbol->string (syntax-e ident)))])
-
-     (syntax/loc this-syntax
+   (syntax/loc this-syntax
+     (begin
        (define name
-         (set-metatable! (s-lua (#%table [from-name to-name] ...))
-                         Interface))))])
+         (set-metatable! (s-lua (#%table [function-str metamethod-str] ...))
+                         Interface))
 
-(define-interface Add       ([add        __add]))
-(define-interface Subtract  ([subtract   __sub]))
-(define-interface Multiply  ([multiply   __mul]))
-(define-interface Divide    ([divide     __div]))
-(define-interface Modulo    ([modulo     __mod]))
-(define-interface Power     ([power      __pow]))
-(define-interface Negate    ([negate     __unm]))
-(define-interface Concat    ([concat     __concat]))
-(define-interface Length    ([length     __len]))
-(define-interface Equal     ([equal      __eq]))
-(define-interface LessThan  ([less-than  __lt]))
-(define-interface LessEqual ([less-equal __le]))
-(define-interface ToString  ([to-string  __tostring]))
-(define-interface Index     ([index      __index]))
-(define-interface NewIndex  ([new-index  __index]))
-(define-interface Call      ([call       __call]))
+       (define function dispatcher)
+       ...))])
 
 #;(define-macro impl
     [(_ interface target
@@ -73,7 +70,3 @@
                         (#%assign [(#%member target 'v)]
                                   [(#%member methods 'k)])))
                 (#%return %void)))))
-
-(impl ToString Interface
-      (let ([to-string (const "Interface")])
-        (s-lua (#%table ["to-string" to-string]))))

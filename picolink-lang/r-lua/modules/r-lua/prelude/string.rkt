@@ -1,22 +1,25 @@
 #lang picolink/r-lua/base
 
-(require (only lua error)
-         (only lua/ext/type string?)
-         (only lua/ext/values foldl-values)
-         (only lua/string sub)
+(require (only lua  error
+                    tostring)
 
-         r-lua/prelude/arith
-         r-lua/prelude/condition
-         r-lua/prelude/definition
-         r-lua/prelude/equality
-         r-lua/prelude/logic
-         r-lua/prelude/s-lua)
+         (only lua/string      sub)
+         (only lua/ext/type    string?)
+         (only lua/ext/values  foldl-values)
+
+         (only r-lua/prelude/arith             +)
+         (only r-lua/prelude/condition         when)
+         (only r-lua/prelude/definition        define)
+         (only r-lua/prelude/equality          eq?)
+         (only r-lua/prelude/interface         define-interface)
+         (only r-lua/prelude/interface/monoid  mappend)
+         (only r-lua/prelude/logic             or)
+         (only r-lua/prelude/ordering          <)
+         (only r-lua/prelude/print             print)
+         (only r-lua/prelude/s-lua             s-lua))
 
 (provide (all-defined)
          string?)
-
-(define (%cat a b)
-  (s-lua (#%cat a b)))
 
 (define (string-length self)
   (s-lua (#%length self)))
@@ -44,4 +47,9 @@
    (#%function (#%vararg)
                (#%block
                 (#%return
-                 (#%call foldl-values %cat #%vararg))))))
+                 (#%call foldl-values mappend #%vararg))))))
+
+(define-interface ToString
+  [to-string __tostring
+             (λ (a)
+               (tostring a))])

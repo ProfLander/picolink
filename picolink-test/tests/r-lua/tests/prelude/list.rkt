@@ -58,3 +58,9 @@ cell
 
 (print "(cddr cell):")
 (cddr cell)
+
+(print "(length null):")
+(length null)
+
+(print "(length (list 1 2 3 4))")
+(length (list 1 2 3 4))

@@ -4,10 +4,10 @@
          r-lua/prelude/arith
          r-lua/prelude/assignment
          r-lua/prelude/binding
-         r-lua/prelude/condition
          r-lua/prelude/definition
          r-lua/prelude/function
          r-lua/prelude/if
+         r-lua/prelude/ordering
          r-lua/prelude/print
          r-lua/prelude/struct)
 
