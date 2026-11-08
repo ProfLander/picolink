@@ -2,7 +2,7 @@
 
 (provide (all-defined))
 
-(define-macro %hash
+(define-macro table
   [(_ (~seq k v) ...)
 
    (with-syntax ([(k-str ...) (map (compose symbol->string

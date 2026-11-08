@@ -9,7 +9,6 @@
          r-lua/prelude/equality
          r-lua/prelude/for
          r-lua/prelude/function
-         r-lua/prelude/hash
          r-lua/prelude/if
          r-lua/prelude/interface
          r-lua/prelude/lambda
@@ -23,6 +22,7 @@
          r-lua/prelude/sequencing
          r-lua/prelude/string
          r-lua/prelude/struct
+         r-lua/prelude/table
          r-lua/prelude/type
          r-lua/prelude/values
          r-lua/prelude/vector
@@ -37,7 +37,6 @@
          (all-from r-lua/prelude/equality)
          (all-from r-lua/prelude/for)
          (all-from r-lua/prelude/function)
-         (all-from r-lua/prelude/hash)
          (all-from r-lua/prelude/if)
          (all-from r-lua/prelude/interface)
          (all-from r-lua/prelude/lambda)
@@ -51,6 +50,7 @@
          (all-from r-lua/prelude/sequencing)
          (all-from r-lua/prelude/string)
          (all-from r-lua/prelude/struct)
+         (all-from r-lua/prelude/table)
          (all-from r-lua/prelude/type)
          (all-from r-lua/prelude/values)
          (all-from r-lua/prelude/vector)
