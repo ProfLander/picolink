@@ -8,8 +8,11 @@
 (define (identity x)
   x)
 
-(define (const x)
-  (λ (_) x))
+(define (const t)
+  (s-lua
+   (#%function (#%vararg)
+               (#%block
+                (#%return t)))))
 
 (define-macro thunk
   [(_ body ...)
