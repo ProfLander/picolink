@@ -1,10 +1,5 @@
 #lang picolink/r-lua/base
 
-(require (only lua type)
-         r-lua/prelude/definition
-         r-lua/prelude/equality)
+(require (only lua/ext/type function?))
 
-(provide (all-defined))
-
-(define (procedure? v)
-  (eq? (type v) "function"))
+(provide (rename function? procedure?))

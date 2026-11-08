@@ -1,8 +1,7 @@
 #lang picolink/r-lua/base
 
-(require (only lua
-               error
-               type)
+(require (only lua error)
+         (only lua/ext/type string?)
          (only lua/ext/values foldl-values)
          (only lua/string sub)
 
@@ -13,10 +12,8 @@
          r-lua/prelude/logic
          r-lua/prelude/s-lua)
 
-(provide (all-defined))
-
-(define (string? v)
-  (eq? (type v) "string"))
+(provide (all-defined)
+         string?)
 
 (define (%cat a b)
   (s-lua (#%cat a b)))
