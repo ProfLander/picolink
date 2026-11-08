@@ -27,10 +27,7 @@
     mt))
 
 (define void
-  (s-lua
-   (#%function (#%vararg)
-    (#%block
-     (#%return %void)))))
+  (const %void))
 
 (define (void? v)
   (s-lua (#%eq v %void)))
