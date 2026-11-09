@@ -1,8 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua         error)
-
-         (only lua/ext/nil   nil)
+(require (only lua/ext/nil   nil)
          (only lua/ext/type  nil?)
 
          (only r-lua/prelude/assignment  set!)
@@ -15,6 +13,7 @@
          (only r-lua/prelude/string      ToString to-string string-append)
          (only r-lua/prelude/struct      define-struct)
          (only r-lua/prelude/table       table)
+         (only r-lua/prelude/error          error)
          (only r-lua/prelude/vector
                vector
                vector-length

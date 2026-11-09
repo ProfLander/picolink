@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua  error tostring)
+(require (only lua  tostring)
 
          (only lua/string      sub)
          (only lua/ext/type    string?)
@@ -10,6 +10,7 @@
          (only r-lua/prelude/condition         when)
          (only r-lua/prelude/definition        define)
          (only r-lua/prelude/equality          equal?)
+         (only r-lua/prelude/error             error)
          (only r-lua/prelude/interface         define-interface)
          (only r-lua/prelude/interface/monoid  mappend)
          (only r-lua/prelude/logic             or)

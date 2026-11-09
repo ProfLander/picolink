@@ -1,14 +1,13 @@
 #lang picolink/r-lua/base
 
-(require (only lua error)
-
-         (only lua/ext/values foldr-values)
+(require (only lua/ext/values foldr-values)
 
          (only r-lua/prelude/arith             +)
          (only r-lua/prelude/assignment        set!)
          (only r-lua/prelude/binding           let letrec)
          (only r-lua/prelude/condition         unless)
          (only r-lua/prelude/definition        define)
+         (only r-lua/prelude/error             error)
          (only r-lua/prelude/format            format)
          (only r-lua/prelude/function          const thunk)
          (only r-lua/prelude/if                if)

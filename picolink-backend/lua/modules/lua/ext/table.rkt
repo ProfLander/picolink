@@ -1,9 +1,9 @@
 #lang picolink/r-lua/base
 
-(require (only lua error)
-         (only lua/ext/type table?)
+(require (only lua/ext/type table?)
 
          (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/error       error)
          (only r-lua/prelude/format      format)
          (only r-lua/prelude/if          if)
          (only r-lua/prelude/s-lua       s-lua))

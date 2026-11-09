@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua            collectgarbage error)
+(require (only lua            collectgarbage)
          (only lua/coroutine  yield)
 
          (only lua/ext/table  table-ref table-set!)
@@ -20,6 +20,7 @@
          (only r-lua/prelude/binding     let let* let-values letrec)
          (only r-lua/prelude/condition   when unless)
          (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/error       error)
          (only r-lua/prelude/format      format)
          (only r-lua/prelude/if          if)
          (only r-lua/prelude/lambda      λ)
