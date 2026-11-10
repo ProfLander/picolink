@@ -195,16 +195,27 @@
     (syntax/loc this-syntax
       v.s-lua))])
 
-(define-syntax-class formals
-  #:attributes [[arg 1] tail]
+(define-splicing-syntax-class formals
+  #:attributes [(arg 1)
+                tail
+                tail-bind]
 
-  (pattern tail:id
+  (pattern [(~datum :) tail:id tail-bind:id]
            #:attr [arg 1] null)
 
-  (pattern (arg:id ...)
-           #:attr tail #f)
+  (pattern tail:id
+           #:attr [arg 1] null
+           #:attr tail-bind #'list)
 
-  (pattern (arg:id ... . tail:id)))
+  (pattern (arg:id ... . (~or [(~datum :) tail:id %tail-bind:id]
+                              tail:id))
+           #:attr tail-bind (if (attribute %tail-bind)
+                                (attribute %tail-bind)
+                                #'list))
+
+  (pattern (arg:id ...)
+           #:attr tail #f
+           #:attr tail-bind #f))
 
 (define-s-lua-syntax-class val
   #:literal-sets [r-lua-ir-literals]
@@ -217,18 +228,47 @@
 
   [(#%abs ~! args:formals body:expr)
 
-   (let ([body (hoist-do #'body.s-lua)])
+   (define (replace-vararg name stx)
+     (syntax-parse stx
+       [ident:id
+        #:when (datum=? #'ident name)
+        (syntax/loc this-syntax
+          #%vararg)]
+
+       [(form ...)
+        (datum->syntax this-syntax
+                       (map (λ (form)
+                              (replace-vararg name form))
+                            (attribute form))
+                       this-syntax
+                       this-syntax)]
+
+       [_ this-syntax]))
+
+   (let ([body (hoist-do #'body.s-lua)]
+         [is-vararg-values (and (attribute args.tail)
+                                (datum=? (attribute args.tail-bind)
+                                         #'values))])
+
      (in-s-lua
-      (with-syntax* ([ret (last body)]
-                     [(body ...) (drop-right body 1)]
+      (with-syntax* ([(body ... ret)
+                      (if is-vararg-values
+                          (replace-vararg (attribute args.tail)
+                                          body)
+                          body)]
+
                      [(vararg ...)
                       (if (attribute args.tail)
                           #'(#%vararg)
                           #'())]
+
                      [(vararg-bind ...)
-                      (if (attribute args.tail)
+                      (if (and (attribute args.tail)
+                               (not is-vararg-values))
+
                           #'((#%local [args.tail]
-                                      [(#%call list vararg ...)]))
+                                      [(#%call args.tail-bind
+                                               vararg ...)]))
                           #'())])
 
         (syntax/loc this-syntax
