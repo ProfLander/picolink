@@ -14,6 +14,7 @@
          r-lua/prelude/if
          r-lua/prelude/interface
          r-lua/prelude/interface/drop
+         r-lua/prelude/interface/copy
          r-lua/prelude/interface/length
          r-lua/prelude/interface/monoid
          r-lua/prelude/lambda
@@ -48,6 +49,7 @@
          (all-from r-lua/prelude/if)
          (all-from r-lua/prelude/interface)
          (all-from r-lua/prelude/interface/drop)
+         (all-from r-lua/prelude/interface/copy)
          (all-from r-lua/prelude/interface/length)
          (all-from r-lua/prelude/interface/monoid)
          (all-from r-lua/prelude/lambda)
