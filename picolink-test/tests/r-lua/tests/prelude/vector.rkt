@@ -5,8 +5,8 @@
 (print "inst:")
 inst
 
-(print "(vector-length inst):")
-(vector-length inst)
+(print "(length inst):")
+(length inst)
 
 (print "(vector-ref inst 0):")
 (vector-ref inst 0)

@@ -1,24 +1,25 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/values foldr-values)
+(require (only lua/ext/values  foldr-values)
 
-         (only r-lua/prelude/arith             +)
-         (only r-lua/prelude/assignment        set!)
-         (only r-lua/prelude/binding           let letrec)
-         (only r-lua/prelude/condition         unless)
-         (only r-lua/prelude/definition        define)
-         (only r-lua/prelude/error             error)
-         (only r-lua/prelude/format            format)
-         (only r-lua/prelude/function          const thunk)
-         (only r-lua/prelude/if                if)
-         (only r-lua/prelude/interface         impl)
-         (only r-lua/prelude/interface/length  Length length)
-         (only r-lua/prelude/lambda            λ)
-         (only r-lua/prelude/print             print)
-         (only r-lua/prelude/string            ToString to-string)
-         (only r-lua/prelude/struct            define-struct)
-         (only r-lua/prelude/sequence          sequence-null)
-         (only r-lua/prelude/table             table))
+         (only r-lua/prelude/arith                +)
+         (only r-lua/prelude/assignment           set!)
+         (only r-lua/prelude/binding              let letrec)
+         (only r-lua/prelude/condition            unless)
+         (only r-lua/prelude/definition           define)
+         (only r-lua/prelude/error                error)
+         (only r-lua/prelude/format               format)
+         (only r-lua/prelude/function             const thunk)
+         (only r-lua/prelude/if                   if)
+         (only r-lua/prelude/interface            impl)
+         (only r-lua/prelude/interface/equal      Equal)
+         (only r-lua/prelude/interface/length     Length length)
+         (only r-lua/prelude/lambda               λ)
+         (only r-lua/prelude/print                print)
+         (only r-lua/prelude/interface/to-string  ToString to-string)
+         (only r-lua/prelude/struct               define-struct)
+         (only r-lua/prelude/sequence             sequence-null)
+         (only r-lua/prelude/table                table))
 
 (provide null?
          null
@@ -40,6 +41,10 @@
 
 (define-struct %null []
   #:predicate-name null?)
+
+(impl [Equal %null:type]
+      (define (equal? a b)
+        (s-lua (#%eq a b))))
 
 (impl [ToString %null:type]
        (define to-string (const "()")))
@@ -68,6 +73,10 @@
   (if (pair? v)
       (list? (cdr v))
       (null? v)))
+
+(impl [Equal pair:type]
+      (define (equal? a b)
+        (s-lua (#%eq a b))))
 
 (define (print-list self)
   (letrec ([%print-list

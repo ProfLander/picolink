@@ -5,4 +5,4 @@
 (print a)
 
 (define b 3)
-(set! b (if #t 4 5))
+#;(set! b (if #t 4 5))

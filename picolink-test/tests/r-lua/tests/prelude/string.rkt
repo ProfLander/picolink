@@ -1,4 +1,4 @@
 #lang picolink/r-lua
 
-(print "string-append:")
-(string-append "foo" "bar" "baz")
+(print "string monoid:")
+(<> "foo" "bar" "baz")

@@ -1,13 +1,13 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/arith       +)
-         (only r-lua/prelude/assignment  set!)
-         (only r-lua/prelude/binding     let)
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/function    thunk)
-         (only r-lua/prelude/if          if)
-         (only r-lua/prelude/ordering    < >)
-         (only r-lua/prelude/struct      define-struct))
+(require (only r-lua/prelude/arith            +)
+         (only r-lua/prelude/assignment       set!)
+         (only r-lua/prelude/binding          let)
+         (only r-lua/prelude/definition       define)
+         (only r-lua/prelude/function         thunk)
+         (only r-lua/prelude/if               if)
+         (only r-lua/prelude/interface/order  < >)
+         (only r-lua/prelude/struct           define-struct))
 
 (provide (all-defined))
 

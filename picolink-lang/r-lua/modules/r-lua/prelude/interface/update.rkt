@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-interface Update
-  [update __update])
+  [update %update])
 
 (define-interface Update!
-  [update! __update!])
+  [update! %update!])

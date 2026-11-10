@@ -15,9 +15,9 @@
 
   (let ([tick (λ (world)
 
-                (let ([world (string-append world "!")])
+                (let ([world (<> world "!")])
 
-                  (if (< 100 (string-length world))
+                  (if (< 100 (length world))
                       (quit-with world)
                       world)))])
 
@@ -31,7 +31,7 @@
 
                 (let ([world (substring world
                                         0
-                                        (- (string-length world) 1))])
+                                        (- (length world) 1))])
 
                   (if (string-empty? world)
                       (quit-with world)

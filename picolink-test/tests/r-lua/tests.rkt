@@ -1,7 +1,9 @@
 #lang picolink/r-lua
 
-(require tests/begin
+(require tests/abs
+         tests/begin
          tests/define
+         tests/if
          tests/let
          tests/letrec
          tests/macro-hygiene

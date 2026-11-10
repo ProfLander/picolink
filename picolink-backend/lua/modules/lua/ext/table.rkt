@@ -10,6 +10,9 @@
 
 (provide (all-defined))
 
+(define (array-table . [: vs #%values])
+  (s-lua (#%table vs)))
+
 (define (check-table t)
   (if (table? t)
       t

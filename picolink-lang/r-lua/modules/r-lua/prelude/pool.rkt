@@ -1,18 +1,18 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/binding           let let*)
-         (only r-lua/prelude/condition         when unless)
-         (only r-lua/prelude/format            format)
-         (only r-lua/prelude/interface         impl)
-         (only r-lua/prelude/interface/drop    Drop drop)
-         (only r-lua/prelude/interface/update  Update update)
-         (only r-lua/prelude/list              null pair? car cdr)
-         (only r-lua/prelude/sequencing        begin)
-         (only r-lua/prelude/string            ToString)
-         (only r-lua/prelude/struct            define-struct)
+(require (only r-lua/prelude/binding              let let*)
+         (only r-lua/prelude/condition            when unless)
+         (only r-lua/prelude/format               format)
+         (only r-lua/prelude/interface            impl)
+         (only r-lua/prelude/interface/drop       Drop drop)
+         (only r-lua/prelude/interface/length     length)
+         (only r-lua/prelude/interface/to-string  ToString)
+         (only r-lua/prelude/interface/update     Update update)
+         (only r-lua/prelude/list                 null pair? car cdr)
+         (only r-lua/prelude/sequencing           begin)
+         (only r-lua/prelude/struct               define-struct)
          (only r-lua/prelude/vector
                vector
-               vector-length
                vector-ref
                vector-set!
                vector-push))
@@ -69,6 +69,10 @@
                      (define (name-handle-index self)
                        (name-handle-ref self 0))
 
+                     (impl [Equal name-handle:type]
+                           (define (equal? a b)
+                             (s-lua (#%eq a b))))
+
                      (impl [ToString name-handle:type]
                            (define (to-string self)
                              (format "#<~a ~a>"
@@ -110,7 +114,7 @@
                                      handle)
 
                                    (let ([index
-                                          (vector-length %names-active)]
+                                          (length %names-active)]
 
                                          [inst  (%make-name fields)])
 

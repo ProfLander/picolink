@@ -2,10 +2,10 @@
 
 (require (rename lua print lua-print)
 
-         (only r-lua/prelude/condition   cond)
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/equality    equal?)
-         (only r-lua/prelude/void        void void?))
+         (only r-lua/prelude/condition        cond)
+         (only r-lua/prelude/definition       define)
+         (only r-lua/prelude/interface/equal  equal?)
+         (only r-lua/prelude/void             void void?))
 
 (provide (all-defined))
 

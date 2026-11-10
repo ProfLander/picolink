@@ -4,11 +4,11 @@
 
          (only lua/ext/values foldl-values)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/equality    equal?)
-         (only r-lua/prelude/if          if)
-         (only r-lua/prelude/interface   define-interface)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only r-lua/prelude/definition       define)
+         (only r-lua/prelude/if               if)
+         (only r-lua/prelude/interface        define-interface)
+         (only r-lua/prelude/interface/equal  equal?)
+         (only r-lua/prelude/s-lua            s-lua))
 
 (provide (all-defined))
 
@@ -33,7 +33,7 @@
             (s-lua (#%neg a)))])
 
 (define (- . [: vs #%values])
-  (if (equal? (select "#" vs) 1)
+  (if (= (select "#" vs) 1)
       (negate vs)
       (foldl-values subtract vs)))
 

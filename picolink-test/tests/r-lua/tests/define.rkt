@@ -1,5 +1,5 @@
 #lang picolink/r-lua
 
-(require tests/define/number
-         tests/define/lambda
-         tests/define/let-bound)
+(require tests/define/lambda
+         tests/define/let-bound
+         tests/define/number)

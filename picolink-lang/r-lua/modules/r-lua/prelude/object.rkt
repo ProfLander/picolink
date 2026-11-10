@@ -2,23 +2,19 @@
 
 (require (only lua/ext/type  nil?)
 
-         (only r-lua/prelude/binding          let*)
-         (only r-lua/prelude/condition        when unless)
-         (only r-lua/prelude/definition       define)
-         (only r-lua/prelude/error            error)
-         (only r-lua/prelude/format           format)
-         (only r-lua/prelude/interface        impl)
-         (only r-lua/prelude/interface/update
-               Update!
-               update!)
-         (only r-lua/prelude/interface/drop   Drop drop)
-         (only r-lua/prelude/pool             define-pool)
-         (only r-lua/prelude/sequencing       begin)
-         (only r-lua/prelude/string
-               ToString
-               to-string
-               string-append)
-         (only r-lua/prelude/struct           define-struct))
+         (only r-lua/prelude/binding              let*)
+         (only r-lua/prelude/condition            when unless)
+         (only r-lua/prelude/definition           define)
+         (only r-lua/prelude/error                error)
+         (only r-lua/prelude/format               format)
+         (only r-lua/prelude/interface            impl)
+         (only r-lua/prelude/interface/monoid     <>)
+         (only r-lua/prelude/interface/update     Update! update!)
+         (only r-lua/prelude/interface/drop       Drop drop)
+         (only r-lua/prelude/pool                 define-pool)
+         (only r-lua/prelude/sequencing           begin)
+         (only r-lua/prelude/interface/to-string  ToString to-string)
+         (only r-lua/prelude/struct               define-struct))
 
 (provide (all-defined))
 
@@ -77,16 +73,20 @@
                        (name-ref self field-index))
                      ...
 
+                     (impl [Equal name:type]
+                           (define (equal? a b)
+                             (s-lua (#%eq a b))))
+
                      (impl [ToString name:type]
                            (define (to-string self)
-                             (string-append "#<"
-                                            name-str
-                                            (string-append
-                                             " " (to-string
-                                                  (name-ref self
-                                                            field-index)))
-                                            ...
-                                            ">")))
+                             (<> "#<"
+                                 name-str
+                                 (<>
+                                  " " (to-string
+                                       (name-ref self
+                                                 field-index)))
+                                 ...
+                                 ">")))
                      
                      (impl [Update! name:type]
                            (define (update! self field ...)

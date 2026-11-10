@@ -17,17 +17,21 @@
 
          (only love/runtime/repl  repl-read)
 
-         (only r-lua/prelude/binding     let let* let-values letrec)
-         (only r-lua/prelude/condition   when unless)
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/error       error)
-         (only r-lua/prelude/format      format)
-         (only r-lua/prelude/if          if)
-         (only r-lua/prelude/lambda      λ)
-         (only r-lua/prelude/logic       and or)
-         (only r-lua/prelude/struct      define-struct)
-         (only r-lua/prelude/string      to-string)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only r-lua/prelude/binding
+               let
+               let*
+               let-values
+               letrec)
+         (only r-lua/prelude/condition            when unless)
+         (only r-lua/prelude/definition           define)
+         (only r-lua/prelude/error                error)
+         (only r-lua/prelude/format               format)
+         (only r-lua/prelude/if                   if)
+         (only r-lua/prelude/lambda               λ)
+         (only r-lua/prelude/logic                and or)
+         (only r-lua/prelude/struct               define-struct)
+         (only r-lua/prelude/interface/to-string  to-string)
+         (only r-lua/prelude/s-lua                s-lua))
 
 (provide quit-with
          %love-runner

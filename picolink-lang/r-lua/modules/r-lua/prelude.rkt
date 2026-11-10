@@ -6,7 +6,6 @@
          r-lua/prelude/boolean
          r-lua/prelude/condition
          r-lua/prelude/definition
-         r-lua/prelude/equality
          r-lua/prelude/error
          r-lua/prelude/for
          r-lua/prelude/format
@@ -15,8 +14,11 @@
          r-lua/prelude/interface
          r-lua/prelude/interface/copy
          r-lua/prelude/interface/drop
+         r-lua/prelude/interface/equal
          r-lua/prelude/interface/length
          r-lua/prelude/interface/monoid
+         r-lua/prelude/interface/order
+         r-lua/prelude/interface/to-string
          r-lua/prelude/interface/update
          r-lua/prelude/lambda
          r-lua/prelude/list
@@ -25,7 +27,6 @@
          r-lua/prelude/object
          r-lua/prelude/pool
          r-lua/prelude/print
-         r-lua/prelude/ordering
          r-lua/prelude/procedure
          r-lua/prelude/sequence
          r-lua/prelude/sequencing
@@ -43,7 +44,6 @@
          (all-from r-lua/prelude/boolean)
          (all-from r-lua/prelude/condition)
          (all-from r-lua/prelude/definition)
-         (all-from r-lua/prelude/equality)
          (all-from r-lua/prelude/error)
          (all-from r-lua/prelude/for)
          (all-from r-lua/prelude/format)
@@ -52,15 +52,17 @@
          (all-from r-lua/prelude/interface)
          (all-from r-lua/prelude/interface/copy)
          (all-from r-lua/prelude/interface/drop)
+         (all-from r-lua/prelude/interface/equal)
          (all-from r-lua/prelude/interface/length)
          (all-from r-lua/prelude/interface/monoid)
+         (all-from r-lua/prelude/interface/order)
+         (all-from r-lua/prelude/interface/to-string)
          (all-from r-lua/prelude/interface/update)
          (all-from r-lua/prelude/lambda)
          (all-from r-lua/prelude/list)
          (all-from r-lua/prelude/logic)
          (all-from r-lua/prelude/number)
          (all-from r-lua/prelude/object)
-         (all-from r-lua/prelude/ordering)
          (all-from r-lua/prelude/pool)
          (all-from r-lua/prelude/print)
          (all-from r-lua/prelude/procedure)

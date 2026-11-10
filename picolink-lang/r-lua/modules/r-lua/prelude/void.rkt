@@ -4,10 +4,10 @@
          (only lua/ext/metatable  get-metatable)
          (only lua/ext/proxy      make-proxy)
 
-         (only r-lua/prelude/binding     let)
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/function    const)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only r-lua/prelude/binding          let)
+         (only r-lua/prelude/definition       define)
+         (only r-lua/prelude/function         const)
+         (only r-lua/prelude/s-lua            s-lua))
 
 (provide (all-defined))
 
@@ -16,9 +16,18 @@
 
 (define void:type
   (let ([mt (get-metatable %void)])
+
+    ; Manual ToString implementation
     (table-set! mt
-                "__tostring"
+                "%to-string"
                 (const "#<void>"))
+
+    ; Manual Equal implementation
+    (table-set! mt
+                "%equal?"
+                (λ (a b)
+                  (s-lua (#%eq a b))))
+
     mt))
 
 (define void

@@ -5,6 +5,4 @@
 (provide (all-defined))
 
 (define-interface Equal
-  [equal? __eq
-          (λ (a b)
-            (s-lua (#%eq a b)))])
+  [equal? %equal?])
