@@ -8,5 +8,5 @@
 
 (define-interface Apply
   [apply __call
-         (λ (self . [: vs values])
+         (λ (self . [: vs #%values])
            (self vs))])

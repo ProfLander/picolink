@@ -9,7 +9,7 @@
   x)
 
 (define (const t)
-  (λ [: vs values]
+  (λ [: vs #%values]
     t))
 
 (define-macro thunk

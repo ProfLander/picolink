@@ -41,7 +41,7 @@
 
   (sub self (+ from 1) to))
 
-(define (string-append . [: vs values])
+(define (string-append . [: vs #%values])
   (foldl-values mappend vs))
 
 (define-interface ToString

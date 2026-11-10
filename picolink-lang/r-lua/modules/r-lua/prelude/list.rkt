@@ -115,7 +115,7 @@
 
           length)))
 
-(define (list . [: vs values])
+(define (list . [: vs #%values])
   (foldr-values cons null vs))
 
 (define (reverse lst)

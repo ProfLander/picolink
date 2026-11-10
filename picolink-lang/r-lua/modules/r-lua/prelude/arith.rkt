@@ -19,7 +19,7 @@
        (λ (a b)
          (s-lua (#%add a b)))])
 
-(define (+ . [: vs values])
+(define (+ . [: vs #%values])
   (foldl-values add vs))
 
 (define-interface Subtract
@@ -32,7 +32,7 @@
           (λ (a)
             (s-lua (#%neg a)))])
 
-(define (- . [: vs values])
+(define (- . [: vs #%values])
   (if (equal? (select "#" vs) 1)
       (negate vs)
       (foldl-values subtract vs)))
@@ -42,7 +42,7 @@
             (λ (a b)
               (s-lua (#%mul a b)))])
 
-(define (* . [: vs values])
+(define (* . [: vs #%values])
   (foldl-values multiply vs))
 
 (define-interface Divide
@@ -50,7 +50,7 @@
           (λ (a b)
             (s-lua (#%div a b)))])
 
-(define (/ . [: vs values])
+(define (/ . [: vs #%values])
   (foldl-values divide vs))
 
 (define-interface Exponent

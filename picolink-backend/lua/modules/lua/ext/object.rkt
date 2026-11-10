@@ -5,5 +5,5 @@
 
 (provide (all-defined))
 
-(define (send t k . [: vs values])
+(define (send t k . [: vs #%values])
   ((s-lua (#%member t 'k)) t vs))

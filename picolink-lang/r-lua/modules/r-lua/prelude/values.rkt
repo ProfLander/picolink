@@ -9,15 +9,15 @@
 
 (provide (all-defined))
 
-(define (values . [: vs values])
+(define (values . [: vs #%values])
   vs)
 
-(define (values-length . [: vs values])
+(define (values-length . [: vs #%values])
   (select "#" vs))
 
-(define (values-skip idx . [: vs values])
+(define (values-skip idx . [: vs #%values])
   (select (+ 1 idx) vs))
 
-(define (values-ref idx . [: vs values])
+(define (values-ref idx . [: vs #%values])
   (let ([val (values-skip idx vs)])
     val))

@@ -248,7 +248,7 @@
    (let ([body (hoist-do #'body.s-lua)]
          [is-vararg-values (and (attribute args.tail)
                                 (datum=? (attribute args.tail-bind)
-                                         #'values))])
+                                         #'#%values))])
 
      (in-s-lua
       (with-syntax* ([(body ... ret)

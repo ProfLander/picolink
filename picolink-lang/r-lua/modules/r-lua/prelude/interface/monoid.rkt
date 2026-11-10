@@ -12,5 +12,5 @@
            (λ (a b)
              (s-lua (#%cat a b)))])
 
-(define (<> . [: vs values])
+(define (<> . [: vs #%values])
   (foldl-values mappend vs))

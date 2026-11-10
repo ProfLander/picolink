@@ -24,7 +24,7 @@
 (define-type vector:type
   #:printed-name vector)
 
-(define (vector . [: vs values])
+(define (vector . [: vs #%values])
   (ascribe vector:type (table vs)))
 
 (define (vector-ref self idx)

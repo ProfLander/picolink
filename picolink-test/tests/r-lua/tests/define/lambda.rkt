@@ -14,7 +14,7 @@
 
 (vararg-vector "foo" 3 2 1)
 
-(define vararg-values (λ (a . [: x values])
+(define vararg-values (λ (a . [: x #%values])
                         x))
 
 (let-values ([(a b c) (vararg-values "foo" 9 7 5)])

@@ -21,5 +21,5 @@
 (define (metatable-set! t k v)
   (table-set! (get-metatable t) k v))
 
-(define (metatable-send t k . [: vs values])
+(define (metatable-send t k . [: vs #%values])
   ((metatable-ref t k) t vs))

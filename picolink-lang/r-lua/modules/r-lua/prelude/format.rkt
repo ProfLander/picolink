@@ -9,6 +9,6 @@
 
 (provide (all-defined))
 
-(define (format str . [: vs values])
+(define (format str . [: vs #%values])
   (let ([str (send str "gsub" "~a" "%%s")])
     (%format str vs)))
