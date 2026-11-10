@@ -44,7 +44,7 @@
                 (equal? (get-metatable v) name)))
 
          (impl ToString name
-               (table [to-string (const name-str)])))))])
+               (define to-string (const name-str))))))])
 
 (define (ascribe type value)
   (set-metatable! value type))

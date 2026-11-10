@@ -1,8 +1,7 @@
 #lang picolink/r-lua/base
 
 (require (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/lambda      λ)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only r-lua/prelude/lambda      λ))
 
 (provide (all-defined))
 
@@ -10,10 +9,8 @@
   x)
 
 (define (const t)
-  (s-lua
-   (#%function (#%vararg)
-               (#%block
-                (#%return t)))))
+  (λ [: vs values]
+    t))
 
 (define-macro thunk
   [(_ body ...)

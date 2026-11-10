@@ -1,7 +1,11 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/metatable  get-metatable set-metatable! metatable-send)
+(require (only lua/ext/metatable
+               get-metatable
+               set-metatable!
+               metatable-send)
 
+         (only lua/ext/table   table-ref table-set!)
          (only lua/ext/object  send)
 
          (only r-lua/prelude/binding     let)
@@ -9,7 +13,8 @@
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       and)
          (only r-lua/prelude/s-lua       s-lua)
-         (only r-lua/prelude/void        %void))
+         (only r-lua/prelude/table       table)
+         (only r-lua/prelude/void        void))
 
 (provide (all-defined))
 
@@ -27,41 +32,39 @@
          (s-lua (#%eq mt Interface)))))
 
 (define-macro define-interface
-  [(_ name [(~and function
-                  (~parse function-str (symbol->string (syntax-e #'function))))
+  [(_ name [function
             (~and metamethod
-                  (~parse metamethod-str (symbol->string (syntax-e #'metamethod))))
+                  (~parse metamethod-str (symbol->string
+                                          (syntax-e #'metamethod))))
             (~optional dispatcher
-                       #:defaults ([dispatcher
-                                    #'(λ (self)
-                                        (metatable-send self metamethod-str))]))] ...)
+                       #:defaults
+                       ([dispatcher
+                         #'(λ (self)
+                             (metatable-send self
+                                             metamethod-str))]))] ...)
 
    (syntax/loc this-syntax
      (begin
        (define name
-         (set-metatable! (s-lua (#%table [function-str metamethod-str] ...))
+         (set-metatable! (table [function metamethod-str] ...)
                          Interface))
 
        (define function dispatcher)
        ...))])
 
-#;(define-macro impl
-    [(_ interface target
-        ((~datum define) (method-name arg ...)
-                         body ...)
-        ...)
-     #'(begin
-         (let ([inner-name (s-lua (#%member interface 'method-name))])
-           (s-lua (#%assign [(#%member target  'inner-name)]
-                            [(#%member methods 'method-name)])))
-         ...)])
+(define-macro impl
+  [(_ interface target
+      ((~datum define) (~or (~and (~seq (method-name arg ...)
+                                        body ...)
+                                  (~parse method-expr
+                                          #'(λ (arg ...) body ...)))
+                            (~seq method-name method-expr)))
+      ...)
 
-(define impl
-  (s-lua
-   (#%function (interface target methods)
-               (#%block
-                (#%for [k v (#%in (#%call pairs interface))]
-                       (#%block
-                        (#%assign [(#%member target 'v)]
-                                  [(#%member methods 'k)])))
-                (#%return %void)))))
+   (with-syntax ([(method-name-str ...)
+                  (for/list ([ident (in-list (attribute method-name))])
+                    (symbol->string (syntax-e ident)))])
+     #'(void
+        (let ([inner-name (table-ref interface method-name-str)])
+          (table-set! target inner-name method-expr))
+        ...))])

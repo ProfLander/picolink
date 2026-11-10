@@ -3,8 +3,7 @@
 (require (only lua/ext/values  foldl-values)
 
          (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/interface   define-interface)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only r-lua/prelude/interface   define-interface))
 
 (provide (all-defined))
 
@@ -13,9 +12,5 @@
            (λ (a b)
              (s-lua (#%cat a b)))])
 
-(define <>
-  (s-lua
-   (#%function (#%vararg)
-               (#%block
-                (#%return
-                 (#%call foldl-values mappend #%vararg))))))
+(define (<> . [: vs values])
+  (foldl-values mappend vs))

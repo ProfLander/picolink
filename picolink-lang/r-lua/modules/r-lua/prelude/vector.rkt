@@ -16,7 +16,6 @@
          (only r-lua/prelude/print      print)
          (only r-lua/prelude/sequence   sequence-map in-range)
          (only r-lua/prelude/string     ToString to-string string-append)
-         (only r-lua/prelude/s-lua      s-lua)
          (only r-lua/prelude/table      table)
          (only r-lua/prelude/type       define-type ascribe))
 
@@ -25,14 +24,8 @@
 (define-type vector:type
   #:printed-name vector)
 
-(define vector
-  (s-lua
-   (#%function (#%vararg)
-               (#%block
-                (#%return
-                 (#%call ascribe
-                         vector:type
-                         (#%table #%vararg)))))))
+(define (vector . [: vs values])
+  (ascribe vector:type (table vs)))
 
 (define (vector-ref self idx)
   (table-ref self (+ 1 idx)))
@@ -47,17 +40,16 @@
   vec)
 
 (impl ToString vector:type
-      (table [to-string
-              (λ (self)
-                (string-append
-                 (for/fold ([acc "#("])
-                           ([i (in-range 0 (vector-length self))])
-                   (let* ([val (vector-ref self i)]
-                          [str (to-string val)])
-                     (if (equal? i 0)
-                         (string-append acc str)
-                         (string-append acc " " str))))
-                 ")"))]))
+      (define (to-string self)
+        (string-append
+         (for/fold ([acc "#("])
+                   ([i (in-range 0 (vector-length self))])
+           (let* ([val (vector-ref self i)]
+                  [str (to-string val)])
+             (if (equal? i 0)
+                 (string-append acc str)
+                 (string-append acc " " str))))
+         ")")))
 
 (define (in-vector vec)
   (sequence-map (in-range 0 (vector-length vec))

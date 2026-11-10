@@ -41,12 +41,8 @@
 
   (sub self (+ from 1) to))
 
-(define string-append
-  (s-lua
-   (#%function (#%vararg)
-               (#%block
-                (#%return
-                 (#%call foldl-values mappend #%vararg))))))
+(define (string-append . [: vs values])
+  (foldl-values mappend vs))
 
 (define-interface ToString
   [to-string __tostring

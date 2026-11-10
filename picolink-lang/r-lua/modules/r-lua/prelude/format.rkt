@@ -1,16 +1,14 @@
 #lang picolink/r-lua/base
 
-(require (rename lua/string  format %format)
+(require (rename lua/string format %format)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only lua/ext/object  send)
+
+         (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
-(define format
-  (s-lua
-   (#%function (str #%vararg)
-               (#%block
-                (#%local [str] [(#%call (#%member string gsub)
-                                        str "~a" "%%s")])
-                (#%return (#%call %format str #%vararg))))))
+(define (format str . [: vs values])
+  (let ([str (send str "gsub" "~a" "%%s")])
+    (%format str vs)))

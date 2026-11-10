@@ -5,8 +5,5 @@
 
 (provide (all-defined))
 
-(define send
-  (s-lua
-   (#%function (t k #%vararg)
-               (#%block
-                (#%return (#%call (#%member t 'k) t #%vararg))))))
+(define (send t k . [: vs values])
+  ((s-lua (#%member t 'k)) t vs))

@@ -1,7 +1,6 @@
 #lang picolink/r-lua
 
-(require (only lua/ext/nil
-               nil))
+(require (only lua/ext/nil  nil))
 
 (define-object actor [name position])
 
@@ -28,19 +27,19 @@
 (print-actor-handle actor-2)
 (print-actor-pool)
 
-(actor-release actor-1)
+(drop actor-1)
 (print-actor-pool)
 
 (define actor-3 (actor-update actor-2 "bloke" nil))
 (print-actor-handle actor-3)
 (print-actor-pool)
 
-(actor-release actor-2)
+(drop actor-2)
 (print-actor-pool)
 
 (define actor-4 (actor-update actor-3 "fella" "c"))
 (print-actor-handle actor-4)
 (print-actor-pool)
 
-(actor-release actor-3)
+(drop actor-3)
 (print-actor-pool)

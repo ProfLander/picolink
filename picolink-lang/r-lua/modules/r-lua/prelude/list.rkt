@@ -18,7 +18,6 @@
          (only r-lua/prelude/string            ToString to-string)
          (only r-lua/prelude/struct            define-struct)
          (only r-lua/prelude/sequence          sequence-null)
-         (only r-lua/prelude/s-lua             s-lua)
          (only r-lua/prelude/table             table))
 
 (provide null?
@@ -43,10 +42,10 @@
   #:predicate-name null?)
 
 (impl ToString %null:type
-      (table [to-string (const "()")]))
+       (define to-string (const "()")))
 
 (impl Length %null:type
-      (table [length (const 0)]))
+      (define length (const 0)))
 
 (define null (%null))
 
@@ -93,36 +92,31 @@
     (format "(~a)" (%print-pair self))))
 
 (impl ToString pair:type
-      (table [to-string (λ (self)
-                          (if (list? self)
-                              (print-list self)
-                              (print-pair self)))]))
+      (define (to-string self)
+        (if (list? self)
+            (print-list self)
+            (print-pair self))))
 
 (impl Length pair:type
+      (define length
+        (letrec ([length
+                  (λ (lst)
 
-      (letrec ([length
-                (λ (lst)
+                    (unless (list? lst)
+                      (error (format "value is not a list: ~a" lst)))
 
-                  (unless (list? lst)
-                    (error (format "value is not a list: ~a" lst)))
+                    (%length 0 lst))]
 
-                  (%length 0 lst))]
+                 [%length
+                  (λ (acc lst)
+                    (if (pair? lst)
+                        (+ acc 1 (length (cdr lst)))
+                        acc))])
 
-               [%length
-                (λ (acc lst)
-                  (if (pair? lst)
-                      (+ acc 1 (length (cdr lst)))
-                      acc))])
+          length)))
 
-        (table [length length])))
-
-(define list
-  (s-lua
-   (#%function (#%vararg)
-               (#%block
-                (#%return
-                 (#%call foldr-values
-                         cons null #%vararg))))))
+(define (list . [: vs values])
+  (foldr-values cons null vs))
 
 (define (reverse lst)
   (let loop ([acc null]

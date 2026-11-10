@@ -8,7 +8,5 @@
 
 (define-interface Apply
   [apply __call
-         (s-lua (#%function (self #%vararg)
-                            (#%block
-                             (#%return
-                              (#%call self #%vararg)))))])
+         (λ (self . [: vs values])
+           (self vs))])
