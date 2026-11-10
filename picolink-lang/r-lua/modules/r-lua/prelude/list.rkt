@@ -41,10 +41,10 @@
 (define-struct %null []
   #:predicate-name null?)
 
-(impl ToString %null:type
+(impl [ToString %null:type]
        (define to-string (const "()")))
 
-(impl Length %null:type
+(impl [Length %null:type]
       (define length (const 0)))
 
 (define null (%null))
@@ -91,13 +91,13 @@
 
     (format "(~a)" (%print-pair self))))
 
-(impl ToString pair:type
+(impl [ToString pair:type]
       (define (to-string self)
         (if (list? self)
             (print-list self)
             (print-pair self))))
 
-(impl Length pair:type
+(impl [Length pair:type]
       (define length
         (letrec ([length
                   (λ (lst)

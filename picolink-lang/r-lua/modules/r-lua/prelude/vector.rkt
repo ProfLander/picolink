@@ -39,7 +39,7 @@
   (insert vec val)
   vec)
 
-(impl ToString vector:type
+(impl [ToString vector:type]
       (define (to-string self)
         (string-append
          (for/fold ([acc "#("])

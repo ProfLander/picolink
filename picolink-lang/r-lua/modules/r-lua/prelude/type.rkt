@@ -4,24 +4,13 @@
 
          (only r-lua/prelude/binding     let)
          (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/equality    equal?)
          (only r-lua/prelude/function    const)
-         (only r-lua/prelude/interface   impl)
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       and)
-         (only r-lua/prelude/print       print)
-         (only r-lua/prelude/string      ToString to-string)
-         (only r-lua/prelude/table       table))
+         (only r-lua/prelude/table       table)
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
-
-(define Type
-  (set-metatable!
-   (table)
-   (table [__tostring (const "#<Type>")])))
-
-(define (Type? v)
-  (equal? (get-metatable v) Type))
 
 (define-macro define-type
   [(_ name
@@ -37,14 +26,17 @@
        (begin
          (define name
            (set-metatable! (table)
-                           Type))
+                           (table [__tostring (const name-str)])))
 
          (define (predicate-name v)
            (and v
-                (equal? (get-metatable v) name)))
-
-         (impl ToString name
-               (define to-string (const name-str))))))])
+                (let ([mt (get-metatable v)])
+                  (s-lua (#%eq mt name))))))))])
 
 (define (ascribe type value)
   (set-metatable! value type))
+
+(define-type Boolean)
+(define-type Number)
+(define-type String)
+(define-type Procedure)
