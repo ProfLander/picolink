@@ -18,8 +18,7 @@
 (define-literal-forms r-lua-ir-literals
   #:binding-space r-lua
   "cannot use outside of r-lua"
-  [#%module-begin
-   #%begin
+  [#%begin
    #%define
    #%let-values
    #%letrec-values
@@ -36,8 +35,7 @@
 
   (define-syntax-class r-lua-ir-literal
     #:literal-sets [r-lua-ir-literals]
-    (pattern (~or #%module-begin
-                  #%begin
+    (pattern (~or #%begin
                   #%define
                   #%let-values
                   #%letrec-values
