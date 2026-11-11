@@ -27,23 +27,11 @@
 (provide (all-defined)
          string?)
 
-(impl [Copy String]
-      (define copy identity))
-
-(impl [Drop String]
-      (define drop void))
-
-(impl [Equal String]
-      (define (equal? a b)
-        (s-lua (#%eq a b))))
-
-(impl [Length String]
-      (define (length self)
-        (s-lua (#%length self))))
-
-(impl [Monoid String]
-      (define (mappend a b)
-        (s-lua (#%cat a b))))
+(impl [Copy String])
+(impl [Drop String])
+(impl [Equal String])
+(impl [Length String])
+(impl [Monoid String])
 
 (impl [ToString String]
       (define to-string identity))

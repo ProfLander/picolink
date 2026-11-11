@@ -18,11 +18,15 @@
   (let ([mt (get-metatable %void)])
 
     ; Manual ToString implementation
+    (table-set! mt "ToString" #t)
+
     (table-set! mt
-                "%to-string"
+                "__tostring"
                 (const "#<void>"))
 
     ; Manual Equal implementation
+    (table-set! mt "Equal" #t)
+
     (table-set! mt
                 "%equal?"
                 (λ (a b)
