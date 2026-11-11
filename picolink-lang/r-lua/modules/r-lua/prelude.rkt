@@ -12,6 +12,7 @@
          r-lua/prelude/function
          r-lua/prelude/if
          r-lua/prelude/interface
+         r-lua/prelude/interface/arith
          r-lua/prelude/interface/copy
          r-lua/prelude/interface/drop
          r-lua/prelude/interface/equal
@@ -50,6 +51,7 @@
          (all-from r-lua/prelude/function)
          (all-from r-lua/prelude/if)
          (all-from r-lua/prelude/interface)
+         (all-from r-lua/prelude/interface/arith)
          (all-from r-lua/prelude/interface/copy)
          (all-from r-lua/prelude/interface/drop)
          (all-from r-lua/prelude/interface/equal)
