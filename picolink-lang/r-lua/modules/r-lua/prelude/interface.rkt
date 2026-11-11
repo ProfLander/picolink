@@ -14,6 +14,7 @@
          (only r-lua/prelude/definition  define)
          (only r-lua/prelude/error       error)
          (only r-lua/prelude/format      format)
+         (only r-lua/prelude/if          if)
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       and or)
          (only r-lua/prelude/s-lua       s-lua)
@@ -36,47 +37,74 @@
        (let ([mt (get-metatable v)])
          (s-lua (#%eq mt Interface)))))
 
+(define (dispatch interface method)
+
+  (λ (self . [: args #%values])
+
+    (let ([mt
+           (cond
+             [(boolean?  self) Boolean]
+             [(number?   self) Number]
+             [(string?   self) String]
+             [(function? self) Procedure]
+             [else (get-metatable self)])])
+
+      (unless mt
+        (error (format "~a has no interface storage" self)))
+
+      (unless (table-ref mt (table-ref interface "%name"))
+        (let ([self-name
+               (cond
+                 [(boolean?  self) "Boolean"]
+                 [(number?   self) "Number"]
+                 [(string?   self) "String"]
+                 [(function? self) "Procedure"]
+                 [else self])]
+
+              [iface-name (table-ref interface "%name")])
+
+          (error (format "~a does not implement ~a"
+                         self-name iface-name))))
+
+      (let ([f (or (table-ref mt method)
+                   (table-ref (table-ref interface "%member-defaults")
+                              method))])
+
+        (f self args)))))
+
 (define-macro define-interface
   [(_ (~and name
             (~parse name-str (symbol->string
                               (syntax-e #'name))))
-      [function
+
+      [(~and function
+             (~parse function-str (symbol->string
+                                   (syntax-e #'function))))
        (~and metamethod
              (~parse metamethod-str (symbol->string
                                      (syntax-e #'metamethod))))
-       (~optional dispatcher
+       (~optional default-impl
                   #:defaults
-                  ([dispatcher
-                    #'(λ (self . [: args #%values])
-                        (let ([name   (cond
-                                        [(boolean?  self) "Boolean"]
-                                        [(number?   self) "Number"]
-                                        [(string?   self) "String"]
-                                        [(function? self) "Procedure"]
-                                        [else self])]
-                              [target (cond
-                                        [(boolean?  self) Boolean]
-                                        [(number?   self) Number]
-                                        [(string?   self) String]
-                                        [(function? self) Procedure]
-                                        [else (get-metatable self)])])
-
-                          (let ([f (table-ref target metamethod-str)])
-
-                            (unless f
-                              (error (format "~a does not implement ~a"
-                                             name name-str)))
-
-                            (f self args))))]))] ...)
+                  ([default-impl
+                     #'(λ (self . [: args #%values])
+                         (error "~a missing required method ~a"
+                                self function-str))]))]
+      ...)
 
    (syntax/loc this-syntax
      (begin
        (define name
-         (set-metatable! (table [__name name-str]
-                                [function metamethod-str] ...)
+         (set-metatable! (table [%name name-str]
+
+                                [%member-names
+                                 (table [function metamethod-str] ...)]
+
+                                [%member-defaults
+                                 (table [metamethod default-impl] ...)])
+
                          Interface))
 
-       (define function dispatcher)
+       (define function (dispatch name metamethod-str))
        ...))])
 
 (define-macro impl
@@ -92,6 +120,8 @@
                   (for/list ([ident (in-list (attribute method-name))])
                     (symbol->string (syntax-e ident)))])
      #'(void
-        (let ([inner-name (table-ref interface method-name-str)])
+        (table-set! target (table-ref interface "%name") #t)
+        (let ([inner-name (table-ref (table-ref interface "%member-names")
+                                     method-name-str)])
           (table-set! target inner-name method-expr))
         ...))])
