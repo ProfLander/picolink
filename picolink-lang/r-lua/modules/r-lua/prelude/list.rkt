@@ -19,7 +19,7 @@
          (only r-lua/prelude/interface/to-string  ToString to-string)
          (only r-lua/prelude/struct               define-struct)
          (only r-lua/prelude/sequence             sequence-null)
-         (only r-lua/prelude/table                table))
+         (only r-lua/prelude/unit                 define-unit))
 
 (provide null?
          null
@@ -39,20 +39,15 @@
          in-list
          for/list)
 
-(define-struct %null []
-  #:predicate-name null?)
+(define-unit null)
 
-(impl [Equal %null:type]
-      (define (equal? a b)
-        (s-lua (#%eq a b))))
+(impl [Equal null:type])
 
-(impl [ToString %null:type]
-       (define to-string (const "()")))
+(impl [ToString null:type]
+      (define to-string (const "()")))
 
-(impl [Length %null:type]
+(impl [Length null:type]
       (define length (const 0)))
-
-(define null (%null))
 
 (define-struct pair [ar dr]
   #:constructor-name cons)
