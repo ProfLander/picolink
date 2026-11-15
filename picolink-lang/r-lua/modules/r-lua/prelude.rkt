@@ -25,7 +25,6 @@
          r-lua/prelude/list
          r-lua/prelude/logic
          r-lua/prelude/number
-         r-lua/prelude/object
          r-lua/prelude/pool
          r-lua/prelude/print
          r-lua/prelude/procedure
@@ -64,7 +63,6 @@
          (all-from r-lua/prelude/list)
          (all-from r-lua/prelude/logic)
          (all-from r-lua/prelude/number)
-         (all-from r-lua/prelude/object)
          (all-from r-lua/prelude/pool)
          (all-from r-lua/prelude/print)
          (all-from r-lua/prelude/procedure)
