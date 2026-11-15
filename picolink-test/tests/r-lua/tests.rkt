@@ -8,5 +8,5 @@
          tests/letrec
          tests/macro-hygiene
          tests/prelude
-         tests/string
-         tests/void)
+         tests/runtime
+         tests/string)

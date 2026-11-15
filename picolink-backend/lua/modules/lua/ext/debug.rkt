@@ -2,8 +2,9 @@
 
 (require (only lua/debug  get-metatable set-metatable!)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/void        void))
+         (only r-lua/runtime/void        void)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 

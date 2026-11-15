@@ -1,12 +1,13 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/binding     let)
+(require (only r-lua/runtime/void        void)
+
+         (only r-lua/prelude/binding     let)
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       or)
          (only r-lua/prelude/sequencing  begin)
          (only r-lua/prelude/sequence    sequence-null?)
-         (only r-lua/prelude/values      values)
-         (only r-lua/prelude/void        void))
+         (only r-lua/prelude/values      values))
 
 (provide (all-defined))
 

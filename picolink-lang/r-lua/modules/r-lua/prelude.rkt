@@ -1,6 +1,9 @@
 #lang picolink/r-lua/base
 
-(require r-lua/prelude/arith
+(require r-lua/runtime/print
+         r-lua/runtime/void
+
+         r-lua/prelude/arith
          r-lua/prelude/assignment
          r-lua/prelude/binding
          r-lua/prelude/boolean
@@ -26,8 +29,6 @@
          r-lua/prelude/list
          r-lua/prelude/logic
          r-lua/prelude/number
-         r-lua/prelude/pool
-         r-lua/prelude/print
          r-lua/prelude/procedure
          r-lua/prelude/sequence
          r-lua/prelude/sequencing
@@ -36,10 +37,12 @@
          r-lua/prelude/table
          r-lua/prelude/type
          r-lua/prelude/values
-         r-lua/prelude/vector
-         r-lua/prelude/void)
+         r-lua/prelude/vector)
 
-(provide (all-from r-lua/prelude/arith)
+(provide (all-from r-lua/runtime/print)
+         (all-from r-lua/runtime/void)
+
+         (all-from r-lua/prelude/arith)
          (all-from r-lua/prelude/assignment)
          (all-from r-lua/prelude/binding)
          (all-from r-lua/prelude/boolean)
@@ -65,8 +68,6 @@
          (all-from r-lua/prelude/list)
          (all-from r-lua/prelude/logic)
          (all-from r-lua/prelude/number)
-         (all-from r-lua/prelude/pool)
-         (all-from r-lua/prelude/print)
          (all-from r-lua/prelude/procedure)
          (all-from r-lua/prelude/sequence)
          (all-from r-lua/prelude/sequencing)
@@ -75,5 +76,4 @@
          (all-from r-lua/prelude/table)
          (all-from r-lua/prelude/type)
          (all-from r-lua/prelude/values)
-         (all-from r-lua/prelude/vector)
-         (all-from r-lua/prelude/void))
+         (all-from r-lua/prelude/vector))

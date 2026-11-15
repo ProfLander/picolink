@@ -1,7 +1,8 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/interface  define-interface)
-         (only r-lua/prelude/void       void))
+(require (only r-lua/runtime/void       void)
+
+         (only r-lua/prelude/interface  define-interface))
 
 (provide (all-defined))
 

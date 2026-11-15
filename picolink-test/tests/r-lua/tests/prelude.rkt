@@ -6,7 +6,6 @@
          tests/prelude/for
          tests/prelude/list
          tests/prelude/logic
-         tests/prelude/pool
          tests/prelude/string
          tests/prelude/surface
          tests/prelude/values

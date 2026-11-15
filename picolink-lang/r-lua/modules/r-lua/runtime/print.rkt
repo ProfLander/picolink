@@ -2,11 +2,12 @@
 
 (require (rename lua print lua-print)
 
+         (only r-lua/runtime/void                 void void?)
+
          (only r-lua/prelude/condition            cond)
          (only r-lua/prelude/definition           define)
          (only r-lua/prelude/interface/equal      equal?)
-         (only r-lua/prelude/interface/to-string  to-string)
-         (only r-lua/prelude/void                 void void?))
+         (only r-lua/prelude/interface/to-string  to-string))
 
 (provide print)
 
