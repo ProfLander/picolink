@@ -1,38 +1,23 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table      table-set!)
-         (only lua/ext/metatable  get-metatable)
-         (only lua/ext/proxy      make-proxy)
+(require (only lua  get-metatable set-metatable!)
 
-         (only r-lua/prelude/binding          let)
          (only r-lua/prelude/definition       define)
          (only r-lua/prelude/function         const)
-         (only r-lua/prelude/s-lua            s-lua))
+         (only r-lua/prelude/s-lua            s-lua)
+         (only r-lua/prelude/table            table))
 
-(provide (all-defined))
-
-(define %void
-  (make-proxy #t))
+(provide void void:type void?)
 
 (define void:type
-  (let ([mt (get-metatable %void)])
+  (table [ToString #t]
+         [Equal #t]
+         [__index (table)]
+         [__tostring (const "#<void>")]))
 
-    ; Manual ToString implementation
-    (table-set! mt "ToString" #t)
-
-    (table-set! mt
-                "__tostring"
-                (const "#<void>"))
-
-    ; Manual Equal implementation
-    (table-set! mt "Equal" #t)
-
-    (table-set! mt
-                "%equal?"
-                (λ (a b)
-                  (s-lua (#%eq a b))))
-
-    mt))
+(define %void
+  (set-metatable! (table)
+                  void:type))
 
 (define void
   (const %void))
