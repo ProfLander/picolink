@@ -2,6 +2,8 @@
 
 (require (only lua/ext/values  foldr-values)
 
+         (only r-lua/runtime/pool/type  copy-handle! drop-handle!)
+
          (only r-lua/prelude/arith                +)
          (only r-lua/prelude/assignment           set!)
          (only r-lua/prelude/binding              let letrec)
@@ -12,13 +14,16 @@
          (only r-lua/prelude/function             const thunk)
          (only r-lua/prelude/if                   if)
          (only r-lua/prelude/interface            impl)
+         (only r-lua/prelude/interface/copy       Copy)
+         (only r-lua/prelude/interface/drop       Drop)
          (only r-lua/prelude/interface/equal      Equal)
          (only r-lua/prelude/interface/length     Length length)
-         (only r-lua/prelude/lambda               λ)
          (only r-lua/prelude/interface/to-string  ToString to-string)
+         (only r-lua/prelude/lambda               λ)
          (only r-lua/prelude/struct               define-struct)
          (only r-lua/prelude/sequence             sequence-null)
-         (only r-lua/prelude/unit                 define-unit))
+         (only r-lua/prelude/unit                 define-unit)
+         (only r-lua/prelude/type                 define-type))
 
 (provide null?
          null
@@ -40,6 +45,8 @@
 
 (define-unit null)
 
+(impl [Copy  null:type])
+(impl [Drop  null:type])
 (impl [Equal null:type])
 
 (impl [ToString null:type]
@@ -48,14 +55,15 @@
 (impl [Length null:type]
       (define length (const 0)))
 
+(define-type pair:type)
+
 (define-struct pair [ar dr]
+  #:type pair:type
   #:constructor-name cons)
 
-(define (car v)
-  (pair-ref v 0))
+(define car pair-ar)
 
-(define (cdr v)
-  (pair-ref v 1))
+(define cdr pair-dr)
 
 (define (cadr v)
   (car (cdr v)))
@@ -67,6 +75,12 @@
   (if (pair? v)
       (list? (cdr v))
       (null? v)))
+
+(impl [Copy pair:type]
+      (define copy copy-handle!))
+
+(impl [Drop pair:type]
+      (define drop drop-handle!))
 
 (impl [Equal pair:type])
 

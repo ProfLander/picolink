@@ -59,6 +59,9 @@ cell
 (print "(cddr cell):")
 (cddr cell)
 
+(print cell)
+(drop cell)
+
 (print "(length null):")
 (length null)
 

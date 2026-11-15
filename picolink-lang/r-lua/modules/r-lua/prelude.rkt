@@ -6,15 +6,14 @@
          r-lua/prelude/arith
          r-lua/prelude/assignment
          r-lua/prelude/binding
-         r-lua/prelude/boolean
-         r-lua/prelude/cdata
          r-lua/prelude/condition
          r-lua/prelude/definition
-         r-lua/prelude/error
          r-lua/prelude/for
-         r-lua/prelude/format
-         r-lua/prelude/function
          r-lua/prelude/if
+         r-lua/prelude/lambda
+         r-lua/prelude/logic
+         r-lua/prelude/sequencing
+
          r-lua/prelude/interface
          r-lua/prelude/interface/arith
          r-lua/prelude/interface/copy
@@ -25,18 +24,23 @@
          r-lua/prelude/interface/order
          r-lua/prelude/interface/to-string
          r-lua/prelude/interface/update
-         r-lua/prelude/lambda
-         r-lua/prelude/list
-         r-lua/prelude/logic
-         r-lua/prelude/number
-         r-lua/prelude/procedure
+
          r-lua/prelude/sequence
-         r-lua/prelude/sequencing
-         r-lua/prelude/string
-         r-lua/prelude/struct
+         r-lua/prelude/error
+         r-lua/prelude/format
          r-lua/prelude/table
-         r-lua/prelude/type
          r-lua/prelude/values
+
+         r-lua/prelude/type
+         r-lua/prelude/boolean
+         r-lua/prelude/number
+         r-lua/prelude/string
+         r-lua/prelude/procedure
+         r-lua/prelude/cdata
+
+         r-lua/prelude/function
+         r-lua/prelude/struct
+         r-lua/prelude/list
          r-lua/prelude/vector)
 
 (provide (all-from r-lua/runtime/print)
@@ -45,15 +49,14 @@
          (all-from r-lua/prelude/arith)
          (all-from r-lua/prelude/assignment)
          (all-from r-lua/prelude/binding)
-         (all-from r-lua/prelude/boolean)
-         (all-from r-lua/prelude/cdata)
          (all-from r-lua/prelude/condition)
          (all-from r-lua/prelude/definition)
-         (all-from r-lua/prelude/error)
          (all-from r-lua/prelude/for)
-         (all-from r-lua/prelude/format)
-         (all-from r-lua/prelude/function)
          (all-from r-lua/prelude/if)
+         (all-from r-lua/prelude/lambda)
+         (all-from r-lua/prelude/logic)
+         (all-from r-lua/prelude/sequencing)
+
          (all-from r-lua/prelude/interface)
          (all-from r-lua/prelude/interface/arith)
          (all-from r-lua/prelude/interface/copy)
@@ -64,16 +67,21 @@
          (all-from r-lua/prelude/interface/order)
          (all-from r-lua/prelude/interface/to-string)
          (all-from r-lua/prelude/interface/update)
-         (all-from r-lua/prelude/lambda)
-         (all-from r-lua/prelude/list)
-         (all-from r-lua/prelude/logic)
-         (all-from r-lua/prelude/number)
-         (all-from r-lua/prelude/procedure)
+
          (all-from r-lua/prelude/sequence)
-         (all-from r-lua/prelude/sequencing)
-         (all-from r-lua/prelude/string)
-         (all-from r-lua/prelude/struct)
+         (all-from r-lua/prelude/error)
+         (all-from r-lua/prelude/format)
          (all-from r-lua/prelude/table)
-         (all-from r-lua/prelude/type)
          (all-from r-lua/prelude/values)
+
+         (all-from r-lua/prelude/type)
+         (all-from r-lua/prelude/boolean)
+         (all-from r-lua/prelude/number)
+         (all-from r-lua/prelude/string)
+         (all-from r-lua/prelude/procedure)
+         (all-from r-lua/prelude/cdata)
+
+         (all-from r-lua/prelude/function)
+         (all-from r-lua/prelude/struct)
+         (all-from r-lua/prelude/list)
          (all-from r-lua/prelude/vector))
