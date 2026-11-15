@@ -3,6 +3,7 @@
 (require (only r-lua/runtime/void        void)
 
          (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/if          if)
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       or)
          (only r-lua/prelude/sequencing  begin)
