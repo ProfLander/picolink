@@ -7,11 +7,11 @@
          (only r-lua/prelude/function         thunk)
          (only r-lua/prelude/if               if)
          (only r-lua/prelude/interface/order  < >)
-         (only r-lua/prelude/struct           define-struct))
+         (only r-lua/prelude/unit             define-unit))
 
 (provide (all-defined))
 
-(define-struct sequence-null [])
+(define-unit sequence-null)
 
 (define (sequence-map seq f)
   (thunk
@@ -36,4 +36,4 @@
          (let ([out acc])
            (set! acc (+ acc step))
            out)
-         (sequence-null)))))
+         sequence-null))))

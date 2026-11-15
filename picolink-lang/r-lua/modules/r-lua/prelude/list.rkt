@@ -139,7 +139,7 @@
   (let ([acc lst])
     (thunk
      (if (null? acc)
-         (sequence-null)
+         sequence-null
          (begin
            (let ([out (car acc)])
              (set! acc (cdr acc))
