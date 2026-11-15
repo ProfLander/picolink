@@ -4,6 +4,7 @@
          (only lua/ext/type  boolean?)
 
          (only r-lua/prelude/function             identity)
+         (only r-lua/prelude/if                   if)
          (only r-lua/prelude/interface            impl)
          (only r-lua/prelude/interface/copy       Copy)
          (only r-lua/prelude/interface/drop       Drop)
@@ -20,5 +21,9 @@
 (impl [Copy     Boolean])
 (impl [Drop     Boolean])
 (impl [Equal    Boolean])
-(impl [ToString Boolean])
 
+(impl [ToString Boolean]
+      (define (to-string self)
+        (if self
+            "#t"
+            "#f")))
