@@ -2,7 +2,7 @@
 
 (require (only lua/ext/table  table-set!)
 
-         (only lua/runtime/io  set-unbuffered-stdio!)
+         (only lua/runtime     lua-pre)
 
          (only love/ext        love arg timer load)
          (only love/ext/timer  step)
@@ -19,7 +19,7 @@
 
 (define (love-run entry-point)
 
-  (set-unbuffered-stdio!)
+  (lua-pre)
   (repl-init)
 
   (table-set! love "run"
