@@ -1,0 +1,13 @@
+#lang picolink/r-lua/base
+
+(require (only lua/debug  get-metatable set-metatable!)
+
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/void        void))
+
+(provide (all-defined))
+
+(define debug-get-metatable get-metatable)
+
+(define (debug-set-metatable! t mt)
+  (void (set-metatable! t mt)))
