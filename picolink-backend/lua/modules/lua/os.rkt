@@ -8,12 +8,12 @@
   #:template (#%member os _)
   clock
   date
-  difftime
+  [difftime   diff-time]
   execute
   exit
-  getenv
+  [getenv     get-env]
   remove
   rename
-  setlocale
+  [setlocale  set-locale]
   time
-  tmpname)
+  [tmpname    tmp-name])

@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua            collectgarbage)
+(require (only lua            collect-garbage)
          (only lua/coroutine  yield)
 
          (only lua/ext/table  table-ref table-set!)
@@ -105,8 +105,8 @@
   (table-set! handlers "lowmemory"
               (or (table-ref handlers "lowmemory")
                   (λ (world)
-                    (collectgarbage)
-                    (collectgarbage)
+                    (collect-garbage)
+                    (collect-garbage)
                     world)))
 
   (table-set! handlers "threaderror"

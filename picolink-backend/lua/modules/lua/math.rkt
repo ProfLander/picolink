@@ -30,7 +30,7 @@
   pow
   rad
   random
-  randomseed
+  [randomseed  random-seed]
   sin
   sinh
   sqrt

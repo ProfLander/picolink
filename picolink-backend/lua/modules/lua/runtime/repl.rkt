@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua        loadstring setfenv pcall)
+(require (only lua        load-string set-fenv! pcall)
          (only lua/io     stderr read)
          (only lua/debug  traceback)
 
@@ -11,23 +11,22 @@
          (only r-lua/prelude/condition   unless)
          (only r-lua/prelude/definition  define)
          (only r-lua/prelude/if          if)
-         (only r-lua/prelude/s-lua       s-lua)
-         (only r-lua/prelude/void        void))
+         (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 
 (define (repl scope)
 
   (let ([input (read)])
-    (let-values ([(res err) (loadstring input "repl")])
+    (let-values ([(res err) (load-string input "repl")])
 
       (if res
 
-          (let ([f (setfenv res (table-ref (s-lua lctx) scope))])
+          (let ([f (set-fenv! res (table-ref (s-lua lctx) scope))])
             (let-values ([(res err) (pcall f)])
               (unless res
-                (send stderr "write" (traceback err 2)))))
+                (send stderr "write" (traceback err)))))
 
-          (send stderr "write" (traceback err 2))))
+          (send stderr "write" (traceback err))))
 
     (repl scope)))

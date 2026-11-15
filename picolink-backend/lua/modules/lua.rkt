@@ -6,28 +6,28 @@
 
 (define-intrinsics
   assert
-  collectgarbage
+  [collectgarbage collect-garbage]
   dofile
   error
   _G
-  getfenv
-  getmetatable
+  [getfenv        get-fenv]
+  [getmetatable   get-metatable]
   ipairs
   load
-  loadfile
-  loadstring
+  [loadfile       load-file]
+  [loadstring     load-string]
   next
   pairs
   pcall
   print
-  rawequal
-  rawget
-  rawset
+  [rawequal       raw-equal]
+  [rawget         raw-get]
+  [rawset         raw-set]
   select
-  setfenv
-  setmetatable
-  tonumber
-  tostring
+  [setfenv        set-fenv!]
+  [setmetatable   set-metatable!]
+  [tonumber       to-number]
+  [tostring       to-string]
   type
   unpack
   _VERSION
@@ -45,4 +45,4 @@
   string
   table
 
-  newproxy)
+  [newproxy       new-proxy])

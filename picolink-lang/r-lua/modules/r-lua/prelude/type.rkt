@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/metatable  get-metatable set-metatable!)
+(require (only lua  get-metatable set-metatable!)
 
          (only r-lua/prelude/binding     let)
          (only r-lua/prelude/definition  define)

@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua  tostring)
+(require (rename lua  to-string lua-to-string)
 
          (only r-lua/prelude/interface  define-interface))
 
@@ -9,4 +9,4 @@
 (define-interface ToString
   [to-string __tostring
              (λ (a)
-               (tostring a))])
+               (lua-to-string a))])

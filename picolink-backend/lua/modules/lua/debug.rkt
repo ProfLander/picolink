@@ -6,17 +6,17 @@
 
 (define-intrinsics
   #:template (#%member debug _)
-  getfenv
-  gethook
-  getinfo
-  getlocal
-  getmetatable
-  getregistry
-  getupvalue
-  setfenv
-  sethook
-  setlocal
-  setmetatable
-  setupvalue
+  [getfenv       get-fenv]
+  [gethook       get-hook]
+  [getinfo       get-info]
+  [getlocal      get-local]
+  [getmetatable  get-metatable]
+  [getregistry   get-registry]
+  [getupvalue    get-upvalue]
+  [setfenv       set-fenv]
+  [sethook       set-hook]
+  [setlocal      set-local!]
+  [setmetatable  set-metatable!]
+  [setupvalue    set-upvalue!]
   traceback
   debug)

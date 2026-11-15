@@ -6,10 +6,10 @@
 
 (define-intrinsics
   #:template (#%member package _)
-  cpath
+  [cpath    c-path]
   loaded
   loaders
-  loadlib
+  [loadlib  load-lib]
   path
   preload
-  seeall)
+  [seeall   see-all])
