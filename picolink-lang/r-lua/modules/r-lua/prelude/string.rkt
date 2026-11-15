@@ -4,6 +4,8 @@
          (only lua/ext/type    string?)
          (only lua/ext/values  foldl-values)
 
+         (only lua/ext/debug   debug-set-metatable!)
+
          (only r-lua/prelude/arith                < +)
          (only r-lua/prelude/condition            when)
          (only r-lua/prelude/definition           define)
@@ -25,6 +27,7 @@
          string?)
 
 (define-type String)
+(debug-set-metatable! "" String)
 
 (impl [Copy String])
 (impl [Drop String])

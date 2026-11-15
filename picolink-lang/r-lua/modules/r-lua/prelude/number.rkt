@@ -1,6 +1,7 @@
 #lang picolink/r-lua/base
 
 (require (only lua/ext/type number?)
+         (only lua/ext/debug   debug-set-metatable!)
 
          (only r-lua/prelude/function             identity)
          (only r-lua/prelude/interface            impl)
@@ -20,8 +21,11 @@
          (only r-lua/prelude/s-lua                s-lua)
          (only r-lua/prelude/void                 void))
 
-(provide number?)
+(provide (all-defined)
+         number?)
+
 (define-type Number)
+(debug-set-metatable! 0 Number)
 
 (impl [Copy     Number])
 (impl [Drop     Number])

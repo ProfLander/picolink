@@ -1,13 +1,9 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/metatable
-               get-metatable
-               set-metatable!
-               metatable-ref)
-
-         (only lua/ext/table   table-ref table-set!)
-         (only lua/ext/object  send)
-         (only lua/ext/type    boolean? number? string? function?)
+(require (only lua get-metatable  set-metatable!)
+         (only lua/ext/metatable  metatable-ref)
+         (only lua/ext/table      table-ref table-set!)
+         (only lua/ext/object     field send)
 
          (only r-lua/prelude/binding     let)
          (only r-lua/prelude/condition   unless cond)
@@ -18,8 +14,7 @@
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       and or)
          (only r-lua/prelude/s-lua       s-lua)
-         (only r-lua/prelude/table       table)
-         (only r-lua/prelude/type        Boolean Number String Procedure)
+         (only r-lua/prelude/table       table))
 
 (provide (all-defined))
 
@@ -40,41 +35,38 @@
 
   (λ (self . [: args #%values])
 
-    (let ([mt
-           (cond
-             [(boolean?  self) Boolean]
-             [(number?   self) Number]
-             [(string?   self) String]
-             [(function? self) Procedure]
-             [else (get-metatable self)])])
+    (let ([mt (or (get-metatable self)
+                  (error
+                   (format "~a has unrecognized type" self)))])
 
       (unless mt
         (error (format "~a has no interface storage" self)))
 
-      (unless (table-ref mt (table-ref interface "%name"))
-        (let ([self-name
-               (cond
-                 [(boolean?  self) "Boolean"]
-                 [(number?   self) "Number"]
-                 [(string?   self) "String"]
-                 [(function? self) "Procedure"]
-                 [else self])]
-
-              [iface-name (table-ref interface "%name")])
-
+      (let ([iface-name (table-ref interface "%name")])
+        (unless (table-ref mt iface-name)
           (error (format "~a does not implement ~a"
-                         self-name iface-name))))
+                         self iface-name))))
 
-      (let ([f (or (table-ref mt method)
-                   (table-ref (table-ref interface "%member-defaults")
-                              method))])
+      (cond
+        [(and (table-ref interface "%raw")
+              (table-ref mt method))
+         ((table-ref mt method) self args)]
 
-        (f self args)))))
+        [(field self method)
+         (send self method args)]
+
+        [else
+         ((table-ref (table-ref interface "%member-defaults")
+                     method)
+          self args)]))))
 
 (define-macro define-interface
   [(_ (~and name
             (~parse name-str (symbol->string
                               (syntax-e #'name))))
+
+      (~optional (~and #:raw (~bind [raw #'#t]))
+                 #:defaults ([raw #'#f]))
 
       [(~and function
              (~parse function-str (symbol->string
@@ -86,14 +78,16 @@
                   #:defaults
                   ([default-impl
                      #'(λ (self . [: args #%values])
-                         (error "~a missing required method ~a"
-                                self function-str))]))]
+                         (error (format "~a missing required method ~a"
+                                        self function-str)))]))]
       ...)
 
    (syntax/loc this-syntax
      (begin
        (define name
          (set-metatable! (table [%name name-str]
+
+                                [%raw raw]
 
                                 [%member-names
                                  (table [function metamethod-str] ...)]
@@ -118,9 +112,15 @@
    (with-syntax ([(method-name-str ...)
                   (for/list ([ident (in-list (attribute method-name))])
                     (symbol->string (syntax-e ident)))])
-     #'(void
+     #'(begin
         (table-set! target (table-ref interface "%name") #t)
+
         (let ([inner-name (table-ref (table-ref interface "%member-names")
                                      method-name-str)])
-          (table-set! target inner-name method-expr))
+
+          (table-set! (if (table-ref interface "%raw")
+                          target
+                          (table-ref target "__index"))
+
+                      inner-name method-expr))
         ...))])

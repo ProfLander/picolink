@@ -1,6 +1,7 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/type  boolean?)
+(require (only lua/ext/debug debug-set-metatable!)
+         (only lua/ext/type  boolean?)
 
          (only r-lua/prelude/function             identity)
          (only r-lua/prelude/interface            impl)
@@ -14,6 +15,7 @@
          boolean?)
 
 (define-type Boolean)
+(debug-set-metatable! #f Boolean)
 
 (impl [Copy     Boolean])
 (impl [Drop     Boolean])

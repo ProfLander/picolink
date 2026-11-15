@@ -68,9 +68,7 @@
       (list? (cdr v))
       (null? v)))
 
-(impl [Equal pair:type]
-      (define (equal? a b)
-        (s-lua (#%eq a b))))
+(impl [Equal pair:type])
 
 (define (list->string self)
   (letrec ([%list->string
