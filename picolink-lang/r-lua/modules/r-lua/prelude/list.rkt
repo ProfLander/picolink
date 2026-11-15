@@ -73,33 +73,33 @@
       (define (equal? a b)
         (s-lua (#%eq a b))))
 
-(define (print-list self)
-  (letrec ([%print-list
+(define (list->string self)
+  (letrec ([%list->string
             (λ (self)
               (let ([lhs (car self)]
                     [rhs (cdr self)])
                 (if (null? rhs)
                     (to-string lhs)
-                    (format "~a ~a" lhs (%print-list rhs)))))])
+                    (format "~a ~a" lhs (%list->string rhs)))))])
 
-    (format "(~a)" (%print-list self))))
+    (format "(~a)" (%list->string self))))
 
-(define (print-pair self)
-  (letrec ([%print-pair
+(define (pair->string self)
+  (letrec ([%pair->string
             (λ (self)
               (let ([lhs (car self)]
                     [rhs (cdr self)])
                 (if (pair? rhs)
-                    (format "~a ~a" lhs (%print-pair rhs))
+                    (format "~a ~a" lhs (%pair->string rhs))
                     (format "~a . ~a" lhs rhs))))])
 
-    (format "(~a)" (%print-pair self))))
+    (format "(~a)" (%pair->string self))))
 
 (impl [ToString pair:type]
       (define (to-string self)
         (if (list? self)
-            (print-list self)
-            (print-pair self))))
+            (list->string self)
+            (pair->string self))))
 
 (impl [Length pair:type]
       (define length
