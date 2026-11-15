@@ -17,10 +17,16 @@
 (define (+ a b)
   (s-lua (#%add a b)))
 
+(define (sub a b)
+  (s-lua (#%sub a b)))
+
+(define (neg a b)
+  (s-lua (#%neg a)))
+
 (define (- a b)
   (if (nil? b)
-      (s-lua (#%neg a))
-      (s-lua (#%sub a b))))
+      (neg a)
+      (sub a b)))
 
 (define (* a b)
   (s-lua (#%mul a b)))
