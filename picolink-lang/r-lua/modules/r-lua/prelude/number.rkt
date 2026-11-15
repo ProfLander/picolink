@@ -71,7 +71,7 @@
       (let ([field (table-ref fields field-index)])
         (for ([offset (in-range 0 chunk-size)])
 
-          (pool-debug "pool %s drop field %s chunk %s offset %s"
+          (pool-debug "pool ~a drop field ~a chunk ~a offset ~a"
                       name field chunk-index offset)
 
           (drop (pool-field pool field chunk-index offset)))))
