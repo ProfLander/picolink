@@ -1,7 +1,9 @@
 #lang picolink/r-lua/base
 
-(require (only lua get-metatable  set-metatable!)
-         (only lua/ext/metatable  metatable-ref)
+(require (only lua         get-metatable set-metatable!)
+         (only lua/string  format)
+
+         (only lua/ext/math       =)
          (only lua/ext/table      table-ref table-set!)
          (only lua/ext/object     field send)
 
@@ -9,27 +11,22 @@
          (only r-lua/prelude/condition   unless cond)
          (only r-lua/prelude/definition  define)
          (only r-lua/prelude/error       error)
-         (only r-lua/prelude/format      format)
-         (only r-lua/prelude/if          if)
+         (only r-lua/prelude/function    const)
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       and or)
-         (only r-lua/prelude/s-lua       s-lua)
          (only r-lua/prelude/table       table))
 
 (provide (all-defined))
 
 (define Interface
   (set-metatable!
-   (s-lua (#%table))
-   (s-lua (#%table ["__tostring"
-                    (#%function ()
-                                (#%block
-                                 (#%return "#<Interface>")))]))))
+   (table)
+   (table [__tostring (const "#<Interface>")])))
 
 (define (Interface? v)
   (and v
        (let ([mt (get-metatable v)])
-         (s-lua (#%eq mt Interface)))))
+         (= mt Interface))))
 
 (define (dispatch interface method)
 
@@ -37,21 +34,17 @@
 
     (let ([mt (or (get-metatable self)
                   (error
-                   (format "~a has unrecognized type" self)))])
+                   (format "%s has unrecognized type" self)))])
 
       (unless mt
-        (error (format "~a has no interface storage" self)))
+        (error (format "%s has no interface storage" self)))
 
       (let ([iface-name (table-ref interface "%name")])
         (unless (table-ref mt iface-name)
-          (error (format "~a does not implement ~a"
+          (error (format "%s does not implement %s"
                          self iface-name))))
 
       (cond
-        [(and (table-ref interface "%raw")
-              (table-ref mt method))
-         ((table-ref mt method) self args)]
-
         [(field self method)
          (send self method args)]
 
@@ -65,9 +58,6 @@
             (~parse name-str (symbol->string
                               (syntax-e #'name))))
 
-      (~optional (~and #:raw (~bind [raw #'#t]))
-                 #:defaults ([raw #'#f]))
-
       [(~and function
              (~parse function-str (symbol->string
                                    (syntax-e #'function))))
@@ -78,7 +68,7 @@
                   #:defaults
                   ([default-impl
                      #'(λ (self . [: args #%values])
-                         (error (format "~a missing required method ~a"
+                         (error (format "%s missing required method %s"
                                         self function-str)))]))]
       ...)
 
@@ -86,8 +76,6 @@
      (begin
        (define name
          (set-metatable! (table [%name name-str]
-
-                                [%raw raw]
 
                                 [%member-names
                                  (table [function metamethod-str] ...)]
@@ -118,9 +106,6 @@
         (let ([inner-name (table-ref (table-ref interface "%member-names")
                                      method-name-str)])
 
-          (table-set! (if (table-ref interface "%raw")
-                          target
-                          (table-ref target "__index"))
-
+          (table-set! (table-ref target "__index")
                       inner-name method-expr))
         ...))])

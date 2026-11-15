@@ -7,7 +7,4 @@
 (provide (all-defined))
 
 (define-interface ToString
-  #:raw
-  [to-string __tostring
-             (λ (a)
-               (lua-to-string a))])
+  [to-string %to-string])

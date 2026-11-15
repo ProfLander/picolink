@@ -12,8 +12,7 @@
 (define void:type
   (table [ToString #t]
          [Equal #t]
-         [__index (table)]
-         [__tostring (const "#<void>")]))
+         [__index (table [%to-string (const "#<void>")])]))
 
 (define %void
   (set-metatable! (table)
