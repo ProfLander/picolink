@@ -8,7 +8,7 @@
                table-set!
                table-length)
 
-         (only r-lua/prelude/arith                = +)
+         (only r-lua/prelude/arith                = < +)
          (only r-lua/prelude/binding              let*)
          (only r-lua/prelude/condition            when unless)
          (only r-lua/prelude/definition           define)
@@ -20,7 +20,6 @@
          (only r-lua/prelude/interface/equal      Equal)
          (only r-lua/prelude/interface/length     Length length)
          (only r-lua/prelude/interface/monoid     <>)
-         (only r-lua/prelude/interface/order      <)
          (only r-lua/prelude/lambda               λ)
          (only r-lua/prelude/list                 for/list in-list)
          (only r-lua/prelude/print                print)

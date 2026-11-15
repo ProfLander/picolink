@@ -20,8 +20,3 @@
 
 (define (greater-or-equal? a b)
   (s-lua (#%ge a b)))
-
-(define < less-than?)
-(define <= less-or-equal?)
-(define > greater-than?)
-(define >= greater-or-equal?)

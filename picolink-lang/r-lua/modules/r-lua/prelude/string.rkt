@@ -4,7 +4,7 @@
          (only lua/ext/type    string?)
          (only lua/ext/values  foldl-values)
 
-         (only r-lua/prelude/arith                +)
+         (only r-lua/prelude/arith                < +)
          (only r-lua/prelude/condition            when)
          (only r-lua/prelude/definition           define)
          (only r-lua/prelude/function             identity)
@@ -12,7 +12,6 @@
          (only r-lua/prelude/interface            impl)
          (only r-lua/prelude/interface/monoid     mappend)
          (only r-lua/prelude/interface/to-string  ToString)
-         (only r-lua/prelude/interface/order      <)
          (only r-lua/prelude/interface/copy       Copy)
          (only r-lua/prelude/interface/drop       Drop)
          (only r-lua/prelude/interface/equal      Equal equal?)

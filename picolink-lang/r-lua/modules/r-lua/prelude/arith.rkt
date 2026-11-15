@@ -16,11 +16,20 @@
                divide
                expt
                modulo)
+         (only r-lua/prelude/interface/order
+               less-than?
+               less-or-equal?
+               greater-than?
+               greater-or-equal?)
          (only r-lua/prelude/s-lua            s-lua))
 
 (provide (all-defined))
 
-(define = equal?)
+(define =  equal?)
+(define <  less-than?)
+(define <= less-or-equal?)
+(define >  greater-than?)
+(define >= greater-or-equal?)
 
 (define (+ . [: vs #%values])
   (foldl-values add vs))
@@ -35,3 +44,7 @@
 
 (define (/ . [: vs #%values])
   (foldl-values divide vs))
+
+(define ^ expt)
+
+(define % modulo)
