@@ -139,7 +139,7 @@
         (let* ([is-entry-point (entry-point-module? mod)]
                [mod (splice-hidden-imports hidden-imports mod)]
                [mod (splice-requires prog mod)]
-               [mod (splice-lctx mod)]
+               [mod (splice-scope mod)]
                [mod (if is-entry-point
                         ((current-lua-transform-module-body-pre) mod)
                         mod)]
@@ -326,7 +326,7 @@
                    (#%local [_NAME] [module-name])))))
             stx))))
 
-(define (splice-lctx mod)
+(define (splice-scope mod)
 
   (define stx (compiled-module-stx mod))
 
@@ -351,6 +351,13 @@
                           [name]))))]
 
       [(#%local [ident ...] _)
+       (list this-syntax
+             (in-s-lua
+              (syntax/loc this-syntax
+                (#%assign [(#%member scope ident) ...]
+                          [ident ...]))))]
+
+      [(#%do (#%block _ ... (#%assign [ident ...] _)))
        (list this-syntax
              (in-s-lua
               (syntax/loc this-syntax
