@@ -25,7 +25,7 @@
      (syntax/loc this-syntax
        (begin
          (define name
-           (set-metatable! (table)
+           (set-metatable! (table [__index (table)])
                            (table [__tostring (const name-str)])))
 
          (define (predicate-name v)
