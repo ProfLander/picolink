@@ -7,11 +7,13 @@
          (only r-lua/prelude/interface/copy   Copy)
          (only r-lua/prelude/interface/drop   Drop)
          (only r-lua/prelude/interface/equal  Equal)
-         (only r-lua/prelude/type             Procedure)
+         (only r-lua/prelude/type             define-type)
          (only r-lua/prelude/void             void))
 
 (provide (all-defined)
          (rename function? procedure?))
+
+(define-type Procedure)
 
 (impl [Copy Procedure]
       (define copy identity))

@@ -19,10 +19,12 @@
          (only r-lua/prelude/interface/monoid     Monoid)
          (only r-lua/prelude/logic                or)
          (only r-lua/prelude/s-lua                s-lua)
-         (only r-lua/prelude/type                 String)
+         (only r-lua/prelude/type                 define-type))
 
 (provide (all-defined)
          string?)
+
+(define-type String)
 
 (impl [Copy String])
 (impl [Drop String])

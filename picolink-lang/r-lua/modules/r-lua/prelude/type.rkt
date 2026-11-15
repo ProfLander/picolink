@@ -35,8 +35,3 @@
 
 (define (ascribe type value)
   (set-metatable! value type))
-
-(define-type Boolean)
-(define-type Number)
-(define-type String)
-(define-type Procedure)
