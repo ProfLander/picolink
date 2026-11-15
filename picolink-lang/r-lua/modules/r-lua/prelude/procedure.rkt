@@ -27,8 +27,3 @@
 (impl [Equal Procedure]
       (define (equal? a b)
         (s-lua (#%eq a b))))
-
-(define-interface Apply
-  [apply __call
-         (λ (self . [: vs #%values])
-           (self vs))])
