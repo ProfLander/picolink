@@ -39,7 +39,8 @@
 (define reserved-symbol->lua-name
   (hash
    "="  "__eq__"
-   ":" "__colon__"
+   "~"  "__tilde__"
+   ":"  "__colon__"
    "::" "__2colon__"
    "+"  "__plus__"
    "-"  "__minus__"
