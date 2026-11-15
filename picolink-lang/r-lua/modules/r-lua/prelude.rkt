@@ -4,6 +4,7 @@
          r-lua/prelude/assignment
          r-lua/prelude/binding
          r-lua/prelude/boolean
+         r-lua/prelude/cdata
          r-lua/prelude/condition
          r-lua/prelude/definition
          r-lua/prelude/error
@@ -42,6 +43,7 @@
          (all-from r-lua/prelude/assignment)
          (all-from r-lua/prelude/binding)
          (all-from r-lua/prelude/boolean)
+         (all-from r-lua/prelude/cdata)
          (all-from r-lua/prelude/condition)
          (all-from r-lua/prelude/definition)
          (all-from r-lua/prelude/error)
