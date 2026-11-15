@@ -1,12 +1,12 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/arith            +)
+(require (only lua/ext/math + < >)
+
          (only r-lua/prelude/assignment       set!)
          (only r-lua/prelude/binding          let)
          (only r-lua/prelude/definition       define)
          (only r-lua/prelude/function         thunk)
          (only r-lua/prelude/if               if)
-         (only r-lua/prelude/interface/order  < >)
          (only r-lua/prelude/unit             define-unit))
 
 (provide (all-defined))
