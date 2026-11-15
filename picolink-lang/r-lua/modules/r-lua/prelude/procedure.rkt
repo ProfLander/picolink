@@ -7,7 +7,6 @@
          (only r-lua/prelude/interface/copy   Copy)
          (only r-lua/prelude/interface/drop   Drop)
          (only r-lua/prelude/interface/equal  Equal)
-         (only r-lua/prelude/print            print)
          (only r-lua/prelude/type             Procedure)
          (only r-lua/prelude/void             void))
 

@@ -20,7 +20,6 @@
          (only r-lua/prelude/s-lua       s-lua)
          (only r-lua/prelude/table       table)
          (only r-lua/prelude/type        Boolean Number String Procedure)
-         (only r-lua/prelude/void        void))
 
 (provide (all-defined))
 

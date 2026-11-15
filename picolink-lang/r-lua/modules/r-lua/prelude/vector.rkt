@@ -22,7 +22,6 @@
          (only r-lua/prelude/interface/monoid     <>)
          (only r-lua/prelude/lambda               λ)
          (only r-lua/prelude/list                 for/list in-list)
-         (only r-lua/prelude/print                print)
          (only r-lua/prelude/sequence             sequence-map in-range)
          (only r-lua/prelude/interface/to-string  ToString to-string)
          (only r-lua/prelude/type                 define-type ascribe))

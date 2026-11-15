@@ -17,7 +17,6 @@
          (only r-lua/prelude/interface/equal      Equal)
          (only r-lua/prelude/interface/order      Order)
          (only r-lua/prelude/interface/to-string  ToString)
-         (only r-lua/prelude/print                print)
          (only r-lua/prelude/s-lua                s-lua)
          (only r-lua/prelude/type                 Number)
          (only r-lua/prelude/void                 void))

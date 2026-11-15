@@ -15,7 +15,6 @@
          (only r-lua/prelude/interface/equal      Equal)
          (only r-lua/prelude/interface/length     Length length)
          (only r-lua/prelude/lambda               λ)
-         (only r-lua/prelude/print                print)
          (only r-lua/prelude/interface/to-string  ToString to-string)
          (only r-lua/prelude/struct               define-struct)
          (only r-lua/prelude/sequence             sequence-null)

@@ -3,9 +3,9 @@
 (require (only lua  select)
 
          (only lua/ext/math  +)
+
          (only r-lua/prelude/binding     let)
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/print       print))
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
