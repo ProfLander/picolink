@@ -15,7 +15,8 @@
       body ...)
 
    (with-syntax ([(seq-id* ...)
-                  (generate-temporaries (attribute seq-id))])
+                  (generate-temporaries (attribute seq-id))]
+                 [loop (generate-temporary 'loop)])
 
      (syntax/loc this-syntax
        (let ([seq-id* sequence] ...)
@@ -32,7 +33,8 @@
       body ...)
 
    (with-syntax ([(seq-id* ...)
-                  (generate-temporaries (attribute seq-id))])
+                  (generate-temporaries (attribute seq-id))]
+                 [loop (generate-temporary 'loop)])
 
      (syntax/loc this-syntax
        (let ([seq-id* sequence] ...)
