@@ -137,12 +137,12 @@
       (let-values ([(hidden-imports mod) (rewrite-idents mod)])
 
         (let* ([is-entry-point (entry-point-module? mod)]
-               [mod (if is-entry-point
-                        ((current-lua-transform-module-body-pre) mod)
-                        mod)]
                [mod (splice-hidden-imports hidden-imports mod)]
                [mod (splice-requires prog mod)]
                [mod (splice-lctx mod)]
+               [mod (if is-entry-point
+                        ((current-lua-transform-module-body-pre) mod)
+                        mod)]
                [mod (if is-entry-point
                         ((current-lua-transform-module-body-post) mod)
                         mod)]
