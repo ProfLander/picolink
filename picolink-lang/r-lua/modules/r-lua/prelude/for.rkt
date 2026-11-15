@@ -27,6 +27,19 @@
                  body ...
                  (loop (seq-id*) ...)))))))])
 
+(define-macro for*
+  [(_ (seq-clause ...)
+      body ...)
+
+   (for/foldr ([acc (quasisyntax/loc this-syntax
+                      (begin body ...))])
+
+              ([seq-clause (in-list (attribute seq-clause))])
+
+     (quasisyntax/loc acc
+       (for (#,seq-clause)
+         #,acc)))])
+
 (define-macro for/fold
   [(_ ([acc-id acc] ...)
       ([seq-id sequence] ...)
