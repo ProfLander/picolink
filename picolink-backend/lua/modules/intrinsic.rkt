@@ -30,13 +30,13 @@
        [_ this-syntax]))
 
    (with-syntax ([([name value] ...)
-                  (append (for/list ([name (attribute name)])
-                            (list name (replace name #'template)))
-
-                          (for/list ([from-name (attribute from-name)]
+                  (append (for/list ([from-name (attribute from-name)]
                                      [to-name   (attribute to-name)])
                             (list to-name
-                                  (replace from-name #'template))))])
+                                  (replace from-name #'template)))
+
+                          (for/list ([name (attribute name)])
+                            (list name (replace name #'template))))])
      #'(begin
          (define name (s-lua value))
          ...))])
