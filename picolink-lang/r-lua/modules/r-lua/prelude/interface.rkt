@@ -8,13 +8,15 @@
          (only lua/ext/object     field send)
 
          (only r-lua/prelude/binding     let)
-         (only r-lua/prelude/condition   unless cond)
+         (only r-lua/prelude/condition   unless)
          (only r-lua/prelude/definition  define)
          (only r-lua/prelude/error       error)
          (only r-lua/prelude/function    const)
+         (only r-lua/prelude/if          if)
          (only r-lua/prelude/lambda      λ)
          (only r-lua/prelude/logic       and or)
-         (only r-lua/prelude/table       table))
+         (only r-lua/prelude/table       table)
+         (only r-lua/prelude/type        check-Type))
 
 (provide (all-defined))
 
@@ -28,30 +30,25 @@
        (let ([mt (get-metatable v)])
          (= mt Interface))))
 
+(define (check-Interface v)
+  (unless (Interface? v)
+    (error (format "%s is not an Interface" v))))
+
 (define (dispatch interface method)
+
+  (check-Interface interface)
 
   (λ (self . [: args #%values])
 
-    (let ([mt (or (get-metatable self)
-                  (error
-                   (format "%s has unrecognized type" self)))])
+    (let ([iface-name (table-ref interface "%name")])
+      (unless (field self iface-name)
+        (error (format "%s does not implement %s"
+                       self iface-name))))
 
-      (unless mt
-        (error (format "%s has no interface storage" self)))
-
-      (let ([iface-name (table-ref interface "%name")])
-        (unless (table-ref mt iface-name)
-          (error (format "%s does not implement %s"
-                         self iface-name))))
-
-      (cond
-        [(field self method)
-         (send self method args)]
-
-        [else
-         ((table-ref (table-ref interface "%member-defaults")
-                     method)
-          self args)]))))
+    (let ([method (or (field self method)
+                      (table-ref (table-ref interface "%member-defaults")
+                                 method))])
+      (method self args))))
 
 (define-macro define-interface
   [(_ (~and name
@@ -101,11 +98,16 @@
                   (for/list ([ident (in-list (attribute method-name))])
                     (symbol->string (syntax-e ident)))])
      #'(begin
-        (table-set! target (table-ref interface "%name") #t)
 
-        (let ([inner-name (table-ref (table-ref interface "%member-names")
-                                     method-name-str)])
+         (check-Interface interface)
+         (check-Type      target)
 
-          (table-set! (table-ref target "__index")
-                      inner-name method-expr))
-        ...))])
+         (let ([index (table-ref target "__index")]
+               [name (table-ref interface "%name")]
+               [member-names (table-ref interface "%member-names")])
+
+           (table-set! index name #t)
+
+           (let ([inner-name (table-ref member-names method-name-str)])
+             (table-set! index inner-name method-expr))
+           ...)))])

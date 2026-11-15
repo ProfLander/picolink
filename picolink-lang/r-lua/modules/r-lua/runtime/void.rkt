@@ -10,9 +10,11 @@
 (provide void void:type void?)
 
 (define void:type
-  (table [ToString #t]
-         [Equal #t]
-         [__index (table [%to-string (const "#<void>")])]))
+  (table [__index (table [Copy     #t]
+                         [Drop     #t]
+                         [Equal    #t]
+                         [ToString #t]
+                         [%to-string (const "#<void>")])]))
 
 (define %void
   (set-metatable! (table)
