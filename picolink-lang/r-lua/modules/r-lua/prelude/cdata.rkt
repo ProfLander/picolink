@@ -7,6 +7,8 @@
 
          (only luajit/ffi cast)
 
+         (only r-lua/runtime/void  void)
+
          (only r-lua/prelude/definition           define)
          (only r-lua/prelude/interface            impl)
          (only r-lua/prelude/interface/equal      Equal)
@@ -30,7 +32,7 @@
 (define %CData (debug-get-metatable %inst))
 
 (define-type CData)
-(debug-set-metatable! %inst CData)
+(void (debug-set-metatable! %inst CData))
 
 (impl [Equal CData]
       (define equal?

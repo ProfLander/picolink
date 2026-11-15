@@ -3,6 +3,8 @@
 (require (only lua/ext/debug debug-set-metatable!)
          (only lua/ext/type  boolean?)
 
+         (only r-lua/runtime/void  void)
+
          (only r-lua/prelude/function             identity)
          (only r-lua/prelude/if                   if)
          (only r-lua/prelude/interface            impl)
@@ -16,7 +18,7 @@
          boolean?)
 
 (define-type Boolean)
-(debug-set-metatable! #f Boolean)
+(void (debug-set-metatable! #f Boolean))
 
 (impl [Copy     Boolean])
 (impl [Drop     Boolean])

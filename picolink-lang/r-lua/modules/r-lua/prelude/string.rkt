@@ -6,6 +6,8 @@
 
          (only lua/ext/debug   debug-set-metatable!)
 
+         (only r-lua/runtime/void  void)
+
          (only r-lua/prelude/arith                < +)
          (only r-lua/prelude/condition            when)
          (only r-lua/prelude/definition           define)
@@ -27,7 +29,7 @@
          string?)
 
 (define-type String)
-(debug-set-metatable! "" String)
+(void (debug-set-metatable! "" String))
 
 (impl [Copy String])
 (impl [Drop String])

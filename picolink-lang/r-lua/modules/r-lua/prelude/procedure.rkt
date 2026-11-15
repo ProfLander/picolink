@@ -5,7 +5,7 @@
          (only lua/ext/type   function?)
          (only lua/ext/debug  debug-set-metatable!)
 
-         (only r-lua/runtime/void                 void)
+         (only r-lua/runtime/void  void)
 
          (only r-lua/prelude/format               format)
          (only r-lua/prelude/function             identity)
@@ -20,7 +20,7 @@
          (rename function? procedure?))
 
 (define-type Procedure)
-(debug-set-metatable! identity Procedure)
+(void (debug-set-metatable! identity Procedure))
 
 (impl [Copy Procedure]
       (define copy identity))

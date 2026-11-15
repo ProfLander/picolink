@@ -11,4 +11,5 @@
 (define debug-get-metatable get-metatable)
 
 (define (debug-set-metatable! t mt)
-  (void (set-metatable! t mt)))
+  (set-metatable! t mt)
+  t)
