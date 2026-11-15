@@ -3,10 +3,11 @@
 (require (only lua/ext/table  table-length table-ref)
 
          r-lua/runtime/pool
+         r-lua/runtime/pool/type
          r-lua/runtime/pool/handle
          r-lua/runtime/pool/registry)
 
-(define pool (make-pool "test" 1 2
+(define pool (make-pool "test" Chunk 1 2
                         "x" "y"))
 ""
 

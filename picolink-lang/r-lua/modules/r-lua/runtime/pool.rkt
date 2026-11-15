@@ -31,6 +31,7 @@
          make-pool
          pool-id
          pool-name
+         pool-type
          pool-chunk-size
          pool-chunk-count
          pool-fields
@@ -65,7 +66,8 @@
 
 ; Constructor
 
-(define (make-pool name chunk-size chunk-count . [: fields array-table])
+(define (make-pool name type chunk-size chunk-count
+                   . [: fields array-table])
 
   (let* ([capacity     (* chunk-size chunk-count)]
          [capacity-    (- capacity 1)])
@@ -79,6 +81,7 @@
         (ref-counts-set!  ref-counts  i 0))
 
       (let ([pool (table [name        name]
+                         [type        type]
                          [fields      fields]
 
                          [id          -1]
@@ -110,6 +113,9 @@
 
 (define (pool-name pool)
   (table-ref pool "name"))
+
+(define (pool-type pool)
+  (table-ref pool "type"))
 
 (define (pool-fields pool)
   (table-ref pool "fields"))
