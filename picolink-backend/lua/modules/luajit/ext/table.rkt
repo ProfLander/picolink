@@ -8,5 +8,12 @@
 (provide (all-defined))
 
 (define make-table  new)
+
+(define (make-array-table n)
+  (make-table n 0))
+
+(define (make-hash-table n)
+  (make-table 0 n))
+
 (define clear-table clear)
 
