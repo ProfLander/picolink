@@ -51,9 +51,7 @@
   (insert vec val)
   vec)
 
-(impl [Equal vector:type]
-      (define (equal? a b)
-        (s-lua (#%eq a b))))
+(impl [Equal vector:type])
 
 (impl [ToString vector:type]
       (define (to-string self)
