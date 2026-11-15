@@ -1,6 +1,7 @@
 #lang picolink/r-lua/base
 
 (require (only lua/ext/type table?)
+         (only lua/ext/object field set-field!)
 
          (only r-lua/prelude/definition  define)
          (only r-lua/prelude/error       error)
@@ -20,15 +21,11 @@
 
 (define (table-ref t k)
   (check-table t)
-  (s-lua (#%member t (quote k))))
+  (field t k))
 
-(define table-set!
-  (s-lua
-   (#%function (t k v)
-               (#%block
-                (#%call check-table t)
-                (#%assign [(#%member t (quote k))] [v])
-                (#%return %void)))))
+(define (table-set! t k v)
+  (check-table t)
+  (set-field! t k v))
 
 (define (table-length t)
   (check-table t)
