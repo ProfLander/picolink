@@ -4,7 +4,7 @@
          (only lua/math    floor)
          (only lua/string  format)
 
-         (only lua/ext/math  = + - * / ^ % < <=)
+         (only lua/ext/ops   = + - * / ^ % < <=)
          (only lua/ext/type  number?)
 
          (only r-lua/prelude/binding     let let* let-values)

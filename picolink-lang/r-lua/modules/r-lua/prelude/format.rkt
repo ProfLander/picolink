@@ -4,7 +4,7 @@
 
          (only lua/string format gsub)
 
-         (only lua/ext/math +)
+         (only lua/ext/ops +)
 
          (only lua/ext/table
                array-table

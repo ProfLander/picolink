@@ -3,7 +3,7 @@
 (require (only lua         get-metatable set-metatable!)
          (only lua/string  format)
 
-         (only lua/ext/math       =)
+         (only lua/ext/ops        =)
          (only lua/ext/table      table-ref table-set!)
          (only lua/ext/object     field send)
 

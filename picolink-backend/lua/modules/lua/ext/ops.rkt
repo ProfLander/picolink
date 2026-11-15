@@ -51,3 +51,6 @@
 
 (define (>= a b)
   (s-lua (#%ge a b)))
+
+(define (.. a b)
+  (s-lua (#%cat a b)))

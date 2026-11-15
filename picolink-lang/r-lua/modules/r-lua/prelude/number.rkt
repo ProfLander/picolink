@@ -1,7 +1,7 @@
 #lang picolink/r-lua/base
 
 (require (only lua/ext/type    number?)
-         (only lua/ext/math    + - * / ^ % < <=)
+         (only lua/ext/ops     + - * / ^ % < <=)
          (only lua/ext/debug   debug-set-metatable!)
          (only lua/ext/table   table-length table-ref)
 

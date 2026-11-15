@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/math + sub neg * / ^ %)
+(require (only lua/ext/ops  + sub neg * / ^ %)
 
          (only r-lua/prelude/interface        define-interface)
          (only r-lua/prelude/s-lua            s-lua))

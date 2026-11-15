@@ -1,7 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/math = + - * <=)
-         (only lua/ext/string ..)
+(require (only lua/ext/ops  = + - * <= ..)
          (only lua/ext/table
                array-table
                table-ref

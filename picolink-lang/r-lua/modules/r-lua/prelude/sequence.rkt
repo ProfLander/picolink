@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/math + < >)
+(require (only lua/ext/ops + < >)
 
          (only r-lua/prelude/assignment       set!)
          (only r-lua/prelude/binding          let)
