@@ -1,8 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table  table-ref)
-
-         (only r-lua/prelude/definition  define)
+(require (only r-lua/prelude/definition  define)
          (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
