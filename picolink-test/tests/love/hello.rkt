@@ -1,8 +1,6 @@
 #lang picolink/r-lua
 
-(require (only lua/ext/table table-set!)
-
-         (rename love/ext/graphics print graphics-print)
+(require (only love/ext/graphics  graphics-print)
 
          (only love/runtime/world  genesis quit-with))
 
