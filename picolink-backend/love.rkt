@@ -40,25 +40,20 @@
    #:stx (syntax-parse (compiled-module-stx mod)
            #:literal-sets [s-lua-ir-literals]
 
-           [(#%chunk (#%block body ... tail))
+           [(#%chunk (#%block body ...))
 
             (in-s-lua
-             (with-syntax ([tail (syntax-parse #'tail
-                                   #:literal-sets [s-lua-ir-literals]
-                                   [(#%call print tail)
-                                    #'tail]
-                                   [_ this-syntax])])
-               #'(#%chunk
-                  (#%block
-                   (#%local [runtime]
-                            [(#%call require "love.runtime")])
+             #'(#%chunk
+                (#%block
+                 (#%local [runtime]
+                          [(#%call require "love.runtime")])
 
-                   (#%call (#%member runtime love-run)
-                           (#%function
-                            ()
-                            (#%block
-                             body ...
-                             (#%return tail))))))))])))
+                 (#%call (#%member runtime love-run)
+                         (#%function
+                          ()
+                          (#%block
+                           body ...
+                           (#%return 0)))))))])))
 
 (define love-link      lua-link)
 

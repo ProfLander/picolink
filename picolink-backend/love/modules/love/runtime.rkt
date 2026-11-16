@@ -1,6 +1,8 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table  table-set!)
+(require (only lua  error)
+
+         (only lua/ext/table  table-set!)
 
          (only lua/runtime     lua-pre)
 
@@ -24,11 +26,10 @@
 
   (table-set! love "run"
               (thunk
-                (when load
-                  (load (parse-game-arguments arg) arg))
+               (when load
+                 (load (parse-game-arguments arg) arg))
 
-                (when timer
-                  (step))
+               (when timer
+                 (step))
 
-                (thunk
-                  (or (entry-point) 0)))))
+               entry-point)))
