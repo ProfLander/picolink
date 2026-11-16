@@ -1,6 +1,7 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/sequencing  begin))
+(require (only r-lua/prelude/sequencing  begin)
+         (only r-lua/prelude/lambda      λ))
 
 (provide (all-defined))
 
