@@ -11,9 +11,7 @@
 
 (define channel (get-channel "stdin"))
 
-(define (loop)
+(let loop ()
   (let ([input (read)])
     (: channel "push" input))
   (loop))
-
-(loop)
