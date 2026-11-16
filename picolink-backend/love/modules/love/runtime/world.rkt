@@ -15,7 +15,7 @@
                get-background-color
                present)
 
-         (only love/runtime/repl  repl-read)
+         (only love/runtime/repl    repl-read)
 
          (only r-lua/prelude/binding
                let
@@ -27,11 +27,14 @@
          (only r-lua/prelude/error                error)
          (only r-lua/prelude/format               format)
          (only r-lua/prelude/if                   if)
+         (only r-lua/prelude/interface/copy       copy)
+         (only r-lua/prelude/interface/drop       drop)
+         (only r-lua/prelude/interface/to-string  to-string)
          (only r-lua/prelude/lambda               λ)
          (only r-lua/prelude/logic                and or)
+         (only r-lua/prelude/sequencing           begin)
          (only r-lua/prelude/struct               define-struct)
-         (only r-lua/prelude/interface/to-string  to-string)
-         (only r-lua/prelude/s-lua                s-lua))
+         (only r-lua/prelude/table                table))
 
 (provide quit-with
          %love-runner
@@ -40,17 +43,17 @@
          %love-runner-draw
          genesis)
 
-(define-struct quit-with [world])
+(define-struct quit-with [world]
+  #:pool-size 1)
 
-(define (quit-with-world self)
-  (unless (quit-with? self)
-    (error (format "~a is not a quit-with" self)))
-  (quit-with-ref self 0))
+(define (update-with-then result f)
+  (if (quit-with? result)
 
-(define (update-with-then world f)
-  (if (quit-with? world)
-      (quit-with-world world)
-      (f world)))
+      (let ([world (copy (quit-with-world result))])
+        (drop result)
+        world)
+
+      (f result)))
 
 (define (%love-runner-handle-events world handlers)
 
@@ -90,6 +93,7 @@
         world)))
 
 (define (%love-runner-draw world handlers)
+
   (when (and graphics (is-active))
     (origin)
     (clear (get-background-color))
@@ -121,19 +125,20 @@
                   quit-with))
 
   (letrec ([runner
-            (λ (world handlers)
+            (λ (world-1 handlers)
 
               (repl-read)
 
               (update-with-then
-               (%love-runner-handle-events world handlers)
+               (%love-runner-handle-events world-1 handlers)
 
-               (λ (world)
+               (λ (world-1)
                  (update-with-then
-                  (%love-runner-update world handlers)
+                  (%love-runner-update world-1 handlers)
 
                   (λ (world)
                     (%love-runner-draw world handlers)
+                    (drop world-1)
 
                     (when timer
                       (sleep 0.001))
@@ -184,8 +189,8 @@
                   ...)
               (%love-runner
                state-expr
-               (s-lua (#%table ((... ~?) [handler-key handler-ident])
-                               ...))))]))])
+               (table ((... ~?) [handler-key handler-ident])
+                      ...)))]))])
 
 (define-love-runner genesis
 
