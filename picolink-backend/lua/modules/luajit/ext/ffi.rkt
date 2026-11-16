@@ -2,7 +2,7 @@
 
 (require (only lua  to-number)
 
-         (only lua/ext/object  field set-field!)
+         (only lua/ext/ops  -> =)
 
          (only luajit/ffi  cast new)
 
@@ -19,7 +19,7 @@
   (new "uint64_t[?]" n))
 
 (define (uint64-array-ref array index)
-  (to-number (field array index)))
+  (to-number (-> array index)))
 
 (define (uint64-array-set! array index value)
-  (set-field! array index (cast "uint64_t" value)))
+  (= array index (cast "uint64_t" value)))

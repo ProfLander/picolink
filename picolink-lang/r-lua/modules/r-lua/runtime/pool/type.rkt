@@ -3,8 +3,7 @@
 (require (only lua  set-metatable!)
 
          (only lua/ext/debug   debug-set-metatable!)
-         (only lua/ext/ops    +)
-         (only lua/ext/object field)
+         (only lua/ext/ops    + ->)
          (only lua/ext/table  table-length)
 
          (only r-lua/runtime/pool/handle
@@ -61,7 +60,7 @@
 
     (for ([field-index (in-range 1 (+ (table-length fields) 1))])
 
-      (let ([field (field fields field-index)])
+      (let ([field (-> fields field-index)])
         (for ([offset (in-range 0 chunk-size)])
 
           (pool-debug "pool ~a drop field ~a chunk ~a offset ~a"
@@ -110,7 +109,7 @@
     (let* ([pool-id (handle-pool self)]
            [pool    (get-pool pool-id)]
            [type    (pool-type pool)]
-           [out     (field (debug-set-metatable! self type) key)])
+           [out     (-> (debug-set-metatable! self type) key)])
 
       (debug-set-metatable! self Handle)
 

@@ -1,9 +1,12 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+(require (only lua type)
+
+         (only lua/ext/ops ==)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
 (define (cdata? v)
-  (s-lua (#%eq (#%call type v) "cdata")))
+  (== (type v) "cdata"))

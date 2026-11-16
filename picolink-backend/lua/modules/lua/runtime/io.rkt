@@ -2,7 +2,7 @@
 
 (require (only lua/io  stdout stderr)
 
-         (only lua/ext/object  send)
+         (only lua/ext/ops  :)
 
          (only r-lua/runtime/void        void)
 
@@ -11,5 +11,5 @@
 (provide (all-defined))
 
 (define (set-unbuffered-stdio!)
-  (void (send stdout "setvbuf" "no")
-        (send stderr "setvbuf" "no")))
+  (void (: stdout "setvbuf" "no")
+        (: stderr "setvbuf" "no")))

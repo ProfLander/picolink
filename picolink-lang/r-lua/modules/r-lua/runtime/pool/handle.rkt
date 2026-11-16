@@ -4,7 +4,7 @@
          (only lua/math    floor)
          (only lua/string  format)
 
-         (only lua/ext/ops   = + - * / ^ % < <=)
+         (only lua/ext/ops   == + - * / ^ % < <=)
          (only lua/ext/type  number?)
 
          (only r-lua/prelude/binding     let let* let-values)
@@ -28,15 +28,15 @@
 (define handle-generation-bits  17)
 
 (unless (and (< 0 handle-pool-bits)
-             (= handle-pool-bits
+             (== handle-pool-bits
                 (floor handle-pool-bits))
 
              (< 0 handle-chunk-bits)
-             (= handle-chunk-bits
+             (== handle-chunk-bits
                 (floor handle-chunk-bits))
              
              (< 0 handle-generation-bits)
-             (= handle-generation-bits
+             (== handle-generation-bits
                 (floor handle-generation-bits))
 
              (<= (+ handle-pool-bits
@@ -64,7 +64,7 @@
   (and (number? n limit)
        (<= 0    n)
        (<  n    limit)
-       (=  n    (floor n))))
+       (== n    (floor n))))
 
 (define (handle-pool? n)
   (uint? n handle-pool-limit))
@@ -80,7 +80,7 @@
   (and (number?          n)
        (<= handle-marker n)
        (<  n             (+ handle-marker handle-limit))
-       (=  n             (floor n))))
+       (== n             (floor n))))
 
 (define (check-handle-pool n)
   (unless (handle-pool? n)

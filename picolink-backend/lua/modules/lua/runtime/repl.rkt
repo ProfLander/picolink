@@ -5,7 +5,7 @@
          (only lua/debug  traceback)
 
          (only lua/ext/table   table-ref)
-         (only lua/ext/object  send)
+         (only lua/ext/ops     :)
 
          (only r-lua/prelude/binding     let let-values)
          (only r-lua/prelude/condition   unless)
@@ -25,8 +25,8 @@
           (let ([f (set-fenv! res (table-ref (s-lua lctx) scope))])
             (let-values ([(res err) (pcall f)])
               (unless res
-                (send stderr "write" (traceback err)))))
+                (: stderr "write" (traceback err)))))
 
-          (send stderr "write" (traceback err))))
+          (: stderr "write" (traceback err))))
 
     (repl scope)))

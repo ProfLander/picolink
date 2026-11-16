@@ -5,7 +5,7 @@
          (only lua/io     stderr)
 
          (only lua/ext/table   table-ref)
-         (only lua/ext/object  send)
+         (only lua/ext/ops     :)
 
          (only love/ext/thread  new-thread get-channel)
 
@@ -27,15 +27,15 @@
 (define (repl-init)
   (set! stdin-thread  (new-thread  "love/runtime/stdin-thread.lua"))
   (set! stdin-channel (get-channel "stdin"))
-  (send stdin-thread "start"))
+  (: stdin-thread "start"))
 
 (define (repl-read)
-  (let ([input (send stdin-channel "pop")])
+  (let ([input (: stdin-channel "pop")])
     (when input
       (let-values ([(res err) (load-string input "repl")])
         (if res
             (let ([f (set-fenv! res (table-ref (s-lua lctx) repl-scope))])
               (let-values ([(res err) (pcall f)])
                 (unless res
-                  (send stderr "write" (traceback err)))))
-            (send stderr "write" err))))))
+                  (: stderr "write" (traceback err)))))
+            (: stderr "write" err))))))

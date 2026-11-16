@@ -2,7 +2,7 @@
 
 (require (only lua/io  read)
          
-         (only lua/ext/object  send)
+         (only lua/ext/ops  :)
 
          (only love/ext/thread  get-channel)
          
@@ -13,7 +13,7 @@
 
 (define (loop)
   (let ([input (read)])
-    (send channel "push" input))
+    (: channel "push" input))
   (loop))
 
 (loop)

@@ -1,30 +1,33 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+(require (only lua type)
+
+         (only lua/ext/ops ==)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
 (define (nil? v)
-  (s-lua (#%eq (#%call type v) "nil")))
+  (== (type v) "nil"))
 
 (define (boolean? v)
-  (s-lua (#%eq (#%call type v) "boolean")))
+  (== (type v) "boolean"))
 
 (define (number? v)
-  (s-lua (#%eq (#%call type v) "number")))
+  (== (type v) "number"))
 
 (define (string? v)
-  (s-lua (#%eq (#%call type v) "string")))
+  (== (type v) "string"))
 
 (define (userdata? v)
-  (s-lua (#%eq (#%call type v) "userdata")))
+  (== (type v) "userdata"))
 
 (define (function? v)
-  (s-lua (#%eq (#%call type v) "function")))
+  (== (type v) "function"))
 
 (define (thread? v)
-  (s-lua (#%eq (#%call type v) "thread")))
+  (== (type v) "thread"))
 
 (define (table? v)
-  (s-lua (#%eq (#%call type v) "table")))
+  (== (type v) "table"))

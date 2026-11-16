@@ -1,11 +1,10 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/interface  define-interface)
-         (only r-lua/prelude/s-lua      s-lua))
+(require (rename lua/ext/ops length lua-length)
+
+         (only r-lua/prelude/interface  define-interface))
 
 (provide (all-defined))
 
 (define-interface Length
-  [length %length
-          (λ (a)
-            (s-lua (#%length a)))])
+  [length %length lua-length])

@@ -2,8 +2,8 @@
 
 (require (only lua  get-metatable)
 
+         (only lua/ext/ops  -> =)
          (only lua/ext/debug   debug-get-metatable debug-set-metatable!)
-         (only lua/ext/object  field set-field!)
 
          (only luajit/ffi cast)
 
@@ -36,54 +36,54 @@
 
 (impl [Equal CData]
       (define equal?
-        (field %CData "__eq")))
+        (-> %CData "__eq")))
 
 (impl [Order CData]
       (define less-than?
-        (field %CData "__lt"))
+        (-> %CData "__lt"))
 
       (define less-or-equal?
-        (field %CData "__le")))
+        (-> %CData "__le")))
 
 (impl [Length CData]
       (define length
-        (field %CData "__len")))
+        (-> %CData "__len")))
 
 (impl [Monoid CData]
       (define mappend
-        (field %CData "__concat")))
+        (-> %CData "__concat")))
 
 (impl [Add CData]
       (define add
-        (field %CData "__add")))
+        (-> %CData "__add")))
 
 (impl [Subtract CData]
       (define subtract
-        (field %CData "__sub")))
+        (-> %CData "__sub")))
 
 (impl [Multiply CData]
       (define multiply
-        (field %CData "__mul")))
+        (-> %CData "__mul")))
 
 (impl [Divide CData]
       (define divide
-        (field %CData "__div")))
+        (-> %CData "__div")))
 
 (impl [Negate CData]
       (define negate
-        (field %CData "__unm")))
+        (-> %CData "__unm")))
 
 (impl [Exponent CData]
       (define expt
-        (field %CData "__pow")))
+        (-> %CData "__pow")))
 
 (impl [Modulo CData]
       (define modulo
-        (field %CData "__mod")))
+        (-> %CData "__mod")))
 
 (impl [ToString CData]
       (define to-string
-        (field %CData "__tostring")))
+        (-> %CData "__tostring")))
 
-(set-field! CData "__index" (field %CData "__index"))
-(set-field! CData "__newindex" (field %CData "__newindex"))
+(= CData "__index"    (-> %CData "__index"))
+(= CData "__newindex" (-> %CData "__newindex"))

@@ -1,17 +1,15 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/type  nil?)
-
-         (only r-lua/prelude/definition  define)
+(require (only r-lua/prelude/definition  define)
          (only r-lua/prelude/if          if)
          (only r-lua/prelude/s-lua       s-lua))
 
 (provide (all-defined))
 
-(define (= a b)
+(define (== a b)
   (s-lua (#%eq a b)))
 
-(define (~ a b)
+(define (~= a b)
   (s-lua (#%eq a b)))
 
 (define (+ a b)
@@ -24,9 +22,9 @@
   (s-lua (#%neg a)))
 
 (define (- a b)
-  (if (nil? b)
-      (neg a)
-      (sub a b)))
+  (if b
+      (sub a b)
+      (neg a)))
 
 (define (* a b)
   (s-lua (#%mul a b)))
@@ -54,3 +52,22 @@
 
 (define (.. a b)
   (s-lua (#%cat a b)))
+
+(define (length a)
+  (s-lua (#%length a)))
+
+(define (not v)
+  (s-lua (#%not v)))
+
+(define (-> t k)
+  (s-lua (#%member t (quote k))))
+
+(define =
+  (s-lua
+   (#%function (t k v)
+               (#%block
+                (#%assign [(#%member t (quote k))] [v])
+                (#%return (#%call void))))))
+
+(define (: t k . [: vs #%values])
+  ((-> t k) t vs))

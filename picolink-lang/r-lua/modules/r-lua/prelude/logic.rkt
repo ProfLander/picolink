@@ -1,11 +1,13 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/binding     let)
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/if          if)
-         (only r-lua/prelude/s-lua       s-lua))
+(require (only lua/ext/ops  not)
 
-(provide (all-defined))
+         (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/if          if))
+
+(provide (all-defined)
+         not)
 
 (define-macro and
 
@@ -30,7 +32,3 @@
 
   [(_ a)
    #'a])
-
-(define (not v)
-  (s-lua (#%not v)))
-

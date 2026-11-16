@@ -22,7 +22,6 @@
          (only r-lua/prelude/interface/length     Length length)
          (only r-lua/prelude/interface/monoid     Monoid)
          (only r-lua/prelude/logic                or)
-         (only r-lua/prelude/s-lua                s-lua)
          (only r-lua/prelude/type                 define-type))
 
 (provide (all-defined)

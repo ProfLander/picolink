@@ -20,8 +20,7 @@
                less-than?
                less-or-equal?
                greater-than?
-               greater-or-equal?)
-         (only r-lua/prelude/s-lua            s-lua))
+               greater-or-equal?))
 
 (provide (all-defined))
 

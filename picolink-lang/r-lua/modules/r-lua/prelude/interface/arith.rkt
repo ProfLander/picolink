@@ -2,8 +2,7 @@
 
 (require (only lua/ext/ops  + sub neg * / ^ %)
 
-         (only r-lua/prelude/interface        define-interface)
-         (only r-lua/prelude/s-lua            s-lua))
+         (only r-lua/prelude/interface        define-interface))
 
 (provide (all-defined))
 

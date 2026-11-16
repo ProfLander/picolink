@@ -2,8 +2,7 @@
 
 (require (only luajit/table  new clear)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 

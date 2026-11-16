@@ -2,8 +2,8 @@
 
 (require (only lua/string format)
 
-         (only lua/ext/type table?)
-         (only lua/ext/object field set-field!)
+         (only lua/ext/ops    -> = length)
+         (only lua/ext/type   table?)
 
          (only r-lua/prelude/definition  define)
          (only r-lua/prelude/error       error)
@@ -22,12 +22,12 @@
 
 (define (table-ref t k)
   (check-table t)
-  (field t k))
+  (-> t k))
 
 (define (table-set! t k v)
   (check-table t)
-  (set-field! t k v))
+  (= t k v))
 
 (define (table-length t)
   (check-table t)
-  (s-lua (#%length t)))
+  (length t))

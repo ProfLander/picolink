@@ -1,6 +1,6 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/ops  = + - * <= ..)
+(require (only lua/ext/ops  == + - * <= ..)
          (only lua/ext/table
                array-table
                table-ref
@@ -200,7 +200,7 @@
 (define (handle-valid? handle)
   (let-values ([(pool-id chunk-index generation) (unpack-handle handle)])
     (let ([pool (get-pool pool-id)])
-      (= (pool-generation pool chunk-index) generation))))
+      (== (pool-generation pool chunk-index) generation))))
 
 (define (validate-handle handle)
   (unless (handle-valid? handle)
@@ -293,7 +293,7 @@
 
     (let ([chunk-count (pool-chunk-count pool)])
 
-      (when (= new-top chunk-count)
+      (when (== new-top chunk-count)
 
         (let* ([new-chunk-count  (* chunk-count 2)]
                [chunk-size  (pool-chunk-size  pool)]
@@ -425,7 +425,7 @@
                   (pool-name pool) chunk-index generation)
 
       (let ([ref-count (pool-decrement-ref-count! pool chunk-index)])
-        (when (= 0 ref-count)
+        (when (== 0 ref-count)
           (pool-increment-generation! pool chunk-index)
           (pool-return-free-index! pool chunk-index))))))
 
@@ -453,7 +453,7 @@
     (let* ([pool       (get-pool id)]
            [chunk-size (pool-chunk-size pool)])
 
-      (if (= 1 chunk-size)
+      (if (== 1 chunk-size)
 
           (pool-value->string pool chunk-index 0)
 
@@ -462,7 +462,7 @@
 
                 (let ([str (pool-value->string pool chunk-index offset)])
                   (.. acc
-                      (if (= 0 offset)
+                      (if (== 0 offset)
                           str
                           (.. " " str)))))
 

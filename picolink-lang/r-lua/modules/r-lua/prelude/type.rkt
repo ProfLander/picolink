@@ -3,7 +3,7 @@
 (require (only lua         get-metatable set-metatable!)
          (only lua/string  format)
 
-         (only lua/ext/ops  =)
+         (only lua/ext/ops  ==)
 
          (only r-lua/prelude/binding     let)
          (only r-lua/prelude/condition   unless)
@@ -22,7 +22,7 @@
    (table [__tostring (const "#<Type>")])))
 
 (define (Type? v)
-  (= (get-metatable v) Type))
+  (== (get-metatable v) Type))
 
 (define (check-Type v)
   (unless (Type? v)
@@ -49,7 +49,7 @@
          (define (predicate-name v)
            (and v
                 (let ([mt (get-metatable v)])
-                  (= mt name)))))))])
+                  (== mt name)))))))])
 
 (define (ascribe type value)
   (set-metatable! value type))

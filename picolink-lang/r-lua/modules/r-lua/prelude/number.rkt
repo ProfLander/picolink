@@ -2,9 +2,9 @@
 
 (require (only lua  set-metatable!)
 
+         (only lua/ext/ops  ->)
          (only lua/ext/type    number?)
          (only lua/ext/debug   debug-set-metatable!)
-         (only lua/ext/object  field)
          
          (only r-lua/runtime/pool/type    Pooled)
          (only r-lua/runtime/pool/handle  handle?)
@@ -63,7 +63,7 @@
                    Pooled
                    Number)]
 
-           [out (field (debug-set-metatable! self mt) key)])
+           [out (-> (debug-set-metatable! self mt) key)])
 
       (debug-set-metatable! self %Number)
 

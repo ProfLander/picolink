@@ -1,11 +1,10 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/interface  define-interface)
-         (only r-lua/prelude/s-lua      s-lua))
+(require (only lua/ext/ops  ==)
+
+         (only r-lua/prelude/interface  define-interface))
 
 (provide (all-defined))
 
 (define-interface Equal
-  [equal? %equal?
-          (λ (a b)
-            (s-lua (#%eq a b)))])
+  [equal? %equal? ==])

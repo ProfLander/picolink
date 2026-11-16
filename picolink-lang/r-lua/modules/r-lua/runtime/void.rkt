@@ -2,9 +2,10 @@
 
 (require (only lua  get-metatable set-metatable!)
 
+         (only lua/ext/ops  ==)
+
          (only r-lua/prelude/definition       define)
          (only r-lua/prelude/function         const)
-         (only r-lua/prelude/s-lua            s-lua)
          (only r-lua/prelude/table            table))
 
 (provide void void:type void?)
@@ -24,4 +25,4 @@
   (const %void))
 
 (define (void? v)
-  (s-lua (#%eq v %void)))
+  (== v %void))

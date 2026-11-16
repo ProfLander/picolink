@@ -3,9 +3,8 @@
 (require (only lua         get-metatable set-metatable!)
          (only lua/string  format)
 
-         (only lua/ext/ops        =)
+         (only lua/ext/ops        == -> :)
          (only lua/ext/table      table-ref table-set!)
-         (only lua/ext/object     field send)
 
          (only r-lua/prelude/binding     let)
          (only r-lua/prelude/condition   unless)
@@ -28,7 +27,7 @@
 (define (Interface? v)
   (and v
        (let ([mt (get-metatable v)])
-         (= mt Interface))))
+         (== mt Interface))))
 
 (define (check-Interface v)
   (unless (Interface? v)
@@ -41,11 +40,11 @@
   (λ (self . [: args #%values])
 
     (let ([iface-name (table-ref interface "%name")])
-      (unless (field self iface-name)
+      (unless (-> self iface-name)
         (error (format "%s does not implement %s"
                        self iface-name))))
 
-    (let ([method (or (field self method)
+    (let ([method (or (-> self method)
                       (table-ref (table-ref interface "%member-defaults")
                                  method))])
       (method self args))))
