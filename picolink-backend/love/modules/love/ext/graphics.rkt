@@ -37,8 +37,8 @@
   points
   polygon
   present
-  print
-  printf
+  [print                 graphics-print]
+  [printf                graphics-printf]
   rectangle
   stencil
 
