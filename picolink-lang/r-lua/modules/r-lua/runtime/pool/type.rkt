@@ -26,7 +26,7 @@
          (only r-lua/prelude/definition           define)
          (only r-lua/prelude/for                  for)
          (only r-lua/prelude/interface            impl)
-         (only r-lua/prelude/interface/copy       Copy)
+         (only r-lua/prelude/interface/copy       Copy copy)
          (only r-lua/prelude/interface/drop       Drop drop)
          (only r-lua/prelude/interface/equal      Equal)
          (only r-lua/prelude/interface/to-string  ToString)
@@ -47,9 +47,7 @@
 
 ; Reusable pool type methods
 
-(define copy-handle! pool-retain!)
-
-(define (drop-handle! self)
+(define (foreach-handle! self f)
 
   (let* ([pool-id     (handle-pool  self)]
          [chunk-index (handle-chunk self)]
@@ -63,12 +61,30 @@
       (let ([field (-> fields field-index)])
         (for ([offset (in-range 0 chunk-size)])
 
-          (pool-debug "pool ~a drop field ~a chunk ~a offset ~a"
-                      name field chunk-index offset)
+          (f pool field chunk-index offset
+             (pool-field pool field chunk-index offset)))))))
 
-          (drop (pool-field pool field chunk-index offset)))))
+(define (copy-handle! self)
 
-    (pool-release! self)))
+  (foreach-handle!
+   self
+   (λ (pool field chunk-index offset value)
+     (pool-debug "~a pool copying field ~a chunk ~a offset ~a"
+                 (pool-name pool) field chunk-index offset)
+     (copy value)))
+
+  (pool-retain! self))
+
+(define (drop-handle! self)
+
+  (foreach-handle!
+   self
+   (λ (pool field chunk-index offset value)
+     (pool-debug "~a pool dropping field ~a chunk ~a offset ~a"
+                 (pool-name pool) field chunk-index offset)
+     (drop value)))
+
+  (pool-release! self))
 
 ; Chunk printer
 
