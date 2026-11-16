@@ -1,13 +1,14 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table  table-ref)
+(require (only lua  %require)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only lua/ext/table    table-ref)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
-(define ffi (s-lua (#%call require "ffi")))
+(define ffi (%require "ffi"))
 
 (define c-def        (table-ref ffi "cdef"))
 (define C            (table-ref ffi "C"))

@@ -1,13 +1,14 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table  table-ref)
+(require (only lua  %require)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only lua/ext/table    table-ref)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
-(define jit (s-lua (#%call require "jit")))
+(define jit (%require "jit"))
 
 (define on          (table-ref jit "on"))
 (define off         (table-ref jit "off"))

@@ -1,13 +1,14 @@
 #lang picolink/r-lua/base
 
-(require (only lua/ext/table  table-ref)
+(require (only lua  %require)
 
-         (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+         (only lua/ext/table    table-ref)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
-(define bit (s-lua (#%call require "bit")))
+(define bit (%require "bit"))
 
 (define to-bit                 (table-ref bit "tobit"))
 (define to-hex                 (table-ref bit "tohex"))

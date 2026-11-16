@@ -33,7 +33,7 @@
   _VERSION
   xpcall
 
-  require
+  [require        %require]
   module
 
   coroutine

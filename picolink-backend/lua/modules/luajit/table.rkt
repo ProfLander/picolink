@@ -1,9 +1,10 @@
 #lang picolink/r-lua/base
 
-(require (only r-lua/prelude/definition  define)
-         (only r-lua/prelude/s-lua       s-lua))
+(require (only lua  %require)
+
+         (only r-lua/prelude/definition  define))
 
 (provide (all-defined))
 
-(define new   (s-lua (#%call require "table.new")))
-(define clear (s-lua (#%call require "table.clear")))
+(define new   (%require "table.new"))
+(define clear (%require "table.clear"))
