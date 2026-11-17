@@ -17,7 +17,6 @@
 
 (define (register-pool! pool)
   (let ([id (+ (table-length pool-registry) 1)])
-    (print (format "registering pool with id ~a" id))
     (table-set! pool-registry id pool)
     (table-set! pool "id" id)))
 
