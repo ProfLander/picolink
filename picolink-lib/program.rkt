@@ -109,13 +109,14 @@
 
 (define (compile-program program backend)
 
-  (let* ([mod-ids (scope-idents program)])
+  (let* ([mod-idents (scope-idents program)])
 
-    (for/list ([mod-id (in-list mod-ids)])
+    (for/list ([mod-ident (in-list mod-idents)])
+
       (define mod
-        (lookup-in-program mod-id))
+        (lookup-in-program mod-ident))
 
-      (compile-parsed-module mod-id backend mod))))
+      (compile-parsed-module mod-ident backend mod))))
 
 (define (parallel-compile-program program backend)
 
@@ -167,8 +168,6 @@
            (printf "~a:\n" (syntax-e mod-id))
 
            (replay-deferred-output out-events (current-output-port))
-           (replay-deferred-output err-events (current-error-port))
-
-           (displayln ""))
+           (replay-deferred-output err-events (current-error-port)))
 
          result]))))
