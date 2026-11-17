@@ -19,7 +19,8 @@
 
 (provide (all-defined-out))
 
-(define (current-debug) #f)
+(define current-debug
+  (make-parameter #f))
 
 (define (r-lua->s-lua stx)
 
