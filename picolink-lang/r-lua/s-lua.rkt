@@ -30,21 +30,19 @@
 
     (when debug
       (displayln "anf:")
-      (println (syntax->datum anf)))
+      (println (syntax->datum anf))
+      (displayln ""))
 
     (define s-lua (r-lua-anf->s-lua anf))
 
     (when debug
       (displayln "s-lua:")
-      (println (syntax->datum s-lua)))
+      (println (syntax->datum s-lua))
+      (displayln ""))
 
     s-lua))
 
 (define (hoist-do stx)
-
-  (when (current-debug)
-    (displayln "hoist-do:")
-    (println stx))
 
   (syntax-parse stx
     #:literal-sets [s-lua-ir-literals]
