@@ -36,7 +36,7 @@
 #:interact     lua-interact
 
 (define current-debug
-  (make-parameter #t))
+  (make-parameter #f))
 
 (define (lua-search-paths)
   (list 'picolink/lua/modules))
