@@ -44,7 +44,7 @@
 
 ; Debugging
 
-(define debug #t)
+(define debug #f)
 
 (define (pool-debug fmt . [: vs #%values])
   (when debug
