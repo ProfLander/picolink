@@ -80,12 +80,9 @@
              (length mod-idents))
 
     (displayln "circular dependency:" (current-error-port))
-    (eprintf "  order length: ~a\n" (length order))
-    (eprintf "  mod-idents length: ~a\n" (length mod-idents))
-    (displayln "\norder:" (current-error-port))
-    (println (map syntax->datum order) (current-error-port))
-    (displayln "\nmod-idents:" (current-error-port))
-    (println (map syntax->datum mod-idents) (current-error-port))
+    (println (remove* (map syntax->datum order)
+                      (map syntax->datum mod-idents))
+             (current-error-port))
     (error ""))
 
   order)
