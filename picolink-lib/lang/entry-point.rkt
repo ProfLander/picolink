@@ -201,16 +201,18 @@
                                   (backend-search-paths backend)))
 
      (define dependencies
-       (filter (λ (dep)
-                 (and (not (datum=? dep #'target))
+       (remove-duplicates
+        (filter (λ (dep)
+                  (and (not (datum=? dep #'target))
 
-                      (not (member dep (attribute rest)
-                                   datum=?))
+                       (not (member dep (attribute rest)
+                                    datum=?))
 
-                      (not (member dep (attribute required)
-                                   datum=?))))
+                       (not (member dep (attribute required)
+                                    datum=?))))
 
-               (source-module-dependencies mod)))
+                (source-module-dependencies mod))
+        datum=?))
 
      (define dependency-modules
        (map module-ident dependencies))
