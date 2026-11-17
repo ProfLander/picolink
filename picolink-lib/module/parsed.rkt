@@ -9,7 +9,10 @@
          picolink/language
          picolink/module/source
          picolink/module/compiled
-         picolink/module/scopes)
+         picolink/module/scopes
+
+         (only-in picolink/r-lua/anf   [current-debug debug:r-lua->anf])
+         (only-in picolink/r-lua/s-lua [current-debug debug:anf->s-lua]))
 
 (provide (all-defined-out))
 
@@ -55,17 +58,23 @@
 
   (with-parsed-module-scopes parsed
 
-    (let ([lang (parsed-module-language parsed)]
-          [stx  (parsed-module-stx parsed)])
+    (let* ([lang (parsed-module-language parsed)]
+           [stx  (parsed-module-stx parsed)]
+           [stx (and stx
+                     (parameterize ([debug:r-lua->anf
+                                     (datum=? ident #'entry-point)]
+
+                                    [debug:anf->s-lua
+                                     (datum=? ident #'entry-point)])
+
+                       (compile-module-syntax lang backend stx)))])
 
       (compiled-module ident
                        lang
                        (current-require-scope)
                        (current-provide-scope)
                        (current-def-ctx)
-                       (and stx (compile-module-syntax lang
-                                                       backend
-                                                       stx))))))
+                       stx))))
 
 (define-syntax with-parsed-module-scopes
   (syntax-parser
