@@ -46,14 +46,16 @@
 (define-struct quit-with [world]
   #:pool-size 1)
 
-(define (update-with-then result f)
-  (if (quit-with? result)
+(define-macro update-with-then
+  [(_ [result result-expr] body ...)
+   #'(let ([result result-expr])
+       (if (quit-with? result)
 
-      (let ([world (copy (quit-with-world result))])
-        (drop result)
-        world)
+           (let ([world (copy (quit-with-world result))])
+             (drop result)
+             world)
 
-      (f result)))
+           (begin body ...)))])
 
 (define (%love-runner-handle-events world handlers)
 
@@ -130,22 +132,20 @@
               (repl-read)
 
               (update-with-then
-               (%love-runner-handle-events world-1 handlers)
+               [world-1 (%love-runner-handle-events world-1 handlers)]
 
-               (λ (world-1)
-                 (update-with-then
-                  (%love-runner-update world-1 handlers)
+               (update-with-then
+                [world (%love-runner-update world-1 handlers)]
 
-                  (λ (world)
-                    (%love-runner-draw world handlers)
-                    (drop world-1)
+                (%love-runner-draw world handlers)
+                (drop world-1)
 
-                    (when timer
-                      (sleep 0.001))
+                (when timer
+                  (sleep 0.001))
 
-                    (yield)
+                (yield)
 
-                    (runner world handlers))))))])
+                (runner world handlers))))])
 
     (runner world handlers)))
 
