@@ -1,4 +1,11 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
+
+(require (only r-lua/runtime/print  print)
+
+         (only r-lua/prelude/arith  + - * /)
+
+         r-lua/prelude/number
+         r-lua/prelude/string)
 
 (print "+:")
 (+ 1 2 3 4)

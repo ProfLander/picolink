@@ -1,4 +1,20 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
+
+(require (only r-lua/runtime/print  print)
+
+         (only r-lua/prelude/definition        define)
+         (only r-lua/prelude/interface/length  length)
+         (only r-lua/prelude/list              list)
+         (only r-lua/prelude/sequence          in-range)
+         (only r-lua/prelude/vector
+               vector
+               vector-ref
+               vector->list
+               list->vector
+               for/vector)
+
+         r-lua/prelude/number
+         r-lua/prelude/string)
 
 (define inst (vector 2 4 6 8))
 

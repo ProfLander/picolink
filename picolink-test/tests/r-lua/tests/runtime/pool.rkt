@@ -1,11 +1,14 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
-(require (only lua/ext/table  table-length table-ref)
+(require (only r-lua/runtime/pool       make-pool pool-allocate!)
+         (only r-lua/runtime/pool/type  Chunk)
 
-         r-lua/runtime/pool
-         r-lua/runtime/pool/type
-         r-lua/runtime/pool/handle
-         r-lua/runtime/pool/registry)
+         (only r-lua/prelude/definition      define)
+         (only r-lua/prelude/interface/copy  copy)
+         (only r-lua/prelude/interface/drop  drop)
+
+         r-lua/prelude/string
+         r-lua/prelude/number)
 
 (define pool (make-pool "test" Chunk 1 2
                         "x" "y"))

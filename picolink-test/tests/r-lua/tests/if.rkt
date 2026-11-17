@@ -1,4 +1,14 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
+
+(require (only r-lua/runtime/print     print)
+
+         (only r-lua/prelude/binding   let-values)
+         (only r-lua/prelude/function  identity)
+         (only r-lua/prelude/if        if)
+         (only r-lua/prelude/values    values)
+
+         r-lua/prelude/number
+         r-lua/prelude/string)
 
 (if #t 1234 5678)
 

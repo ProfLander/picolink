@@ -1,4 +1,17 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
+
+(require (only r-lua/runtime/print  print)
+
+         (only r-lua/prelude/assignment  set!)
+         (only r-lua/prelude/binding     let)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/sequencing  begin)
+
+         ; FIXME: Should be implicitly imported by lambda
+         (only r-lua/prelude/list        list)
+
+         r-lua/prelude/string
+         r-lua/prelude/number)
 
 (define thing "define-thing")
 thing

@@ -1,3 +1,3 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
 (require tests/macro-hygiene/a)

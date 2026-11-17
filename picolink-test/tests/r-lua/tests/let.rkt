@@ -1,4 +1,4 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
 (require tests/let/basic
          tests/let/nested

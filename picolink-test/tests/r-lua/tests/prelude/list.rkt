@@ -1,4 +1,25 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
+
+(require (only r-lua/runtime/print  print)
+
+         (only r-lua/prelude/definition        define)
+         (only r-lua/prelude/interface/drop    drop)
+         (only r-lua/prelude/interface/length  length)
+         (only r-lua/prelude/list
+               list
+               list?
+               cons
+               car
+               cdr
+               cadr
+               cddr
+               pair?
+               null
+               null?)
+
+         r-lua/prelude/boolean
+         r-lua/prelude/number
+         r-lua/prelude/string)
 
 (print "null:")
 null

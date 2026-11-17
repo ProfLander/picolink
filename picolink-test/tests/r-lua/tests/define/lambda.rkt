@@ -1,6 +1,16 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
 
-(define identity (λ (x) x))
+(require (only r-lua/runtime/print       print)
+
+         (only r-lua/prelude/binding     let-values)
+         (only r-lua/prelude/definition  define)
+         (only r-lua/prelude/function    identity)
+         (only r-lua/prelude/lambda      λ)
+         (only r-lua/prelude/list        list)
+         (only r-lua/prelude/vector      vector)
+
+         r-lua/prelude/number
+         r-lua/prelude/string)
 
 (identity 1)
 

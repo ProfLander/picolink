@@ -1,4 +1,14 @@
-#lang picolink/r-lua
+#lang picolink/r-lua/base
+
+(require (only r-lua/runtime/print  print)
+
+         (only r-lua/prelude/for       for for/fold for*)
+         (only r-lua/prelude/format    format)
+         (only r-lua/prelude/list      list cons null for/list in-list)
+         (only r-lua/prelude/sequence  in-naturals in-range)
+
+         r-lua/prelude/number
+         r-lua/prelude/string)
 
 (for ([i (in-naturals)]
       [j (in-list (list 3 2 1))])
