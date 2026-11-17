@@ -59,7 +59,17 @@
    "~=" "__ne__"
    "?"  "__question__"
    "!"  "__exclamation__"
-   "λ"  "__lambda__"))
+   "λ"  "__lambda__"
+   "1"  "__one__"
+   "2"  "__two__"
+   "3"  "__three__"
+   "4"  "__four__"
+   "5"  "__five__"
+   "6"  "__six__"
+   "7"  "__seven__"
+   "8"  "__eight__"
+   "9"  "__nine__"
+   "0"  "__zero__"))
 
 (define reserved-identifier->lua-name
   (hash
