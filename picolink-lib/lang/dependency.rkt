@@ -41,7 +41,6 @@
 
        (when (current-debug)
          (displayln "#%define-dependency")
-         (println (syntax->datum this-syntax))
          (displayln ""))
 
        (syntax-local-lift-provide

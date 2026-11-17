@@ -271,20 +271,40 @@
      (define backend
        (syntax-local-backend this-syntax))
 
+     (when (current-debug)
+       (displayln "parsing...")
+       (displayln ""))
+
      (define program (parse-program (attribute mod)))
 
      (parameterize ([current-program-scope program])
+
+       (when (current-debug)
+         (displayln "compiling...")
+         (displayln ""))
 
        (define compiled
          (if (current-parallel)
              (parallel-compile-program program backend)
              (compile-program program backend)))
 
+       (when (current-debug)
+         (displayln "transforming...")
+         (displayln ""))
+
        (define transformed
          (backend-transform backend this-syntax compiled))
 
+       (when (current-debug)
+         (displayln "linking...")
+         (displayln ""))
+
        (define linked
          (backend-link backend this-syntax transformed))
+
+       (when (current-debug)
+         (displayln "running...")
+         (displayln ""))
 
        (define runner
          (backend-run backend this-syntax linked))
