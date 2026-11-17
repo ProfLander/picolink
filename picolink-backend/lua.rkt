@@ -83,14 +83,14 @@
     [(#%chunk (#%block)) #t]
     [_ #f]))
 
-(define (module-requires-empty? prog mod)
-  (null? (module-requires prog mod)))
+(define (module-requires-empty? mod)
+  (null? (in-scope (compiled-module-require-scope mod))))
 
 (define (module-provides-empty? mod)
   (null? (module-provides mod)))
 
-(define (module-empty? prog mod)
-  (and (module-requires-empty? prog mod)
+(define (module-empty? mod)
+  (and (module-requires-empty? mod)
        (module-provides-empty? mod)
        (module-body-empty? mod)))
 
@@ -130,7 +130,7 @@
   (make-parameter splice-runtime-post))
 
 (define (lua-transform-module _lctx prog mod)
-  (if (module-empty? prog mod)
+  (if (module-empty? mod)
 
       (compiled-module-update mod #:stx #f)
 
@@ -258,7 +258,7 @@
 (define (splice-requires prog mod)
 
   (define (not-empty? ident)
-    (not (module-empty? prog (program-module prog (syntax-e ident)))))
+    (not (module-empty? (program-module prog (syntax-e ident)))))
 
   (define module-bindings
     (for/list ([req-mod (in-list (reverse
