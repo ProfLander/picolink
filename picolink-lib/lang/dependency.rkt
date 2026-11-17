@@ -12,16 +12,25 @@
 (begin-for-syntax
 
   (define current-debug
-    (make-parameter #f))
+    (make-parameter #t))
 
   (define (#%dependency-begin lctx language body)
+
+    (when (current-debug)
+      (displayln "#%dependency-begin")
+      (displayln ""))
 
     (with-syntax ([#%language (language-ident lctx)]
                   [(body ...) body])
 
-      #`(begin
-          (require (for-syntax (only-in #,language #%language)))
-          (#%define-dependency #,language #%language body ...)))))
+      (syntax-local-lift-require
+
+       (syntax-local-introduce
+        #`(for-syntax (rename #,language #%language #%language)))
+
+       #`(#%define-dependency #,language #%language body ...)
+
+       #f))))
 
 (define-syntax #%define-dependency
   (syntax-parser
@@ -32,12 +41,17 @@
 
        (when (current-debug)
          (displayln "#%define-dependency")
-         (println this-syntax))
+         (println (syntax->datum this-syntax))
+         (displayln ""))
 
-       #'(begin
-           (require (for-syntax (only-in language #%language)))
+       (syntax-local-lift-provide
+        #'(for-syntax #%module))
 
-           (provide (for-syntax #%module))
+       (syntax-local-lift-module-end-declaration
+        #'(begin-for-syntax
+            (define #%module mod)))
 
-           (define-for-syntax #%module
-             mod)))]))
+       (syntax-local-lift-require
+        #'(for-syntax (rename language #%language #%language))
+        #'(begin)
+        #f))]))
