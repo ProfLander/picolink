@@ -10,6 +10,9 @@
 (define current-debug
   (make-parameter #f))
 
+(define current-debug-binds
+  (make-parameter #f))
+
 (struct let-bind [ident expr]
   #:transparent)
 
@@ -36,7 +39,8 @@
 
   (when (current-debug)
     (displayln "r-lua->r-lua-anf:")
-    (println (syntax->datum stx)))
+    (println (syntax->datum stx))
+    (displayln ""))
 
   (syntax-parse stx
     [mod:module-level
@@ -257,7 +261,7 @@
 
 (define (binds+atom->r-lua-anf binds atom)
 
-  (when (current-debug)
+  (when (current-debug-binds)
     (displayln "binds+atom->r-lua-anf:")
     (displayln "binds:")
     (println binds)
