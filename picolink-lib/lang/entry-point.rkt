@@ -28,9 +28,13 @@
 (begin-for-syntax
 
   (define current-debug
-    (make-parameter #f))
+    (make-parameter #t))
 
   (define (#%entry-point-begin lctx language-path body)
+
+    (when (current-debug)
+      (displayln "#%entry-point-begin")
+      (displayln ""))
 
     (current-is-entry-point #f)
 
@@ -75,7 +79,8 @@
 
      (when (current-debug)
        (displayln "#%load-backend")
-       (println this-syntax))
+       (println (syntax->datum this-syntax))
+       (displayln ""))
 
      (define backend-path
        (current-backend))
@@ -136,7 +141,8 @@
 
      (when (current-debug)
        (displayln "#%define-base-modules")
-       (println this-syntax))
+       (println (syntax->datum this-syntax))
+       (displayln ""))
 
      (define backend (syntax-local-backend this-syntax))
      (define backend-mods (backend-modules backend))
@@ -185,7 +191,8 @@
 
   (when (current-debug)
     (displayln "#%require-dependencies")
-    (println stx))
+    (println (syntax->datum stx))
+    (displayln ""))
 
   (syntax-parse stx
     [(_ (target rest ...) (required ...))
@@ -258,7 +265,8 @@
 
      (when (current-debug)
        (displayln "#%build-program")
-       (println this-syntax))
+       (println (syntax->datum this-syntax))
+       (displayln ""))
 
      (define backend
        (syntax-local-backend this-syntax))
