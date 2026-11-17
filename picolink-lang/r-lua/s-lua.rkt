@@ -29,13 +29,13 @@
 
     (when debug
       (displayln "anf:")
-      (println anf))
+      (println (syntax->datum anf)))
 
     (define s-lua (r-lua-anf->s-lua anf))
 
     (when debug
       (displayln "s-lua:")
-      (println s-lua))
+      (println (syntax->datum s-lua)))
 
     s-lua))
 

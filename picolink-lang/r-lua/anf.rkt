@@ -36,7 +36,7 @@
 
   (when (current-debug)
     (displayln "r-lua->r-lua-anf:")
-    (println stx))
+    (println (syntax->datum stx)))
 
   (syntax-parse stx
     [mod:module-level
