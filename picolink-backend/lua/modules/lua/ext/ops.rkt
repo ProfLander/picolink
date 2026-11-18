@@ -10,7 +10,7 @@
   (s-lua (#%eq a b)))
 
 (define (~= a b)
-  (s-lua (#%eq a b)))
+  (s-lua (#%ne a b)))
 
 (define (+ a b)
   (s-lua (#%add a b)))
