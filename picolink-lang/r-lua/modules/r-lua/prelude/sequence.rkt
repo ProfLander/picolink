@@ -2,16 +2,21 @@
 
 (require (only lua/ext/ops + < >)
 
-         (only r-lua/prelude/assignment       set!)
-         (only r-lua/prelude/binding          let)
-         (only r-lua/prelude/definition       define)
-         (only r-lua/prelude/function         thunk)
-         (only r-lua/prelude/if               if)
-         (only r-lua/prelude/unit             define-unit))
+         (only r-lua/prelude/assignment           set!)
+         (only r-lua/prelude/binding              let)
+         (only r-lua/prelude/definition           define)
+         (only r-lua/prelude/function             thunk const)
+         (only r-lua/prelude/if                   if)
+         (only r-lua/prelude/interface            impl)
+         (only r-lua/prelude/interface/to-string  ToString)
+         (only r-lua/prelude/unit                 define-unit))
 
 (provide (all-defined))
 
 (define-unit sequence-null)
+
+(impl [ToString sequence-null:type]
+      (define to-string (const "#<sequence-null>")))
 
 (define (sequence-map seq f)
   (thunk
