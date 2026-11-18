@@ -6,7 +6,7 @@
 
 (define-intrinsics
 
-  #:template (#%member (#%member love timer) _)
+  #:template (#%member (#%member (#%member _G love) timer) _)
 
   [getAverageDelta get-average-delta]
   [getDelta        get-delta]

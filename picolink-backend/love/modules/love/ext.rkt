@@ -5,12 +5,13 @@
 (provide (all-defined))
 
 (define-intrinsics
+  #:template (#%member _G _)
+
   love
   arg)
 
 (define-intrinsics
-
-  #:template (#%member love _)
+  #:template (#%member (#%member _G love) _)
 
   [getVersion           get-version]
   [hasDeprecationOutput has-deprecation-output]

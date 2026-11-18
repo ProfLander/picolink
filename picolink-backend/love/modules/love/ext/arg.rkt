@@ -6,6 +6,6 @@
 
 (define-intrinsics
 
-  #:template (#%member (#%member love arg) _)
+  #:template (#%member (#%member (#%member _G love) arg) _)
 
   [parseGameArguments parse-game-arguments])

@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member (#%member love graphics) _)
+  #:template (#%member (#%member (#%member _G love) graphics) _)
 
   ; Types
   Canvas

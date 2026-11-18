@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member math _)
+  #:template (#%member (#%member _G math) _)
   abs
   acos
   asin

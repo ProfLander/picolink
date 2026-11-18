@@ -5,11 +5,11 @@
 (provide (all-defined))
 
 (define-intrinsics
+  #:template (#%member _G _)
   assert
   [collectgarbage collect-garbage]
   dofile
   error
-  _G
   [getfenv        get-fenv]
   [getmetatable   get-metatable]
   ipairs

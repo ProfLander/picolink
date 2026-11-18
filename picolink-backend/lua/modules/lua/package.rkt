@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member package _)
+  #:template (#%member (#%member _G package) _)
   [cpath    c-path]
   loaded
   loaders

@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member string _)
+  #:template (#%member (#%member _G string) _)
   byte
   char
   dump

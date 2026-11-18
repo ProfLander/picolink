@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member table _)
+  #:template (#%member (#%member _G table) _)
   concat
   insert
   maxn

@@ -6,7 +6,7 @@
 
 (define-intrinsics
 
-  #:template (#%member (#%member love event) _)
+  #:template (#%member (#%member (#%member _G love) event) _)
 
   clear
   poll

@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member os _)
+  #:template (#%member (#%member _G os) _)
   clock
   date
   [difftime   diff-time]

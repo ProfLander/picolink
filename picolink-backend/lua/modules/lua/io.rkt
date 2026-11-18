@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member io _)
+  #:template (#%member (#%member _G io) _)
 
   close
   flush

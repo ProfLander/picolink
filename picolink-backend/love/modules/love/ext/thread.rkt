@@ -6,7 +6,7 @@
 
 (define-intrinsics
 
-  #:template (#%member (#%member love thread) _)
+  #:template (#%member (#%member (#%member _G love) thread) _)
 
   Channel
   Thread

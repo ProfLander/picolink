@@ -6,7 +6,7 @@
 
 (define-intrinsics
 
-  #:template (#%member (#%member love filesystem) _)
+  #:template (#%member (#%member (#%member _G love) filesystem) _)
 
   FileDecoder
   FileMode

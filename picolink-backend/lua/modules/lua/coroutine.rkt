@@ -5,7 +5,7 @@
 (provide (all-defined))
 
 (define-intrinsics
-  #:template (#%member coroutine _)
+  #:template (#%member (#%member _G coroutine) _)
   create
   resume
   running
