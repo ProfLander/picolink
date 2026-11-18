@@ -42,23 +42,124 @@
 
     s-lua))
 
-(define (hoist-do stx)
+(define (sink f stx)
+  (syntax-parse stx
+    #:literal-sets [s-lua-ir-literals]
+    [(#%chunk (~and %block (~parse block (sink f #'%block))))
+     (in-s-lua
+      (syntax/loc this-syntax
+        (#%chunk block)))]
+
+    [(#%block body ...
+              (~and %tail
+                    (~parse tail (sink f #'%tail))))
+     (in-s-lua
+      (syntax/loc this-syntax
+        (#%block body ... tail)))]
+
+    [(#%do (~and %block
+                 (~parse block (sink f #'%block))))
+     (in-s-lua
+      (syntax/loc this-syntax
+        (#%do block)))]
+
+    [(#%if cond
+           (~and (#%then %then)
+                 (~parse then (sink f #'%then)))
+           (~and (#%else %else)
+                 (~parse else (sink f #'%else))))
+     (in-s-lua
+      (syntax/loc this-syntax
+        (#%if cond
+              (#%then then)
+              (#%else else))))]
+
+    [(~and %form (~parse form (f #'%form)))
+     (in-s-lua
+      (syntax/loc this-syntax
+        form))]))
+
+(define (sink-return stx)
+  (sink (λ (stx)
+          (quasisyntax/loc stx
+            (#%return #,stx)))
+        stx))
+
+(define (sink-assign vals stx)
+  (sink (λ (stx)
+          (quasisyntax/loc stx
+            (#%assign [#,@vals] [#,stx])))
+        stx))
+
+(define (sink-local vals stx)
 
   (syntax-parse stx
     #:literal-sets [s-lua-ir-literals]
-    [(#%do ~! (#%block body ...))
-     (apply append (map hoist-do (attribute body)))]
-    [_ (list this-syntax)]))
+    [(#%chunk (~and %block (~parse (block) (sink-local vals #'%block))))
+     (list
+      (in-s-lua
+       (syntax/loc this-syntax
+         (#%chunk block))))]
 
-(define (unimplemented)
-  (error "unimplemented"))
+    [(#%block body ...
+              (~and %tail
+                    (~parse (tail ...) (sink-local vals #'%tail))))
+     (list
+      (in-s-lua
+       (syntax/loc this-syntax
+         (#%block body ... tail ...))))]
+
+    [(#%do
+      (#%block body
+               ...
+               (~and %tail
+                     (~parse (temp ...) (generate-temporaries vals))
+                     (~parse tail (sink-assign #'(temp ...) #'%tail)))))
+
+     (list
+      (in-s-lua
+       (quasisyntax/loc this-syntax
+         (#%local [temp ...])))
+      (in-s-lua
+       (quasisyntax/loc this-syntax
+         (#%do
+          (#%block
+           body ...
+           tail))))
+      (in-s-lua
+       (quasisyntax/loc this-syntax
+         (#%local [#,@vals] [temp ...]))))]
+
+    [(#%if (~parse (temp ...) (generate-temporaries vals))
+           cond
+           (~and (#%then %then)
+                 (~parse then (sink-assign #'(temp ...) #'%then)))
+           (~and (#%else %else)
+                 (~parse else (sink-assign #'(temp ...) #'%else))))
+     (list
+      (in-s-lua
+       (quasisyntax/loc this-syntax
+         (#%local [temp ...])))
+      (in-s-lua
+       (syntax/loc this-syntax
+         (#%if cond
+               (#%then then)
+               (#%else else))))
+      (in-s-lua
+       (quasisyntax/loc this-syntax
+         (#%local [#,@vals] [temp ...]))))]
+
+    [form
+     (list
+      (in-s-lua
+       (quasisyntax/loc this-syntax
+         (#%local [#,@vals] [form]))))]))
 
 (define-syntax define-s-lua-syntax-class
   (syntax-parser
     [(_ name body ...)
      #'(define-parser-like-syntax-class name s-lua
          body ...)]))
-
 
 ; TODO: Reinstate tail-do elision in a way that is friendly
 ;       to backend s-lua splicing
@@ -67,9 +168,9 @@
 
   [(#%begin ~! top:top-level ...)
    (in-s-lua
-    (with-syntax ([([top ...] ...) (attribute top.s-lua)])
+    (with-syntax ([(top ...) (apply append (attribute top.s-lua))])
       (syntax/loc this-syntax
-       (#%chunk (#%block top ... ...)))))])
+       (#%chunk (#%block top ...)))))])
 
 (define-s-lua-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
@@ -77,44 +178,21 @@
   [(#%begin ~! top:top-level ...)
    (apply append (attribute top.s-lua))]
 
-  [(#%define ~! name val:expr)
-   (let ([body (hoist-do #'val.s-lua)])
-     (cond
-       [(= 1 (length body))
-        (let ([body (car body)])
-          (syntax-parse body
+  [(#%define ~! name %val:expr)
 
-            #:literal-sets [s-lua-ir-literals]
-            
-            ; Hoist top-level lambda definitions into local functions
-            [(~or (#%function (arg ...) (#%block body ...))
-                  (quote (#%function (arg ...) (#%block body ...))))
-             (list
-              (syntax/loc this-syntax
-                (#%local (#%function name (arg ...)
-                                     (#%block body ...)))))]
+   (syntax-parse (sink-assign #'(name) #'%val.s-lua)
+     #:literal-sets [s-lua-ir-literals]
 
-            ; Otherwise, treat as local binding
-            [_
-             (list
-              (with-syntax ([val body])
-                (syntax/loc this-syntax
-                  (#%local [name] [val]))))]))]
+     [(#%assign [_] [(quote (#%function args body))])
+      (list
+       (syntax/loc this-syntax
+         (#%local (#%function name args body))))]
 
-       [else
-        (list
-         (in-s-lua
-          (syntax/loc this-syntax
-            (#%local [name])))
-         (in-s-lua
-          (let ([body (hoist-do #'val.s-lua)])
-            (with-syntax ([(body ...) (drop-right body 1)]
-                          [tail (last body)])
-              (syntax/loc this-syntax
-                (#%do
-                 (#%block
-                  body ...
-                  (#%assign [name] [tail]))))))))]))]
+     [_
+      (list
+       (syntax/loc this-syntax
+         (#%local [name]))
+       this-syntax)])]
 
   [e:expr
    (list
@@ -122,25 +200,40 @@
      (syntax/loc this-syntax
        e.s-lua)))])
 
+(define hoist-do
+  (syntax-parser
+    #:literal-sets [s-lua-ir-literals]
+
+    [(#%do (#%block body ...))
+     #'(body ...)]
+
+    [body
+     #'(body)]))
+
 (define-s-lua-syntax-class expr
   #:literal-sets [r-lua-ir-literals]
 
   [(#%set! ~! ident expr:expr)
-   (in-s-lua
-    (syntax/loc this-syntax
-      (#%assign [ident] [expr.s-lua])))]
+   (sink-assign #'(ident) #'expr.s-lua)]
 
-  [(#%let-values ~! ([(name:id ...) val:expr] ...)
+  [(#%let-values ~! ((~and [(name:id ...) %val:expr]
+                           (~parse (val ...)
+                                   (sink-local #'(name ...)
+                                               #'%val.s-lua)))
+                     ...)
                  body:expr)
    (in-s-lua
     (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
       (syntax/loc this-syntax
         (#%do
          (#%block
-          (#%local [name ...] [val.s-lua]) ...
+          val ... ...
           body ...)))))]
 
-  [(#%letrec-values ~! ([(name:id ...) val:expr] ...)
+  [(#%letrec-values ~! ((~and [(name:id ...) %val:expr]
+                              (~parse val (sink-assign #'(name ...)
+                                                       #'%val.s-lua)))
+                        ...)
                     body:expr)
    (in-s-lua
     (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
@@ -148,40 +241,34 @@
         (#%do
          (#%block
           (#%local [name ... ...])
-          (#%assign [name ...] [val.s-lua]) ...
+          val ...
           body ...)))))]
 
-  [(#%declare ~! (name ...)
-              body:expr)
+  [(#%begin ~! body:expr ... tail:expr)
    (in-s-lua
-    (with-syntax ([(body ...) (hoist-do #'body.s-lua)])
+    (with-syntax ([(body ...) (attribute body.s-lua)]
+                  [(tail ...) (hoist-do (attribute tail.s-lua))])
       (syntax/loc this-syntax
         (#%do
-         (#%block
-          (#%local [name ...])
-          body ...)))))]
-
-  [(#%begin ~! body:expr ...)
-   (in-s-lua
-    (with-syntax ([(body ...)
-                   (apply append (map hoist-do (attribute body.s-lua)))])
-      (syntax/loc this-syntax
-        (#%do
-         (#%block body ...)))))]
+         (#%block body ... tail ...)))))]
 
   [(#%app ~! expr:expr ...+)
    (in-s-lua
     (syntax/loc this-syntax
       (#%call expr.s-lua ...)))]
 
-  [(#%if ~! cond:expr then:expr else:expr)
-   (with-syntax ([(then-body ...) (hoist-do #'then.s-lua)]
-                 [(else-body ...) (hoist-do #'else.s-lua)])
+  [(#%if ~! cond:expr
+         then:expr
+         else:expr)
+   
+   (with-syntax ([(then ...) (hoist-do #'then.s-lua)]
+                 [(else ...) (hoist-do #'else.s-lua)])
+
      (in-s-lua
       (syntax/loc this-syntax
         (#%if cond.s-lua
-              (#%then (#%block then-body ...))
-              (#%else (#%block else-body ...))))))]
+              (#%then (#%block then ...))
+              (#%else (#%block else ...))))))]
 
   [(#%s-lua ~! form)
    (in-s-lua
@@ -244,38 +331,42 @@
 
        [_ this-syntax]))
 
-   (let ([body (hoist-do #'body.s-lua)]
+   (let ([body #'body.s-lua]
          [is-vararg-values (and (attribute args.tail)
                                 (datum=? (attribute args.tail-bind)
                                          #'#%values))])
 
      (in-s-lua
-      (with-syntax* ([(body ... ret)
-                      (if is-vararg-values
-                          (replace-vararg (attribute args.tail)
-                                          body)
-                          body)]
+      (let* ([body         (sink-return
+                            (if is-vararg-values
+                                (replace-vararg (attribute args.tail)
+                                                body)
+                                body))]
 
-                     [(vararg ...)
-                      (if (attribute args.tail)
-                          #'(#%vararg)
-                          #'())]
+             [vararg       (if (attribute args.tail)
+                               #'(#%vararg)
+                               #'())]
 
-                     [(vararg-bind ...)
-                      (if (and (attribute args.tail)
-                               (not is-vararg-values))
+             [vararg-binds (if (and (attribute args.tail)
+                                    (not is-vararg-values))
 
-                          #'((#%local [args.tail]
-                                      [(#%call args.tail-bind
-                                               vararg ...)]))
-                          #'())])
+                               #`((#%local [args.tail]
+                                           [(#%call args.tail-bind
+                                                    #,@vararg)]))
+                               #'())])
 
-        (syntax/loc this-syntax
-          '(#%function (args.arg ... vararg ...)
-                       (#%block
-                        vararg-bind ...
-                        body ...
-                        (#%return ret)))))))])
+        (with-syntax* ([(vararg ...) vararg]
+
+                       [(body ...)   (hoist-do body)]
+
+                       [body         (quasisyntax/loc this-syntax
+                                       (#%block
+                                        #,@vararg-binds
+                                        body ...))])
+
+          (syntax/loc this-syntax
+            '(#%function (args.arg ... vararg ...)
+                         body))))))])
 
 (define r-lua-anf->s-lua
   (syntax-parser

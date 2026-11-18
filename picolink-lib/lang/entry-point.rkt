@@ -28,7 +28,7 @@
 (begin-for-syntax
 
   (define current-debug
-    (make-parameter #t))
+    (make-parameter #f))
 
   (define (#%entry-point-begin lctx language-path body)
 

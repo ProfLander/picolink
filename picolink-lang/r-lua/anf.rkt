@@ -13,28 +13,6 @@
 (define current-debug-binds
   (make-parameter #f))
 
-(struct let-bind [ident expr]
-  #:transparent)
-
-(struct letrec-bind [ident expr]
-  #:transparent)
-
-(struct declaration [ident]
-  #:transparent)
-
-(struct statement [expr]
-  #:transparent)
-
-(struct close-bind []
-  #:transparent)
-
-(define (bind-expr bind)
-  (cond
-    [(let-bind? bind)    (let-bind-expr bind)]
-    [(letrec-bind? bind) (letrec-bind-expr bind)]
-    [(declaration? bind) (error "declaration has no expression part")]
-    [(statement? bind)    (statement-expr bind)]))
-
 (define (r-lua->r-lua-anf stx)
 
   (when (current-debug)
@@ -46,47 +24,65 @@
     [mod:module-level
      #'mod.anf]))
 
+(define-syntax-class datum
+  (pattern (~or _:id
+                _:boolean
+                _:string
+                _:number)))
+
+(define-syntax-class lambda
+  #:literal-sets [r-lua-ir-literals]
+  (pattern (#%abs ~! args body:expr)))
+
+(define datum?
+  (syntax-parser
+    [_:datum #t]
+    [_ #f]))
+
+(define lambda?
+  (syntax-parser
+    [_:lambda #t]
+    [_ #f]))
+
+(define (must-bind? stx)
+  (or (datum? stx)
+      (lambda? stx)))
+
 (define-syntax-class module-level
   #:literal-sets [r-lua-ir-literals]
 
   (pattern (#%begin ~! top:top-level ...)
 
-           #:attr binds null
-
-           #:attr atom
+           #:attr anf
            (in-r-lua
-             (syntax/loc this-syntax
-               (#%begin top.anf ...)))
-
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom))))
+            (syntax/loc this-syntax
+              (#%begin top.anf ...)))))
 
 (define-syntax-class top-level
   #:literal-sets [r-lua-ir-literals]
 
   (pattern (#%begin ~! top:top-level ...)
 
-           #:attr binds null
+           #:attr atom (and (= 1 (length (attribute top)))
+                            (car (attribute top.atom)))
 
-           #:attr atom
-           (in-r-lua
-            (syntax/loc this-syntax
-              (#%begin top.anf ...)))
+           #:attr anf
+           (if (< 1 (length (attribute top)))
 
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+               (in-r-lua
+                (syntax/loc this-syntax
+                  (#%begin top.anf ...)))
+
+               (car (attribute top.anf))))
 
   (pattern (#%define ~! ident expr:expr)
 
-           #:attr binds null
+           #:attr atom #f
 
-           #:attr atom
+           #:attr anf
            (in-r-lua
-             (syntax/loc this-syntax
-               (#%define ident expr.anf)))
-
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+            (syntax/loc this-syntax
+              (#%define ident expr.anf))))
 
   (pattern (~and temp
                  (~parse expr:expr
@@ -95,10 +91,9 @@
 
            #:cut
 
-           #:attr binds (attribute expr.binds)
            #:attr atom (attribute expr.atom)
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom))))
+
+           #:attr anf #'expr.anf))
 
 (define-syntax-class expr
 
@@ -111,248 +106,143 @@
 
            #:cut
 
-           #:attr binds null
-           #:attr atom this-syntax
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+           #:attr atom #t
 
-  (pattern (#%begin ~! body:expr ...)
+           #:attr anf this-syntax)
 
-           #:do [(define %binds
-                   (apply append
-                          (for/list ([binds (attribute body.binds)]
-                                     [atom (attribute body.atom)])
-                            (append binds
-                                    (list (close-bind)
-                                          (let-bind (list
-                                                     (generate-temporary))
-                                                    atom))))))]
+  (pattern (#%begin ~! body ...)
 
-           #:attr binds (drop-right %binds 2)
+           #:with (head:expr ...) (drop-right (attribute body) 1)
+           #:with tail:expr (last (attribute body))
 
-           #:attr atom (let-bind-expr (last %binds))
+           #:attr atom (and (= 0 (length (attribute head)))
+                            (attribute tail.atom))
 
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+           #:attr anf
+           (if (< 0 (length (attribute head)))
 
-  (pattern (#%if ~! cond:expr then:expr else:expr)
+               (for/foldr ([acc #'tail.anf])
+                          ([head (in-list (attribute head.anf))])
 
-           #:do [(define atom (generate-temporary))
+                 (if (must-bind? head)
 
-                 (define then-anf
-                   (binds+atom->r-lua-anf
-                    (attribute then.binds)
-                    (in-r-lua
-                     (with-syntax ([atom atom])
-                       #'(#%set! atom then.atom)))))
+                     #`(#%let-values ([(_) #,head])
+                                     #,acc)
 
-                 (define else-anf
-                   (binds+atom->r-lua-anf
-                    (attribute else.binds)
-                    (in-r-lua
-                     (with-syntax ([atom atom])
-                       #'(#%set! atom else.atom)))))]
+                     #`(#%begin
+                        #,head
+                        #,acc)))
 
-           #:attr binds
-           (append (attribute cond.binds)
-                   (list
-                    (declaration atom)
-                    (statement
-                     (in-r-lua
-                      #`(#%if cond.atom
-                              #,then-anf
-                              #,else-anf)))))
+               (attribute tail.anf)))
 
-           #:attr atom atom
+  (pattern (#%if ~! cond:expr
+                 then:expr
+                 else:expr)
 
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+           #:attr atom #f
+
+           #:attr anf
+           (if (attribute cond.atom)
+
+               #'(#%if cond.anf
+                       then.anf
+                       else.anf)
+
+               (with-syntax ([cond-name (generate-temporary 'cond)])
+                 #'(#%let-values ([(cond-name) cond.anf])
+                                 (#%if cond-name
+                                       then.anf
+                                       else.anf)))))
 
   (pattern (#%let-values ~! ([(ident:id ...) expr:expr] ...)
                          body:expr)
 
-           #:attr binds
-           (append (apply append (attribute expr.binds))
+           #:attr atom (and (= 0 (length (attribute expr)))
+                            (attribute body.atom))
 
-                   (list (close-bind))
+           #:attr anf
+           (if (< 0 (length (attribute expr)))
 
-                   (apply append
-                          (list (map (syntax-parser
-                                       [((ident ...) atom)
-                                        (let-bind (attribute ident)
-                                                  #'atom)])
-                                     (syntax-e
-                                      #'([(ident ...) expr.atom] ...)))))
+               (in-r-lua
+                (quasisyntax/loc this-syntax
+                  (#%let-values ([(ident ...) expr.anf] ...)
+                                body.anf)))
 
-                   (attribute body.binds))
+               (attribute body.anf)))
 
-           #:attr atom (syntax/loc this-syntax body.atom)
-
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
-
-  (pattern (#%letrec-values ~! ([(ident:id ...) expr:expr] ...)
+  (pattern (#%letrec-values ~!
+                            ([(ident:id ...) expr:expr] ...)
                             body:expr)
 
-           #:attr binds
-           (append (apply append (attribute expr.binds))
+           #:attr atom (and (= 0 (length (attribute expr)))
+                            (attribute body.atom))
 
-                   (list (close-bind))
+           #:attr anf
+           (if (< 0 (length (attribute expr)))
 
-                   (apply append
-                          (list (map (syntax-parser
-                                       [((ident ...) atom)
-                                        (letrec-bind (attribute ident)
-                                                     #'atom)])
-                                     (syntax-e
-                                      #'([(ident ...) expr.atom] ...)))))
+               (in-r-lua
+                (quasisyntax/loc this-syntax
+                  (#%letrec-values ([(ident ...) expr.anf] ...)
+                                   body.anf)))
 
-                   (attribute body.binds))
-
-           #:attr atom (syntax/loc this-syntax body.atom)
-
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+               (attribute body.anf)))
 
   (pattern (#%set! ~! ident expr:expr)
 
-           #:attr binds (append (attribute expr.binds)
-                                (list (statement this-syntax)))
+           #:attr atom #f
 
-           #:attr atom
+           #:attr anf
            (in-r-lua
             (syntax/loc this-syntax
-              (#%app void)))
+              (#%begin
+               (#%set! ident expr.anf)
+               (#%app void)))))
 
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+  (pattern (#%abs ~! args body:expr)
 
-  (pattern (#%abs ~! args body:expr ...)
+           #:attr atom #t
 
-           #:attr binds null
-           
-           #:attr atom
+           #:attr anf
            (in-r-lua
             (syntax/loc this-syntax
-              (#%abs args body.anf ...)))
+              (#%abs args body.anf))))
 
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+  (pattern (#%app ~! arg:expr ...)
 
-  (pattern (#%app ~! expr:expr ...)
+           #:do 
+           [(define-values (binds args)
 
-           #:attr binds
-           (apply append (attribute expr.binds))
+              (let-values
+                  ([(binds args)
+                    (for/fold ([binds null]
+                               [args  null])
 
-           #:attr atom
-           (in-r-lua
-             #'(#%app expr.atom ...))
+                              ([atom (in-list (attribute arg.atom))]
+                               [arg  (in-list (attribute arg.anf))])
 
-           #:attr anf (binds+atom->r-lua-anf (attribute binds)
-                                             (attribute atom)))
+                      (if atom
+                          (values binds (cons arg args))
+                          (let ([ident (generate-temporary 'arg)])
+                            (values (cons #`((#,ident) #,arg) binds)
+                                    (cons ident args)))))])
+
+                (values (reverse binds)
+                        (reverse args))))]
+
+           #:attr atom (= 0 (length binds))
+
+           #:attr anf
+           (if (attribute atom)
+
+               (in-r-lua
+                (quasisyntax/loc this-syntax
+                  (#%app #,@args)))
+
+               (in-r-lua
+                (quasisyntax/loc this-syntax
+                  (#%let-values (#,@binds)
+                                (#%app #,@args))))))
 
   (pattern (#%s-lua ~! form)
-
-           #:attr binds null
-           
-           #:attr atom this-syntax
-
+           #:attr atom #f
            #:attr anf this-syntax))
-
-(define (binds+atom->r-lua-anf binds atom)
-
-  (when (current-debug-binds)
-    (displayln "binds+atom->r-lua-anf:")
-    (displayln "binds:")
-    (println binds)
-    (displayln "atom:")
-    (println atom))
-
-  (if (pair? binds)
-
-      (for/foldr ([stx atom]
-                  [open #t]
-                  #:result stx)
-                 ([bind (in-list binds)])
-        (cond
-          [(let-bind? bind)
-           (with-syntax ([(ident ...) (let-bind-ident bind)]
-                         [expr  (let-bind-expr bind)])
-             (syntax-parse stx
-               #:literal-sets [r-lua-ir-literals]
-               [(#%let-values ([(stx-ident ...) stx-expr] ...)
-                              body)
-                #:when open
-                #:cut
-                (values (in-r-lua
-                         (syntax/loc this-syntax
-                           (#%let-values ([(ident ...) expr]
-                                          [(stx-ident ...) stx-expr]
-                                          ...)
-                                         body)))
-                        open)]
-               [stx
-                (values (in-r-lua
-                         (syntax/loc this-syntax
-                           (#%let-values ([(ident ...) expr])
-                                         stx)))
-                        #t)]))]
-
-          [(letrec-bind? bind)
-           (with-syntax ([(ident ...)    (letrec-bind-ident bind)]
-                         [expr     (letrec-bind-expr bind)])
-             (syntax-parse stx
-               #:literal-sets [r-lua-ir-literals]
-               [(#%letrec-values ([(stx-ident ...) stx-expr] ...)
-                                 body)
-                #:when open
-                #:cut
-                (values (in-r-lua
-                         (syntax/loc this-syntax
-                           (#%letrec-values ([(ident ...) expr]
-                                             [(stx-ident ...) stx-expr]
-                                             ...)
-                                            body)))
-                        open)]
-               [stx
-                (values (in-r-lua
-                         (syntax/loc this-syntax
-                           (#%letrec-values ([(ident ...) expr])
-                                            stx)))
-                        #t)]))]
-
-          [(declaration? bind)
-           (with-syntax ([ident (declaration-ident bind)])
-             (syntax-parse stx
-               #:literal-sets [r-lua-ir-literals]
-               [(#%declare (stx-ident ...)
-                           body)
-                #:when open
-                #:cut
-                (values (in-r-lua
-                         (syntax/loc this-syntax
-                           (#%declare (ident stx-ident ...)
-                                      body)))
-                        open)]
-               [stx
-                (values (in-r-lua
-                         (syntax/loc this-syntax
-                           (#%declare (ident)
-                                      stx)))
-                        #t)]))]
-
-          [(statement? bind)
-           (with-syntax ([stmt (statement-expr bind)]
-                         [stx stx])
-
-             (values (in-r-lua
-                      (syntax/loc #'stmt
-                        (#%begin
-                         stmt
-                         stx)))
-                     #f))]
-
-          [(close-bind? bind)
-           (values stx #f)]))
-
-      atom))

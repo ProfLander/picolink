@@ -6,3 +6,5 @@
          r-lua/prelude/number)
 
 (define number 1234)
+
+number

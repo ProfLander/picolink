@@ -15,3 +15,11 @@
     (letrec ([cond  #f]
              [check (λ () (if cond "ja" "nein"))])
       (check)))
+
+(let ([method "foo"])
+  (let ([method (if method
+                    method
+                    "bar")])
+    (if method
+        method
+        "baz")))

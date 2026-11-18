@@ -22,7 +22,6 @@
    #%define
    #%let-values
    #%letrec-values
-   #%declare
    #%set!
    #%abs
    #%app
@@ -39,7 +38,6 @@
                   #%define
                   #%let-values
                   #%letrec-values
-                  #%declare
                   #%set!
                   #%abs
                   #%app

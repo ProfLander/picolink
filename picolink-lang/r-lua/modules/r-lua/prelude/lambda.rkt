@@ -13,12 +13,11 @@
          [[(~datum :) arg:id tail-bind:id]
           (let ([arg (bind! #'arg (r-lua-var) #:space r-lua-space)])
             (with-syntax ([arg #`[: #,arg tail-bind]])
-              (cons #'arg
-                    null)))]
+              (values #'arg null)))]
 
          [arg:id
-          (cons (list (bind! #'arg (r-lua-var) #:space r-lua-space))
-                null)]
+          (values (list (bind! #'arg (r-lua-var) #:space r-lua-space))
+                  null)]
 
          [(arg:id ... [opt-arg opt-val] ...
                   . (~or [(~datum :) tail:id tail-bind:id]
@@ -45,11 +44,12 @@
                             #,@opt-args
                             . [: #,tail tail-bind])])
 
-              (cons args
-                    #'([(opt-arg) (#%if (#%s-lua (#%eq opt-arg nil))
-                                        opt-val
-                                        opt-arg)]
-                       ...))))]
+              (values args
+                      (syntax-e
+                       #'([(opt-arg) (#%if (#%s-lua (#%eq opt-arg nil))
+                                           opt-val
+                                           opt-arg)]
+                          ...)))))]
          
          [(arg:id ... [opt-arg:id opt-val] ...)
 
@@ -58,19 +58,36 @@
                 [opt-args (for/list ([arg (in-list (attribute opt-arg))])
                             (bind! arg (r-lua-var) #:space r-lua-space))])
 
-            (cons (append args opt-args)
-                  #'([(opt-arg) (#%if (#%s-lua (#%eq opt-arg nil))
-                                      opt-val
-                                      opt-arg)]
-                     ...)))]))
+            (values (append args opt-args)
+                    (syntax-e
+                     #'([(opt-arg) (#%if (#%s-lua (#%eq opt-arg nil))
+                                         opt-val
+                                         opt-arg)]
+                        ...))))]))
 
-     (with-syntax* ([(args . (bind ...)) (parse-args #'args)]
-                    [(body ...) (map r-lua/expr (attribute body))])
+     (let*-values ([(args binds) (parse-args #'args)]
+                   [(bodies)     (map r-lua/expr (attribute body))]
+                   [(body)       (if (< 1 (length bodies))
 
-       (syntax/loc this-syntax
-         (#%abs args
-                (#%let-values (bind ...)
-                              (#%begin body ...)))))])])
+                                     (quasisyntax/loc this-syntax
+                                       (#%begin #,@bodies))
+
+                                     (car bodies))]
+
+                   [(body)       (if (< 0 (length binds))
+
+                                     (quasisyntax/loc this-syntax
+                                       (#%let-values (#,@binds)
+                                                     #,body))
+
+                                     body)])
+
+       (with-syntax ([args       args]
+                     [(bind ...) binds]
+                     [body       body])
+
+         (syntax/loc this-syntax
+           (#%abs args body))))])])
 
 (define-macro lambda
   [(_ form ...)
