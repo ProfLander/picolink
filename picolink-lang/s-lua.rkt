@@ -61,5 +61,3 @@
   (if (pair? bs)
       (%s-lua-append a (apply s-lua-append bs))
       a))
-
-
