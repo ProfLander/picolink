@@ -36,6 +36,19 @@
 
            #:attr lua (rewrite-name #'ident)))
 
+(define number->lua-name
+  (hash
+   "0"  "__zero__"
+   "1"  "__one__"
+   "2"  "__two__"
+   "3"  "__three__"
+   "4"  "__four__"
+   "5"  "__five__"
+   "6"  "__six__"
+   "7"  "__seven__"
+   "8"  "__eight__"
+   "9"  "__nine__"))
+
 (define reserved-symbol->lua-name
   (hash
    "="  "__eq__"
@@ -59,17 +72,7 @@
    "~=" "__ne__"
    "?"  "__question__"
    "!"  "__exclamation__"
-   "λ"  "__lambda__"
-   "1"  "__one__"
-   "2"  "__two__"
-   "3"  "__three__"
-   "4"  "__four__"
-   "5"  "__five__"
-   "6"  "__six__"
-   "7"  "__seven__"
-   "8"  "__eight__"
-   "9"  "__nine__"
-   "0"  "__zero__"))
+   "λ"  "__lambda__"))
 
 (define reserved-identifier->lua-name
   (hash
@@ -95,17 +98,22 @@
    "not"      "__not__"
    "length"   "__length__"))
 
-(define (rewrite-name ident #:omit [omit null])
+(define (rewrite-name ident)
   (syntax-parse ident
     [ident:id
      (let* ([id (symbol->string (syntax-e #'ident))]
 
             [id (for/fold ([acc id])
                           ([(from to) (in-hash
+                                       number->lua-name)])
+                  (if (string-prefix? acc from)
+                      (string-replace acc from to #:all #f)
+                      acc))]
+
+            [id (for/fold ([acc id])
+                          ([(from to) (in-hash
                                        reserved-symbol->lua-name)])
-                  (if (member from omit)
-                      acc
-                      (string-replace acc from to)))]
+                  (string-replace acc from to))]
             
             [id (for/fold ([acc id])
                           ([(from to) (in-hash
