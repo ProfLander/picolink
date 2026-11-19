@@ -2,7 +2,6 @@
 
 (require syntax/parse
          picolink/syntax
-         ee-lib
          picolink/racket
          (for-template racket/base
                        picolink/dsl/ir))
@@ -10,8 +9,7 @@
 (provide (all-defined-out))
 
 (define (splice/introduce stx)
-  (racket-introduce
-   (splice-from-scope stx (current-def-ctx))))
+  (racket-introduce stx))
 
 (define dsl-compile/racket
   (syntax-parser

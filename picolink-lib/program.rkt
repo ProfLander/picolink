@@ -5,7 +5,7 @@
 
          syntax/strip-context
 
-         picolink/ee-lib
+         picolink/scope
          picolink/output
          picolink/program/scope
          picolink/module/syntax
@@ -89,38 +89,38 @@
 
 (define (parse-program mod-idents)
 
-  (let ([mod-idents (topological-sort-program mod-idents)])
+  (let ([mod-idents (topological-sort-program mod-idents)]
+        [program (make-scope 'program)])
 
-    (with-scope program
+    (parameterize ([current-program-scope program])
 
-      (parameterize ([current-program-scope program])
+      (for ([mod-ident (in-list mod-idents)])
 
-        (for ([mod-ident (in-list mod-idents)])
+        (let* ([ident  (syntax-local-introduce
+                        (strip-context mod-ident))]
 
-          (let* ([ident  (syntax-local-introduce
-                          (strip-context mod-ident))]
+               [mod    (syntax-local-module mod-ident)]
+               [parsed (parse-module ident mod)])
 
-                 [mod    (syntax-local-module mod-ident)]
-                 [parsed (parse-module ident mod)])
+          (bind-in-program! ident parsed)))
 
-            (bind-in-program! ident parsed)))
-
-        program))))
+      program)))
 
 (define (compile-program program backend)
 
-  (let* ([mod-idents (scope-idents program)])
+  (let* ([mod-idents (scope-names program)])
 
     (for/list ([mod-ident (in-list mod-idents)])
 
       (define mod
-        (lookup-in-program mod-ident))
+        (with-scope program
+          (lookup mod-ident)))
 
       (compile-parsed-module mod-ident backend mod))))
 
 (define (parallel-compile-program program backend)
 
-  (let* ([mod-ids (scope-idents program)]
+  (let* ([mod-ids (scope-names program)]
 
          [pool
           (make-parallel-thread-pool)]

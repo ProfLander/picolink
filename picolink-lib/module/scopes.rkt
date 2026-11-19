@@ -3,85 +3,51 @@
 (require (for-syntax racket/base
                      syntax/parse)
 
-         racket/list
-
-         picolink/syntax
-         picolink/ee-lib)
+         picolink/scope
+         picolink/syntax)
 
 (provide (all-defined-out))
 
 (define current-require-scope
   (make-parameter #f))
 
-(define current-module-scopes
-  (make-parameter null))
-
 (define current-provide-scope
   (make-parameter #f))
+
+(define current-foreign-scopes
+  (make-parameter null))
 
 (define-syntax with-module-scopes
   (syntax-parser
     [(_ body ...)
-     #'(with-scope require-scope
-         (with-scope provide-scope
-           (with-scope module-scope
-             (parameterize ([current-require-scope require-scope]
-                            [current-provide-scope provide-scope]
-                            [current-module-scopes null])
-               body ...))))]))
+     (syntax/loc this-syntax
 
-(define (lookup-in-require ident
-                           [predicate (lambda (v) #t)]
-                           #:space [binding-space #f])
+       (parameterize ([current-require-scope (make-scope 'require)]
+                      [current-provide-scope (make-scope 'provide)]
+                      [current-foreign-scopes null])
+
+         (with-new-scope definition
+           body ...)))]))
+
+(define (lookup-in-require ident)
 
   "Lookup IDENT in the current require scope"
 
-  (lookup-in (current-require-scope)
-             ident
-             predicate
-             #:space binding-space))
+  (with-scope (current-require-scope)
+    (lookup ident)))
 
-(define (lookup-in-provide ident
-                           [predicate (lambda (v) #t)]
-                           #:space [binding-space #f])
-
-  "Lookup IDENT in the current provide scope"
-
-  (lookup-in (current-provide-scope)
-             ident
-             predicate
-             #:space binding-space))
-
-(define (lookup-in-modules ident
-                           [predicate (lambda (v) #t)]
-                           #:space [binding-space #f])
+(define (lookup-foreign ident)
 
   "Lookup IDENT in the current module scope"
 
-  (for/first ([i (in-naturals)]
-              [pair (in-list (current-module-scopes))]
+  (for/first ([pair (in-list (current-foreign-scopes))]
               #:do [(define source-module (car pair))
                     (define scope (cdr pair))
 
-                    (define idents (scope-idents scope))
-
-                    (define scope-tail (member ident idents datum=?))
-                    (define scope-ident (and scope-tail
-                                             (car scope-tail)))
-
                     (define bind
-                      (and scope-ident
-                           (lookup-in scope
-                                      scope-ident
-                                      predicate
-                                      #:space binding-space)))]
+                      (with-scope scope
+                        (lookup ident)))]
 
               #:when bind)
 
     (cons source-module bind)))
-
-(define (bind-in-require! ident val #:space [space #f])
-  (bind-in! (current-require-scope) ident val #:space space))
-
-(define (bind-in-provide! ident val #:space [space #f])
-  (bind-in! (current-provide-scope) ident val #:space space))

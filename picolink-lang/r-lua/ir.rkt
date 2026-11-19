@@ -1,16 +1,14 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse
-                     ee-lib
-                     picolink/syntax)
+                     syntax/parse)
+
+         picolink/syntax
 
          (for-meta 2
                    racket/base
                    racket/function
-                   syntax/parse)
-
-         ee-lib/define)
+                   syntax/parse))
 
 (provide (for-space r-lua (all-defined-out))
          (for-syntax (all-defined-out)))

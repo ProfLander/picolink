@@ -3,10 +3,9 @@
 (require (for-syntax racket/base
                      syntax/parse)
 
-         ee-lib
-
          picolink/syntax
          picolink/language
+         picolink/scope
          picolink/module/source
          picolink/module/compiled
          picolink/module/scopes
@@ -31,7 +30,7 @@
                  lang
                  (current-require-scope)
                  (current-provide-scope)
-                 (current-def-ctx)
+                 (current-scope)
                  (and stx (syntax-local-introduce stx))))
 
 (define (parse-module ident mod)
@@ -62,10 +61,10 @@
            [stx  (parsed-module-stx parsed)]
            [stx (and stx
                      (parameterize ([debug:r-lua->anf
-                                     (datum=? ident #'entry-point)]
+                                     (equal? ident 'entry-point)]
 
                                     [debug:anf->s-lua
-                                     (datum=? ident #'entry-point)])
+                                     (equal? ident 'entry-point)])
 
                        (compile-module-syntax lang backend stx)))])
 
@@ -73,17 +72,19 @@
                        lang
                        (current-require-scope)
                        (current-provide-scope)
-                       (current-def-ctx)
+                       (current-scope)
                        stx))))
 
 (define-syntax with-parsed-module-scopes
   (syntax-parser
     [(_ parsed body ...)
-     #'(parameterize ([current-require-scope
+     (syntax/loc this-syntax
+
+       (parameterize ([current-require-scope
                        (parsed-module-require-scope parsed)]
                       [current-provide-scope
                        (parsed-module-provide-scope parsed)]
-                      [current-module-scopes null]
-                      [current-def-ctx
-                       (parsed-module-module-scope  parsed)])
-         body ...)]))
+                      [current-foreign-scopes null])
+
+         (with-scope (parsed-module-module-scope parsed)
+           body ...)))]))

@@ -2,8 +2,6 @@
 
 (require racket/syntax
 
-         ee-lib
-
          picolink/syntax
          picolink/backend
          picolink/module/scopes)

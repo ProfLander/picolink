@@ -6,8 +6,9 @@
 
          syntax/parse
 
+         picolink/syntax
+         picolink/scope
          picolink/module
-         picolink/ee-lib
 
          (for-template racket/base))
 
@@ -20,7 +21,7 @@
 
 (define racket-introduce (make-interned-syntax-introducer 'racket))
 
-(define (racket-link _lctx compiled)
+(define (racket-link lctx compiled)
 
   (define mods
     (for/list ([mod (in-list compiled)])
@@ -28,7 +29,6 @@
       (define mod-id (compiled-module-ident mod))
       (define require-scope (compiled-module-require-scope mod))
       (define provide-scope (compiled-module-provide-scope mod))
-      (define module-scope (compiled-module-module-scope mod))
       (define stx (compiled-module-stx mod))
 
       (let* ([reqs
@@ -37,13 +37,9 @@
                            [(_ req)     (in-dict imports)])
 
                  (with-syntax ([local-id
-                                (racket-introduce
-                                 (splice-from-scope
-                                  (import-local-id req)
-                                  module-scope))]
+                                (racket-introduce (import-local-id req))]
 
-                               [dots (if (equal? (syntax-e mod-id)
-                                                 'entry-point)
+                               [dots (if (datum=? mod-id #'entry-point)
                                          "."
                                          "..")]
 
@@ -59,10 +55,11 @@
               (for/list ([(_ prov) (in-scope provide-scope)])
 
                 (with-syntax ([local-id
-                               (racket-introduce (splice-from-scope
-                                       (export-local-id prov)
-                                       module-scope))]
-                              [out-id (export-out-id prov)])
+                               (racket-introduce
+                                (export-local-id prov))]
+                              [out-id
+                               (racket-introduce
+                                (export-out-id prov))])
 
                   #'[local-id out-id]))])
 
@@ -88,15 +85,11 @@
                             #'(module ident racket/base
                                 body ...))]))
                      (remf (λ (a)
-                             (equal? (syntax-e (car a))
-                                     'entry-point))
+                             (datum=? (car a) #'entry-point))
                            mods)))
 
   (define entry-point
-    (syntax-parse (cdr (assoc #'entry-point mods
-                              (λ (a b)
-                                (equal? (syntax-e a)
-                                        (syntax-e b)))))
+    (syntax-parse (cdr (assoc #'entry-point mods datum=?))
       #:datum-literals [begin]
       [(begin body ...)
        #'(body ...)]))

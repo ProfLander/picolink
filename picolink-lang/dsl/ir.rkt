@@ -1,6 +1,8 @@
 #lang racket/base
 
-(require ee-lib/define)
+(require (for-syntax racket/base
+                     syntax/parse)
+         picolink/syntax)
 
 (provide (all-defined-out)
          (for-syntax (all-defined-out)))

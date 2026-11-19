@@ -7,18 +7,18 @@
 
 (define-macro let-values
   [(_ _ ...)
-   (syntax-parser/scope
-    scope
-    [(_ ([(name ...) (~cata val r-lua/expr)] ...)
-        body ...)
+   (with-new-scope let-values
+     (syntax-parse this-syntax
+       [(_ ([(name ...) (~cata val r-lua/expr)] ...)
+           body ...)
 
-     (for ([name (in-list (apply append (attribute name)))])
-       (bind! name (r-lua-var) #:space r-lua-space))
+        (for ([name (in-list (apply append (attribute name)))])
+          (bind! name (r-lua-var)))
 
-     (with-syntax ([(body ...) (map r-lua/expr (attribute body))])
-       (syntax/loc this-syntax
-         (#%let-values ([(name ...) val] ...)
-                       (#%begin body ...))))])])
+        (with-syntax ([(body ...) (map r-lua/expr (attribute body))])
+          (syntax/loc this-syntax
+            (#%let-values ([(name ...) val] ...)
+                          (#%begin body ...))))]))])
 
 (define-macro let
   [(_ ([name val] ...)
@@ -38,20 +38,20 @@
 
 (define-macro letrec-values
   [(_ _ ...)
-   (syntax-parser/scope
-    scope
-    [(_ ([(name ...) val] ...)
-        body ...)
+   (with-new-scope letrec-values
+     (syntax-parse this-syntax
+       [(_ ([(name ...) val] ...)
+           body ...)
 
-     (for ([name (in-list (apply append (attribute name)))])
-       (bind! name (r-lua-var) #:space r-lua-space))
+        (for ([name (in-list (apply append (attribute name)))])
+          (bind! name (r-lua-var)))
 
-     (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
-                   [(body ...) (map r-lua/expr (attribute body))])
+        (with-syntax ([(val ...)  (map r-lua/expr (attribute val))]
+                      [(body ...) (map r-lua/expr (attribute body))])
 
-       (syntax/loc this-syntax
-         (#%letrec-values ([(name ...) val] ...)
-                          (#%begin body ...))))])])
+          (syntax/loc this-syntax
+            (#%letrec-values ([(name ...) val] ...)
+                             (#%begin body ...))))]))])
 
 (define-macro letrec
   [(_ ([name val] ...)

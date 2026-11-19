@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require picolink/ee-lib
+(require picolink/scope
          picolink/module/parsed)
 
 (provide (all-defined-out))
@@ -9,7 +9,9 @@
   (make-parameter #f))
 
 (define (lookup-in-program ident)
-  (lookup-in (current-program-scope) ident parsed-module?))
+  (with-scope (current-program-scope)
+    (lookup ident)))
 
 (define (bind-in-program! ident stx)
-  (bind-in! (current-program-scope) ident stx))
+  (with-scope (current-program-scope)
+    (bind! ident stx)))

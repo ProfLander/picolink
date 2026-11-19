@@ -2,8 +2,6 @@
 
 (require racket/syntax
 
-         ee-lib
-
          picolink/binding
          picolink/language
 

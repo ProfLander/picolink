@@ -11,7 +11,7 @@
 
          (except-in syntax/parse expr)
 
-         picolink/ee-lib
+         picolink/scope
          picolink/binding
          picolink/config/parameters
          picolink/s-lua
@@ -84,7 +84,7 @@
     [_ #f]))
 
 (define (module-requires-empty? mod)
-  (null? (in-scope (compiled-module-require-scope mod))))
+  (scope-empty? (compiled-module-require-scope mod)))
 
 (define (module-provides-empty? mod)
   (null? (module-provides mod)))
@@ -263,7 +263,7 @@
   (define module-bindings
     (for/list ([req-mod (in-list (reverse
                                   (filter not-empty?
-                                          (scope-idents
+                                          (scope-names
                                            (compiled-module-require-scope
                                             mod)))))])
 
@@ -506,7 +506,7 @@
 
   (define tail
     (member sym
-            (scope-idents mod-scope)
+            (scope-names mod-scope)
             (λ (a b)
               (equal? a (syntax-e b)))))
 
@@ -514,7 +514,7 @@
     (and tail (car tail )))
 
   (and ident
-       (parameterize ([current-def-ctx mod-scope])
+       (with-scope mod-scope
          (lookup ident))))
 
 (define (lua-link/chunk _lctx prog)

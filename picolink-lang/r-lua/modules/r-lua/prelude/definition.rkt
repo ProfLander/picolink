@@ -20,7 +20,7 @@
 
   [(_ name:id expr)
 
-   (bind! #'name (r-lua-var) #:space r-lua-space)
+   (bind! #'name (r-lua-var))
 
    (with-syntax ([expr (r-lua/expr #'expr)])
      (syntax/loc this-syntax

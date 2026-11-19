@@ -8,7 +8,7 @@ picolink/r-lua/base
                      racket/function
                      syntax/parse
                      picolink/syntax
-                     picolink/ee-lib
+                     picolink/scope
                      picolink/module/scopes
                      picolink/r-lua/space
                      picolink/r-lua/surface))
@@ -20,7 +20,7 @@ picolink/r-lua/base
                                    racket/function
                                    syntax/parse
                                    picolink/syntax
-                                   picolink/ee-lib
+                                   picolink/scope
                                    picolink/module/scopes
                                    picolink/r-lua/space
                                    picolink/r-lua/surface)))

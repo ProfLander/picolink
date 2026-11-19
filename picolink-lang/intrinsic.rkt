@@ -5,6 +5,7 @@
          
          syntax/parse
 
+         picolink/scope
          picolink/intrinsic/var)
 
 (provide (all-defined-out))

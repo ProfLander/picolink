@@ -1,7 +1,5 @@
 #lang racket/base
 
-(require picolink/ee-lib)
-
 (provide (all-defined-out))
 
 (struct compiled-module [ident

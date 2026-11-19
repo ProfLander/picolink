@@ -8,9 +8,9 @@
 (require racket/string
          racket/pretty
 
-         picolink/ee-lib
-         picolink/module/compiled
+         picolink/scope
          picolink/module/scopes
+         picolink/module/compiled
 
          (for-template racket/base))
 
@@ -37,22 +37,22 @@
     (displayln (format "~a:" (syntax-e ident)))
 
     (displayln " requires:")
-    (parameterize ([current-def-ctx require-scope])
-      (for ([ident (in-list (scope-idents require-scope))])
+    (with-scope require-scope
+      (for ([ident (in-list (scope-names require-scope))])
         (print-binding ident)))
 
     (displayln "")
 
     (displayln " provides:")
-    (parameterize ([current-def-ctx provide-scope])
-      (for ([ident (in-list (scope-idents provide-scope))])
+    (with-scope provide-scope
+      (for ([ident (in-list (scope-names provide-scope))])
         (print-binding ident)))
 
     (displayln "")
 
     (displayln " defines:")
-    (parameterize ([current-def-ctx module-scope])
-      (for ([ident (in-list (scope-idents module-scope))])
+    (with-scope module-scope
+      (for ([ident (in-list (scope-names module-scope))])
         (print-binding ident)))))
 
 (define (debug-run _lctx _linked)

@@ -1,14 +1,18 @@
 #lang racket/base
 
-(require syntax/parse
+(require racket/syntax
+
+         syntax/parse
          syntax/strip-context
+
+         picolink/scope
          picolink/syntax
-         picolink/ee-lib
          picolink/binding
          picolink/module/parsed
          picolink/module/scopes
          picolink/intrinsic/var
          picolink/r-lua/space
+
          (for-template picolink/r-lua/ir))
 
 (provide (all-defined-out))
@@ -29,13 +33,11 @@
 (define (check-var ident)
 
   (let-values ([(ident binding)
-                (let ([lexical (lookup ident #:space r-lua-space)])
+                (let ([lexical (lookup ident)])
                   (if lexical
                       (values ident lexical)
 
-                      (let ([pair (lookup-in-modules
-                                   ident
-                                   #:space r-lua-space)])
+                      (let ([pair (lookup-foreign ident)])
 
                         (if pair
                             (values (syntax-property ident
@@ -62,32 +64,39 @@
     ident))
 
 (define (lookup-macro ident)
-  (or (lookup ident macro? #:space r-lua-space)
-      (let ([pair (lookup-in-modules ident macro? #:space r-lua-space)])
-        (and pair (cdr pair)))))
+  (or (let ([binding (lookup ident)])
+
+        (and (macro? binding)
+             binding))
+
+      (let* ([pair (lookup-foreign ident)]
+             [binding (and pair (cdr pair))])
+
+        (and (macro? binding)
+             binding))))
 
 (define (apply-macro mac ctx-type parser stx)
 
   (let ([module-ident (macro-module-ident mac)]
         [module-scope (macro-module-scope mac)])
 
-    (parameterize ([current-module-scopes
+    (parameterize ([current-foreign-scopes
                     (cons (cons module-ident module-scope)
-                          (current-module-scopes))])
+                          (current-foreign-scopes))])
 
       (parser
-       (let ([scope (current-def-ctx)])
+       (let ([scopes (current-scopes)])
 
-         (apply-as-transformer (λ (stx)
-                                 (parameterize ([current-def-ctx scope])
-                                   ((macro-trx mac) stx)))
-                               #f
-                               ctx-type
-                               stx))))))
+         (syntax-local-apply-transformer
+          (λ (stx)
+            (parameterize ([current-scopes scopes])
+              ((macro-trx mac) stx)))
+          #f
+          ctx-type
+          #f
+          stx))))))
 
-(define/hygienic (r-lua/top-level stx)
-  #:definition
-
+(define (r-lua/top-level stx)
   (syntax-parse stx
     #:literal-sets [r-lua-surface-literals]
 
@@ -116,31 +125,30 @@
         (syntax/loc this-syntax
           (#%begin body ...))))]
 
-    [(require ~! (~var _ (bind-require this-syntax #:space r-lua-space)))
+    [(require ~! (~var _ (bind-require this-syntax)))
      (void)]
 
-    [(provide ~! (~var _ (bind-provide this-syntax #:space r-lua-space)))
+    [(provide ~! (~var _ (bind-provide this-syntax)))
      (void)]
 
     [(define-macro ~! name expr ...)
      (void
       (bind! #'name
              (macro
-              (eval-transformer
+              (syntax-local-eval
                (r-lua/macro
                 (datum->syntax this-syntax
                                (attribute expr)
                                this-syntax
                                this-syntax)))
               (current-module-ident)
-              (current-def-ctx))
-             #:space r-lua-space))]
+              (current-scope))))]
 
     [(ident:id _ ...)
      #:do [(define mac (lookup-macro #'ident))]
      #:when mac
      #:cut
-     (apply-macro mac 'definition r-lua/top-level this-syntax)]
+     (apply-macro mac 'module r-lua/top-level this-syntax)]
 
     [(~cata e r-lua/expr)
      (syntax/loc this-syntax
@@ -165,32 +173,31 @@
            (replace-context this-syntax tail))]
          ...))]))
 
-(define/hygienic (r-lua/expr stx)
-  #:expression
+(define (r-lua/expr stx)
+  (with-new-scope expr
+    (syntax-parse stx
+      #:literal-sets [r-lua-surface-literals]
 
-  (syntax-parse stx
-    #:literal-sets [r-lua-surface-literals]
+      [(_:r-lua-ir-literal _ ...)
+       this-syntax]
 
-    [(_:r-lua-ir-literal _ ...)
-     this-syntax]
+      [(ident:id _ ...)
+       #:do [(define mac (lookup-macro #'ident))]
+       #:when mac
+       #:cut
 
-    [(ident:id _ ...)
-     #:do [(define mac (lookup-macro #'ident))]
-     #:when mac
-     #:cut
+       (apply-macro mac 'expression r-lua/expr this-syntax)]
 
-     (apply-macro mac 'definition r-lua/expr this-syntax)]
+      [(~cata ident:id check-var)
+       #'ident]
 
-    [(~cata ident:id check-var)
-     #'ident]
+      [(~or d:boolean
+            d:number
+            d:string)
+       this-syntax]
 
-    [(~or d:boolean
-          d:number
-          d:string)
-     this-syntax]
-
-    [((~cata expr r-lua/expr) ...+)
-     #:cut
-     (in-r-lua
-       (syntax/loc this-syntax
-         (#%app expr ...)))]))
+      [((~cata expr r-lua/expr) ...+)
+       #:cut
+       (in-r-lua
+        (syntax/loc this-syntax
+          (#%app expr ...)))])))

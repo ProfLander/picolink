@@ -7,11 +7,11 @@ picolink/intrinsic
 
          (for-syntax racket/base
                      racket/syntax
-                     ee-lib
+                     picolink/scope
                      picolink/binding))
 
 (provide (all-from-out racket/base)
          (for-syntax (all-from-out racket/base
                                    racket/syntax
-                                   ee-lib
+                                   picolink/scope
                                    picolink/binding)))

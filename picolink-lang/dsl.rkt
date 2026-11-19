@@ -5,11 +5,12 @@
 
          racket/match
          racket/sequence
+         racket/syntax
 
          syntax/parse
 
+         picolink/scope
          picolink/syntax
-         picolink/module/scopes
          picolink/dsl/racket
          picolink/dsl/surface
 
@@ -47,9 +48,7 @@
      (syntax/loc this-syntax
        (begin body ...))]))
 
-(define/hygienic (dsl/top-level stx)
-  #:definition
-
+(define (dsl/top-level stx)
   (syntax-parse stx
     #:literal-sets [dsl-surface-literals]
 
@@ -83,50 +82,56 @@
 
     [(define-macro ident expr)
      (bind! #'ident
-            (dsl-syntax (eval-transformer (dsl/macro #'expr))))
+            (dsl-syntax (syntax-local-eval (dsl/macro #'expr))))
      #'(#%define-macro ident expr)]
 
     [(~cata e dsl/expr)
      #'e]))
 
-(define/hygienic-expression-parser dsl/expr
-  #:literal-sets [dsl-surface-literals]
+(define (dsl/expr stx)
+  (with-new-scope expr
+    (syntax-parse stx
+      #:literal-sets [dsl-surface-literals]
 
-  [n:number #'n]
+      [n:number #'n]
 
-  [ident:id
+      [ident:id
 
-   (unless (lookup #'ident dsl-var?)
-     (parameterize ([error-print-context-length 0])
-       (raise-syntax-error #f
-                           "unbound variable"
-                           #'ident)))
+       (unless (dsl-var? (lookup #'ident))
+         (parameterize ([error-print-context-length 0])
+           (raise-syntax-error #f
+                               "unbound variable"
+                               #'ident)))
 
-   #'ident]
+       #'ident]
 
-  [(let _ ...)
-   (syntax-parser/scope
-    scope
-    [(_ ([(~cata ident (bind! _ (dsl-var)))
-          (~cata expr (dsl/expr (add-scope _ scope)))])
-        (~cata body dsl/expr) ...)
-     #'(#%let ([ident expr]) body ...)])]
+      [(let _ ...)
+       (with-new-scope let
+         (syntax-parse this-syntax
+           [(_ ([(~cata ident (bind! _ (dsl-var)))
+                 (~cata expr (dsl/expr _))])
+               (~cata body dsl/expr) ...)
+            #'(#%let ([ident expr]) body ...)]))]
 
-  [(ident arg ...)
-   #:do [(define mac (lookup #'ident dsl-syntax?))]
-   #:when mac
-   (dsl/expr
-    (apply-as-transformer (dsl-syntax-trx mac)
-                          #'ident
-                          'expression
-                          #'(ident arg ...)))])
+      [(ident arg ...)
+       #:do [(define mac (dsl-syntax? (lookup #'ident)))]
+       #:when mac
+       (dsl/expr
+        (syntax-local-apply-transformer
+         (dsl-syntax-trx mac)
+         #'ident
+         'expression
+         #f
+         #'(ident arg ...)))])))
 
-(define/hygienic-expression-parser dsl/macro
-  #:literal-sets [dsl-surface-literals]
+(define (dsl/macro stx)
+  (with-new-scope macro
+    (syntax-parse stx
+      #:literal-sets [dsl-surface-literals]
 
-  [(pat body ...)
-   #'(syntax-parser
-       [pat body ...])])
+      [(pat body ...)
+       #'(syntax-parser
+           [pat body ...])])))
 
 (define dsl-compiler
   (match-λ

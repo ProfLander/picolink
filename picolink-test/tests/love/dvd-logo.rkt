@@ -17,7 +17,7 @@
   (dvd-world
    (dvd-logo 20 50
              60 40
-             1 1)))
+              1  1)))
 
 (define (tick-world world)
 

@@ -199,12 +199,52 @@
              (define name? %name?)
              (define name-field %name-field) ...)))]))
 
-(define (not-in-space binding-space)
-  (lambda (stx)
-    (if binding-space
-        ((make-interned-syntax-introducer binding-space) stx 'remove)
-        stx)))
-
 (define (datum=? a b)
   (equal? (syntax-e a)
           (syntax-e b)))
+
+
+
+(begin-for-syntax
+
+  (define (in-space binding-space)
+    (λ (stx)
+      (if binding-space
+          ((make-interned-syntax-introducer binding-space) stx 'add)
+          stx)))
+
+  (define (not-in-space binding-space)
+    (λ (stx)
+      (if binding-space
+          ((make-interned-syntax-introducer binding-space) stx 'remove)
+          stx)))
+
+  (define-syntax-class symbol
+    (pattern stx:id
+             #:attr sym (syntax-e (attribute stx))))
+
+  (struct literal-rep [msg]
+    #:property prop:procedure
+    (λ (s stx)
+      (raise-syntax-error #f (literal-rep-msg s) stx))))
+
+(define-syntax define-literal-forms
+  (syntax-parser
+    [(_ literal-set-name:id
+        (~optional (~seq #:syntax-class syntax-class-name:id))
+        (~optional (~seq #:binding-space (~or space:symbol #f)))
+        msg:string (name:id ...))
+
+     #:with (spaced-name ...) (map (in-space (attribute space.sym))
+                                   (attribute name))
+
+     #'(begin
+         (define-syntax spaced-name (literal-rep 'msg))
+         ...
+         (begin-for-syntax
+           (define-literal-set literal-set-name
+             (spaced-name ...))
+           (~? (define-syntax-class syntax-class-name
+                 #:literal-sets (literal-set-name)
+                 (pattern (~or spaced-name ...)))
+               (begin))))]))

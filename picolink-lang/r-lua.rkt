@@ -21,4 +21,4 @@
 (define (r-lua-inject)
   (let ([r-lua-prelude
          (syntax-local-introduce (datum->syntax #f 'r-lua/prelude))])
-    (require! r-lua-prelude r-lua-prelude #:space r-lua-space)))
+    (require! r-lua-prelude r-lua-prelude)))

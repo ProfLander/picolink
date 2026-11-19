@@ -37,9 +37,7 @@
 (define (r-lua-wrap stx)
   #`(begin #,@stx))
 
-(define/hygienic (r-lua-parse stx)
-  #:definition
-  (r-lua/top-level stx))
+(define r-lua-parse r-lua/top-level)
 
 (define r-lua-compiler 
   (match-λ

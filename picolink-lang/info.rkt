@@ -3,7 +3,6 @@
 (define collection "picolink")
 
 (define deps '["base"
-               "ee-lib"
                "string-tools"
                "picolink-lib"])
 

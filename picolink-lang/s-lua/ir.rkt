@@ -1,10 +1,7 @@
 #lang racket/base
 
-(require (for-syntax racket/base
-                     ee-lib
-                     picolink/syntax)
-
-         ee-lib/define)
+(require (for-syntax racket/base)
+         picolink/syntax)
 
 (provide (for-space s-lua (all-defined-out))
          (for-syntax (all-defined-out)))
