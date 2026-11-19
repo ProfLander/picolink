@@ -28,13 +28,13 @@
        (syntax-local-introduce
         #`(for-syntax (rename #,language #%language #%language)))
 
-       #`(#%define-dependency #,language #%language body ...)
+       #'(#%define-dependency #%language body ...)
 
        #f))))
 
 (define-syntax #%define-dependency
   (syntax-parser
-    [(_ language #%language body ...)
+    [(_ #%language body ...)
 
      (with-syntax ([mod (make-source-module-syntax #'#%language
                                                    #'(body ...))])
@@ -50,7 +50,4 @@
         #'(begin-for-syntax
             (define #%module mod)))
 
-       (syntax-local-lift-require
-        #'(for-syntax (rename language #%language #%language))
-        #'(begin)
-        #f))]))
+       #'(void))]))
