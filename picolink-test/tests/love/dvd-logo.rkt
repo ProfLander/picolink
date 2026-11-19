@@ -7,10 +7,10 @@
                rectangle
                graphics-print))
 
-(define-struct dvd-world [logo]
+(struct dvd-world [logo]
   #:pool-size 2)
 
-(define-struct dvd-logo [x y w h vx vy]
+(struct dvd-logo [x y w h vx vy]
   #:pool-size 2)
 
 (define world

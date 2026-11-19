@@ -20,7 +20,7 @@
          (only r-lua/prelude/interface/length     Length length)
          (only r-lua/prelude/interface/to-string  ToString to-string)
          (only r-lua/prelude/lambda               λ)
-         (only r-lua/prelude/struct               define-struct)
+         (only r-lua/prelude/struct               struct)
          (only r-lua/prelude/sequence             sequence-null)
          (only r-lua/prelude/unit                 define-unit)
          (only r-lua/prelude/type                 define-type))
@@ -57,7 +57,7 @@
 
 (define-type pair:type)
 
-(define-struct pair [ar dr]
+(struct pair [ar dr]
   #:type pair:type
   #:constructor-name cons)
 

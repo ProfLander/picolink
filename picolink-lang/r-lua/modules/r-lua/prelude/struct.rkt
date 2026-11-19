@@ -34,7 +34,7 @@
 
 (provide (all-defined))
 
-(define-macro define-struct
+(define-macro struct
   [(_ (~and name:id
             (~parse name-str
                     (symbol->string (syntax-e #'name))))

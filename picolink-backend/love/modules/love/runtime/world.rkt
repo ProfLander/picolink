@@ -33,7 +33,7 @@
          (only r-lua/prelude/lambda               λ)
          (only r-lua/prelude/logic                and or)
          (only r-lua/prelude/sequencing           begin)
-         (only r-lua/prelude/struct               define-struct)
+         (only r-lua/prelude/struct               struct)
          (only r-lua/prelude/table                table))
 
 (provide quit-with
@@ -43,7 +43,7 @@
          %love-runner-draw
          genesis)
 
-(define-struct quit-with [world]
+(struct quit-with [world]
   #:pool-size 1)
 
 (define-macro update-with-then
