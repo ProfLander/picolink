@@ -1,0 +1,15 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(raco "scribble"
+      "+m"
+      "--redirect-main"
+      "http://pkg-build.racket-lang.org/doc/"
+      "--htmls"
+      "--dest" "../docs"
+      (build-package-path-string doc-package
+                                 "scribblings"
+                                 "picolink.scrbl"))

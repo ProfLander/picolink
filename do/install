@@ -1,0 +1,10 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(apply raco "pkg" "install"
+       "--skip-installed"
+       "--deps" "search-auto"
+       "--link" (hash-values (package-paths)))

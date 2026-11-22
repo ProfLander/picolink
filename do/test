@@ -1,0 +1,13 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(let ([installed (installed-packages)])
+  (if (pair? installed)
+
+      (apply raco "test"
+             "-exp" (installed-packages))
+
+      (error "no installed packages")))

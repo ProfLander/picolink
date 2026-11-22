@@ -1,0 +1,13 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(if (installed? main-package)
+
+    (raco "setup"
+          "--no-docs"
+          "--pkgs" main-package)
+
+    (error 'build "main package ~a is not installed" main-package))

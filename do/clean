@@ -1,0 +1,14 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(let ([installed (installed-packages)])
+  (if (pair? installed)
+
+      (apply raco "setup"
+             "--fast-clean"
+             "--pkgs" installed)
+
+      (error "no installed packages")))

@@ -1,0 +1,14 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(let ([installed (installed-packages)])
+  (if (pair? installed)
+
+      (apply raco "pkg" "uninstall"
+             "--auto"
+             installed)
+
+      (exit 0)))

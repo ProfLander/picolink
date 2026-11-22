@@ -1,0 +1,18 @@
+#!/usr/bin/env racket
+
+#lang racket/base
+
+(require "-shared.rkt")
+
+(if (installed? doc-package)
+
+    (raco "setup"
+          "--no-launcher"
+          "--no-foreign-libs"
+          "--no-info-domain"
+          "--no-pkg-deps"
+          "--no-install"
+          "--no-post-install"
+          "--pkgs" doc-package)
+
+    (error 'build-docs "doc package ~a is not installed" doc-package))

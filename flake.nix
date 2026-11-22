@@ -14,7 +14,6 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = [
           elan.packages.${system}.default
-          pkgs.gnumake
           pkgs.racket
         ];
       };

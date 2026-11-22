@@ -1,6 +1,6 @@
-**/compiled
-**/doc
+**/compiled/
+**/doc/
+**/build/
+docs
 flake.lock
 todo
-build
-picolink-lib/build
