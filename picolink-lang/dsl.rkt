@@ -21,7 +21,6 @@
 
 #:extract  extract-dependencies
 #:wrap     wrap-begin
-#:parse    dsl/top-level
 #:compiler dsl-compiler
 
 (struct/cross-phase dsl-var [])
@@ -135,5 +134,5 @@
 
 (define dsl-compiler
   (match-λ
-   ['racket dsl-compile/racket]
+   ['racket (compose dsl-compile/racket dsl/top-level)]
    [target (error "unsupported backend" target)]))

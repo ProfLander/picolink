@@ -38,12 +38,14 @@
                      body)
                 (... ...))
 
-             (with-syntax* ([language (datum->syntax this-syntax
+             (with-syntax* ([compiling (syntax-local-compiling-module?)]
+                            [language (datum->syntax this-syntax
                                                      'language)]
                             [cont
                              (forward-macro
                               this-syntax
-                              #'(#%program-begin language
+                              #'(#%program-begin compiling
+                                                 language
                                                  body (... ...)))])
 
                #'(#%plain-module-begin

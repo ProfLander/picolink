@@ -8,10 +8,10 @@
          picolink/scope
          picolink/syntax
          picolink/binding
-         picolink/module/parsed
-         picolink/module/scopes
+         picolink/module/compiled
+         picolink/module/parameters
+         picolink/program/scope
          picolink/intrinsic/var
-         picolink/r-lua/space
 
          (for-template picolink/r-lua/ir))
 
@@ -19,9 +19,9 @@
 
 (define-literal-set r-lua-surface-literals
   #:datum-literals [begin
-                     require
-                     provide
-                     define-macro]
+                    require
+                    provide
+                    define-macro]
   [])
 
 (struct/cross-phase r-lua-var [])
@@ -75,29 +75,29 @@
         (and (macro? binding)
              binding))))
 
-(define (apply-macro mac ctx-type parser stx)
+(define (apply-macro mac parser stx)
 
-  (let ([module-ident (macro-module-ident mac)]
-        [module-scope (macro-module-scope mac)])
+  (let* ([module-ident (macro-module-ident mac)])
 
-    (parameterize ([current-foreign-scopes
-                    (cons (cons module-ident module-scope)
-                          (current-foreign-scopes))])
+    (parameterize
+        ([current-foreign-scopes
+          (if (datum=? module-ident (current-module-ident))
 
-      (parser
-       (let ([scopes (current-scopes)])
+              (current-foreign-scopes)
 
-         (syntax-local-apply-transformer
-          (λ (stx)
-            (parameterize ([current-scopes scopes])
-              ((macro-trx mac) stx)))
-          #f
-          ctx-type
-          #f
-          stx))))))
+              (let* ([mac-module (with-scope (current-program-scope)
+                                   (lookup module-ident))]
 
-(define (r-lua/top-level stx)
-  (syntax-parse stx
+                     [module-scope (picolink-module-lexical-scope
+                                    mac-module)])
+
+                (cons (cons module-ident module-scope)
+                      (current-foreign-scopes))))])
+
+      (parser ((syntax-local-eval (macro-trx mac)) stx)))))
+
+(define r-lua/top-level
+  (syntax-parser
     #:literal-sets [r-lua-surface-literals]
 
     [(_:r-lua-ir-literal _ ...)
@@ -135,20 +135,18 @@
      (void
       (bind! #'name
              (macro
-              (syntax-local-eval
-               (r-lua/macro
-                (datum->syntax this-syntax
-                               (attribute expr)
-                               this-syntax
-                               this-syntax)))
-              (current-module-ident)
-              (current-scope))))]
+              (r-lua/macro
+               (datum->syntax this-syntax
+                              (attribute expr)
+                              this-syntax
+                              this-syntax))
+              (current-module-ident))))]
 
     [(ident:id _ ...)
      #:do [(define mac (lookup-macro #'ident))]
      #:when mac
      #:cut
-     (apply-macro mac 'module r-lua/top-level this-syntax)]
+     (apply-macro mac r-lua/top-level this-syntax)]
 
     [(~cata e r-lua/expr)
      (syntax/loc this-syntax
@@ -162,8 +160,7 @@
   (syntax-parser
     #:literal-sets [r-lua-surface-literals]
 
-    [(opt:parse-option ...
-      [pat body ... tail] ...)
+    [(opt:parse-option ... [pat body ... tail] ...)
      (syntax/loc this-syntax
        (syntax-parser
          opt ...
@@ -186,7 +183,7 @@
        #:when mac
        #:cut
 
-       (apply-macro mac 'expression r-lua/expr this-syntax)]
+       (apply-macro mac r-lua/expr this-syntax)]
 
       [(~cata ident:id check-var)
        #'ident]

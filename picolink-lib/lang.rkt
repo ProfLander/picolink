@@ -11,7 +11,8 @@
 (define-syntax #%module-begin
   (syntax-parser
     [(_ language body ...)
-     #'(#%program-begin language body ...)]))
+     (with-syntax ([compiling (syntax-local-compiling-module?)])
+       #`(#%program-begin compiling language body ...))]))
 
 (define-syntax #%top-interaction
   (syntax-parser

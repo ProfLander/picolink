@@ -2,4 +2,4 @@
 
 (require picolink/debug)
 
-(current-backend 'picolink/love)
+(current-debug-target 's-lua)

@@ -1,27 +1,23 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse
-                     picolink/lang/expand-state)
+                     syntax/parse)
 
-         picolink/lang/entry-point
-         picolink/lang/dependency)
+         picolink/lang/compiler
+         picolink/lang/input)
 
 (provide (all-defined-out))
 
 (define-syntax #%program-begin
   (syntax-parser
-    [(_ language body ...)
+    [(_ compiling language body ...)
 
-     (let ([is-entry-point (and (not (syntax-local-compiling-module?))
-                                (current-is-entry-point))])
+     (if #t #;(syntax-e #'compiling)
 
-       (if is-entry-point
+         (#%input-begin this-syntax
+                        #'language
+                        (attribute body))
 
-           (#%entry-point-begin this-syntax
-                                #'language
-                                (attribute body))
-
-           (#%dependency-begin this-syntax
-                               #'language
-                               (attribute body))))]))
+         (#%compiler-begin this-syntax
+                           #'language
+                           (attribute body)))]))

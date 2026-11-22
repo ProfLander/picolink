@@ -9,8 +9,7 @@ picolink/r-lua/base
                      syntax/parse
                      picolink/syntax
                      picolink/scope
-                     picolink/module/scopes
-                     picolink/r-lua/space
+                     picolink/module/parameters
                      picolink/r-lua/surface))
 
 (provide (all-from-out picolink/r-lua/ir
@@ -21,6 +20,5 @@ picolink/r-lua/base
                                    syntax/parse
                                    picolink/syntax
                                    picolink/scope
-                                   picolink/module/scopes
-                                   picolink/r-lua/space
+                                   picolink/module/parameters
                                    picolink/r-lua/surface)))

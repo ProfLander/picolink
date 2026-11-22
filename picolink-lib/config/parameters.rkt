@@ -3,22 +3,14 @@
 (#%declare #:cross-phase-persistent)
 
 (#%provide current-root
-           current-backend
-           current-build-directory
-           current-parallel
-           current-config-directory)
+           current-config-path
+           current-build-directory)
 
 (define-values (current-root)
   (make-parameter #f))
 
-(define-values (current-backend)
-  (make-parameter #f))
-
-(define-values (current-config-directory)
+(define-values (current-config-path)
   (make-parameter #f))
 
 (define-values (current-build-directory)
   (make-parameter "build"))
-
-(define-values (current-parallel)
-  (make-parameter #t))

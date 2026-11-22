@@ -1,50 +1,31 @@
 #lang racket/base
 
+(require (for-syntax racket/base
+                     syntax/parse)
+
+         picolink/syntax
+         picolink/scope
+         picolink/module/parameters)
+
 (provide (all-defined-out))
 
-(struct compiled-module [ident
-                         language
-                         require-scope
-                         provide-scope
-                         module-scope
-                         stx]
-  #:transparent)
+(struct/cross-phase picolink-module [ident
+                                     program-scope
+                                     require-scope
+                                     provide-scope
+                                     lexical-scope
+                                     stx])
 
-(define (make-compiled-module ident
-                              #:language language
-                              #:require-scope require-scope
-                              #:provide-scope provide-scope
-                              #:module-scope module-scope
-                              #:stx stx)
-  (compiled-module ident
-                   language
-                   require-scope
-                   provide-scope
-                   module-scope
-                   stx))
+(define-syntax with-picolink-module-scopes
+  (syntax-parser
+    [(_ parsed body ...)
+     (syntax/loc this-syntax
 
-(define (compiled-module-update compiled
-                                #:ident
-                                [ident
-                                 (compiled-module-ident compiled)]
-                                #:language
-                                [language
-                                 (compiled-module-language compiled)]
-                                #:require-scope
-                                [require-scope
-                                 (compiled-module-require-scope compiled)]
-                                #:provide-scope
-                                [provide-scope
-                                 (compiled-module-provide-scope compiled)]
-                                #:module-scope
-                                [module-scope
-                                 (compiled-module-module-scope compiled)]
-                                #:stx
-                                [stx
-                                 (compiled-module-stx compiled)])
-  (compiled-module ident
-                   language
-                   require-scope
-                   provide-scope
-                   module-scope
-                   stx))
+       (parameterize ([current-require-scope
+                       (picolink-module-require-scope parsed)]
+                      [current-provide-scope
+                       (picolink-module-provide-scope parsed)]
+                      [current-foreign-scopes null])
+
+         (with-scope (picolink-module-lexical-scope parsed)
+           body ...)))]))

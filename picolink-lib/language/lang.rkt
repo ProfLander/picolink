@@ -5,13 +5,13 @@
 
          racket/function
 
+         picolink/language
          picolink/binding
-         picolink/module/scopes
-         picolink/language)
+         picolink/module/parameters)
 
 (provide (all-from-out racket/base
                        picolink/binding
-                       picolink/module/scopes)
+                       picolink/module/parameters)
          #%module-begin)
 
 (define-syntax #%module-begin
@@ -24,7 +24,6 @@
              (~optional (~seq #:wrap     wrap))
              (~optional (~seq #:inject   inject)
                         #:defaults ([inject #'(const void)]))
-             (~optional (~seq #:parse    parse))
              (~optional (~seq #:compiler compiler))
              body)
         ...)
@@ -34,9 +33,6 @@
 
      #:fail-unless (attribute wrap)
      "languages must define #:wrap"
-
-     #:fail-unless (attribute parse)
-     "languages must define #:parse"
 
      #:fail-unless (attribute compiler)
      "languages must define #:compiler"
@@ -51,5 +47,4 @@
                          #:extract      extract
                          #:wrap         wrap
                          #:inject       inject
-                         #:parse        parse
                          #:compiler     compiler)))]))

@@ -12,14 +12,13 @@
 
 #:extract  intrinsic-extract
 #:wrap     intrinsic-wrap
-#:parse    intrinsic-parse
 #:compiler intrinsic-compiler
 
 (define intrinsic-extract (const null))
 
 (define intrinsic-wrap identity)
 
-(define intrinsic-parse
+(define intrinsic-compiler
   (syntax-parser
     [(prov:id
       ...)
@@ -29,5 +28,3 @@
        (provide! prov prov))
 
      #f]))
-
-(define intrinsic-compiler (const identity))

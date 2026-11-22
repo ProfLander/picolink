@@ -1,7 +1,7 @@
 #lang picolink/backend
 
 #:target   current-debug-target
-#:link     debug-link
+#:compile  debug-compile
 #:run      debug-run
 #:interact debug-interact
 
@@ -9,8 +9,8 @@
          racket/pretty
 
          picolink/scope
-         picolink/module/scopes
          picolink/module/compiled
+         picolink/module/parameters
 
          (for-template racket/base))
 
@@ -19,41 +19,38 @@
 (define current-debug-target
   (make-parameter #f))
 
-(define (debug-link _lctx prog)
+(define (debug-compile _stx)
 
-  (for ([mod (in-list prog)])
+  (define require-scope (current-require-scope))
+  (define provide-scope (current-provide-scope))
+  (define lexical-scope (current-lexical-scope))
 
-    (define ident         (compiled-module-ident mod))
-    (define require-scope (compiled-module-require-scope mod))
-    (define provide-scope (compiled-module-provide-scope mod))
-    (define module-scope  (compiled-module-module-scope mod))
+  (define (print-binding ident)
+    (define binding (lookup ident))
+    (displayln (format "  ~a:" (syntax-e ident)))
+    (displayln (format "   ~a" (string-replace (pretty-format binding)
+                                               "\n" "\n   "))))
 
-    (define (print-binding ident)
-      (define binding (lookup ident))
-      (displayln (format "  ~a:" (syntax-e ident)))
-      (displayln (format "   ~a" (string-replace (pretty-format binding)
-                                                 "\n" "\n   "))))
+  (displayln (format "~a:" (syntax-e (current-module-ident))))
 
-    (displayln (format "~a:" (syntax-e ident)))
+  (displayln " requires:")
+  (with-scope require-scope
+    (for ([ident (in-list (scope-names require-scope))])
+      (print-binding ident)))
 
-    (displayln " requires:")
-    (with-scope require-scope
-      (for ([ident (in-list (scope-names require-scope))])
-        (print-binding ident)))
+  (displayln "")
 
-    (displayln "")
+  (displayln " provides:")
+  (with-scope provide-scope
+    (for ([ident (in-list (scope-names provide-scope))])
+      (print-binding ident)))
 
-    (displayln " provides:")
-    (with-scope provide-scope
-      (for ([ident (in-list (scope-names provide-scope))])
-        (print-binding ident)))
+  (displayln "")
 
-    (displayln "")
-
-    (displayln " defines:")
-    (with-scope module-scope
-      (for ([ident (in-list (scope-names module-scope))])
-        (print-binding ident)))))
+  (displayln " defines:")
+  (with-scope lexical-scope
+    (for ([ident (in-list (scope-names lexical-scope))])
+      (print-binding ident))))
 
 (define (debug-run _lctx _linked)
   #'(void))

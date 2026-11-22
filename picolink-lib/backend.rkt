@@ -1,39 +1,29 @@
 #lang racket/base
 
-(require racket/syntax)
+(require picolink/syntax)
 
 (provide (all-defined-out))
 
-(struct backend [target
-                 %search-paths
-                 %modules
-                 %transform
-                 %link
-                 %run
-                 %interact]
-  #:transparent)
+(struct/cross-phase backend [target
+                             %search-paths
+                             %modules
+                             %compile
+                             %run
+                             %interact])
 
 (define (make-backend #:target       target
                       #:search-paths search-paths
                       #:modules      modules
-                      #:transform    transform
-                      #:link         link
+                      #:compile      compile
                       #:run          run
                       #:interact     interact)
 
   (backend target
            search-paths
            modules
-           transform
-           link
+           compile
            run
            interact))
-
-(define (backend-ident lctx)
-  (datum->syntax lctx '#%backend))
-
-(define (syntax-local-backend lctx)
-  (syntax-local-eval (backend-ident lctx)))
 
 (define (backend-search-paths backend)
   ((backend-%search-paths backend)))
@@ -41,11 +31,8 @@
 (define (backend-modules backend)
   ((backend-%modules backend)))
 
-(define (backend-transform backend lctx prog)
-  ((backend-%transform backend) lctx prog))
-
-(define (backend-link backend lctx compiled)
-  ((backend-%link backend) lctx compiled))
+(define (backend-compile backend stx)
+  ((backend-%compile backend) stx))
 
 (define (backend-run backend lctx linked)
   ((backend-%run backend) lctx linked))

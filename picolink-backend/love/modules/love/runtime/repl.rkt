@@ -34,7 +34,8 @@
     (when input
       (let-values ([(res err) (load-string input "repl")])
         (if res
-            (let ([f (set-fenv! res (table-ref (s-lua lctx) repl-scope))])
+            (let ([fenv (table-ref (s-lua scopes) repl-scope)]
+                  [f (set-fenv! res fenv)])
               (let-values ([(res err) (pcall f)])
                 (unless res
                   (: stderr "write" (traceback err)))))

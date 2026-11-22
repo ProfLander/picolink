@@ -1,8 +1,9 @@
 #lang racket/base
 
+(require picolink/syntax)
+
 (provide (all-defined-out))
 
-(struct export [local-id
-                out-id
-                orig-stx]
-  #:transparent)
+(struct/cross-phase export [local-id
+                            out-id
+                            orig-stx])

@@ -1,3 +1,3 @@
 #lang picolink/config
 
-(current-backend 'picolink/love)
+(require picolink/love)

@@ -12,7 +12,6 @@
 
 #:extract  s-lua-extract
 #:wrap     s-lua-wrap
-#:parse    s-lua-parse
 #:compiler s-lua-compiler
 
 (define s-lua-extract (const null))
@@ -22,12 +21,10 @@
    (with-syntax ([(body ...) stx])
      #'(#%chunk (#%block body ...)))))
 
-(define s-lua-parse identity)
-
 (define s-lua-compiler 
   (match-λ
    ['s-lua identity]
-   ['lua s-lua:compile/chunk]
+   ['lua   s-lua:compile/chunk]
    [target (error "unsupported backend" target)]))
 
 (define (%s-lua-append a b)

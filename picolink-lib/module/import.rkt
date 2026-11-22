@@ -1,9 +1,10 @@
 #lang racket/base
 
+(require picolink/syntax)
+
 (provide (all-defined-out))
 
-(struct import [local-id
-                src-sym
-                src-mod-path
-                orig-stx]
-  #:transparent)
+(struct/cross-phase import [local-id
+                            src-sym
+                            src-mod-path
+                            orig-stx])

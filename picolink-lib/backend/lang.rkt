@@ -5,7 +5,8 @@
 
          racket/function
 
-         picolink/backend)
+         picolink/backend
+         picolink/backend/parameters)
 
 (provide (all-from-out racket/base)
          #%module-begin)
@@ -17,9 +18,7 @@
                         #:defaults ([search-paths #'(const null)]))
              (~optional (~seq #:modules modules)
                         #:defaults ([modules #'(const null)]))
-             (~optional (~seq #:transform    transform)
-                        #:defaults ([transform #'(λ (a b) b)]))
-             (~optional (~seq #:link         link))
+             (~optional (~seq #:compile      compile))
              (~optional (~seq #:run          run))
              (~optional (~seq #:interact     interact))
              body)
@@ -28,8 +27,8 @@
      #:fail-unless (attribute target)
      "backends must define #:target"
 
-     #:fail-unless (attribute link)
-     "backends must define #:link"
+     #:fail-unless (attribute compile)
+     "backends must define #:compile"
 
      #:fail-unless (attribute run)
      "backends must define #:run"
@@ -37,15 +36,16 @@
      #:fail-unless (attribute interact)
      "backends must define #:interact"
 
-     #'(#%plain-module-begin
+     (syntax/loc this-syntax
+       (#%plain-module-begin
+
         body ...
 
-        (provide #%backend)
-        (define #%backend
-          (make-backend #:target       target
-                        #:search-paths search-paths
-                        #:modules      modules
-                        #:transform    transform
-                        #:link         link
-                        #:run          run
-                        #:interact     interact)))]))
+        (unless (current-backend)
+          (current-backend
+           (make-backend #:target       target
+                         #:search-paths search-paths
+                         #:modules      modules
+                         #:compile      compile
+                         #:run          run
+                         #:interact     interact)))))]))

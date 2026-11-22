@@ -22,7 +22,8 @@
 
       (if res
 
-          (let ([f (set-fenv! res (table-ref (s-lua lctx) scope))])
+          (let ([fenv (table-ref (s-lua scopes) scope)]
+                [f (set-fenv! res fenv)])
             (let-values ([(res err) (pcall f)])
               (unless res
                 (: stderr "write" (traceback err)))))

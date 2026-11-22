@@ -3,61 +3,57 @@
 (require (for-syntax racket/base
                      syntax/parse)
 
-         racket/dict
-         racket/sequence
+         picolink/alist
+         picolink/syntax
+         picolink/module/parameters)
 
-         picolink/syntax)
-
-(provide current-scopes
-         current-scope
+(provide current-lexical-scopes
+         current-lexical-scope
          make-scope
          scope-names
          scope-empty?
          in-scope
          with-scope
          with-new-scope
+         with-module-scopes
          bind!
-         lookup)
+         lookup
+         lookup-foreign)
 
 (struct/cross-phase scope [name bindings])
 
 (define (make-scope name)
-  (scope name (box null)))
+  (scope name (make-alist)))
 
-(define (scope-ref scope sym)
-  (let ([binding (assoc sym (unbox (scope-bindings scope)) datum=?)])
-    (and binding (cdr binding))))
+(define (scope-ref scope key)
+  (alist-ref (scope-bindings scope) key))
 
-(define (scope-set! scope sym binding)
-  (set-box! (scope-bindings scope)
-            (cons (cons sym binding)
-                  (unbox (scope-bindings scope)))))
+(define (scope-set! scope key val)
+  (alist-set! (scope-bindings scope) key val))
 
 (define (scope-names scope)
-  (dict-keys (unbox (scope-bindings scope))))
+  (alist-keys (scope-bindings scope)))
 
 (define (scope-empty? scope)
-  (null? (unbox (scope-bindings scope))))
+  (alist-empty? (scope-bindings scope)))
 
 (define (in-scope scope)
-  (in-dict (unbox (scope-bindings scope))))
+  (in-alist (scope-bindings scope)))
 
-(define current-scopes
-  (make-parameter null))
-
-(define (current-scope)
-  (let ([scopes (current-scopes)])
+(define (current-lexical-scope)
+  (let ([scopes (current-lexical-scopes)])
 
     (unless (pair? scopes)
       (error "not in a binding scope"))
 
-    (car (current-scopes))))
+    (car (current-lexical-scopes))))
 
 (define-syntax with-scope
   (syntax-parser
     [(_ scope body ...)
      (syntax/loc this-syntax
-       (parameterize ([current-scopes (cons scope (current-scopes))])
+       (parameterize ([current-lexical-scopes
+                       (cons scope (current-lexical-scopes))])
          body ...))]))
 
 (define-syntax with-new-scope
@@ -79,7 +75,7 @@
        (current-continuation-marks)))]))
 
 (define (lookup ident)
-  (for/first ([scope (in-list (current-scopes))]
+  (for/first ([scope (in-list (current-lexical-scopes))]
               #:do [(define binding (scope-ref scope ident))]
               #:when binding)
 
@@ -88,7 +84,7 @@
 
 (define (bind! ident binding)
 
-  (let ([scope (current-scope)])
+  (let ([scope (current-lexical-scope)])
 
     (when (scope-ref scope ident)
       (error (scope-name scope)
@@ -106,3 +102,31 @@
       (bind! #'a 5678)
       (bind! #'b 5678)
       (println (lookup #'a)))))
+
+(define (lookup-foreign ident)
+
+  "Lookup IDENT in the current module scope"
+
+  (for/first ([pair (in-list (current-foreign-scopes))]
+              #:do [(define source-module (car pair))
+                    (define scope (cdr pair))
+
+                    (define bind
+                      (with-scope scope
+                        (lookup ident)))]
+
+              #:when bind)
+
+    (cons source-module bind)))
+
+(define-syntax with-module-scopes
+  (syntax-parser
+    [(_ body ...)
+     (syntax/loc this-syntax
+
+       (parameterize ([current-require-scope (make-scope 'require)]
+                      [current-provide-scope (make-scope 'provide)]
+                      [current-foreign-scopes null])
+
+         (with-new-scope lexical
+           body ...)))]))

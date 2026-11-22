@@ -3,8 +3,7 @@
 (require racket/syntax
 
          picolink/syntax
-         picolink/backend
-         picolink/module/scopes)
+         picolink/backend)
 
 (provide (all-defined-out))
 
@@ -13,7 +12,6 @@
                               %extract
                               %wrap
                               %inject
-                              %parse
                               %compiler])
 
 (define (make-language #:search-paths search-paths
@@ -21,14 +19,12 @@
                        #:extract      extract
                        #:wrap         wrap
                        #:inject       inject
-                       #:parse        parse
                        #:compiler     compiler)
   (language search-paths
             modules
             extract
             wrap
             inject
-            parse
             compiler))
 
 (define (language-ident lctx)
@@ -52,9 +48,8 @@
 (define (language-inject lang)
   ((language-%inject lang)))
 
-(define (language-parse lang
-                        stx)
-  ((language-%parse lang) (syntax-local-introduce stx)))
-
 (define (language-compiler lang backend)
   ((language-%compiler lang) ((backend-target backend))))
+
+(define (language-compile lang backend stx)
+  ((language-compiler lang backend) stx))

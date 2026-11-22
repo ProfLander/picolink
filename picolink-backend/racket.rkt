@@ -1,11 +1,11 @@
 #lang picolink/backend
 
 (require racket/list
-         racket/dict
          racket/function
 
          syntax/parse
 
+         picolink/alist
          picolink/syntax
          picolink/scope
          picolink/module
@@ -34,7 +34,7 @@
       (let* ([reqs
               (reverse
                (for*/list ([(_ imports) (in-scope require-scope)]
-                           [(_ req)     (in-dict imports)])
+                           [(_ req)     (in-alist imports)])
 
                  (with-syntax ([local-id
                                 (racket-introduce (import-local-id req))]

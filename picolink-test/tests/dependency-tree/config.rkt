@@ -1,3 +1,3 @@
 #lang picolink/config
 
-(current-backend 'picolink/racket)
+(require picolink/racket)

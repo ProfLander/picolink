@@ -1,9 +1,7 @@
 #lang picolink/language
 
 (require racket/base
-         picolink/backend
-         picolink/r-lua/base
-         picolink/r-lua/space)
+         picolink/r-lua/base)
 
 (provide (all-defined-out))
 
@@ -12,7 +10,6 @@
 #:extract      r-lua-extract
 #:wrap         r-lua-wrap
 #:inject       r-lua-inject
-#:parse        r-lua-parse
 #:compiler     r-lua-compiler
 
 (define (r-lua-modules)

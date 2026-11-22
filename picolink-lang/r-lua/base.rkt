@@ -14,7 +14,6 @@
 #:search-paths r-lua-search-paths
 #:extract      r-lua-extract
 #:wrap         r-lua-wrap
-#:parse        r-lua-parse
 #:compiler     r-lua-compiler
 
 (define (r-lua-search-paths)
@@ -37,9 +36,7 @@
 (define (r-lua-wrap stx)
   #`(begin #,@stx))
 
-(define r-lua-parse r-lua/top-level)
-
 (define r-lua-compiler 
   (match-λ
-   ['s-lua r-lua->s-lua]
+   ['s-lua (compose r-lua->s-lua r-lua/top-level)]
    [target (error "unsupported backend" target)]))

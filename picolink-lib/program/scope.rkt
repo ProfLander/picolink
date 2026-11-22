@@ -1,17 +1,8 @@
-#lang racket/base
+#lang racket/kernel
 
-(require picolink/scope
-         picolink/module/parsed)
+(#%declare #:cross-phase-persistent)
 
-(provide (all-defined-out))
+(#%provide current-program-scope)
 
-(define current-program-scope
+(define-values (current-program-scope)
   (make-parameter #f))
-
-(define (lookup-in-program ident)
-  (with-scope (current-program-scope)
-    (lookup ident)))
-
-(define (bind-in-program! ident stx)
-  (with-scope (current-program-scope)
-    (bind! ident stx)))

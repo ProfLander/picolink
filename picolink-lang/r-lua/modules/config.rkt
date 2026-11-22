@@ -1,7 +1,4 @@
 #lang picolink/config
 
 (require picolink/lua)
-
-(current-backend 'picolink/lua)
-
-(lua-collection-mode)
+(provide (all-from-out picolink/lua))

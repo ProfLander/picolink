@@ -1,24 +1,22 @@
 #lang racket/base
 
-(require racket/dict
-         racket/syntax
+(require racket/syntax
 
          syntax/parse
          syntax/strip-context
 
-         data/ddict
-
+         picolink/alist
          picolink/syntax
          picolink/scope
          picolink/program/scope
-         picolink/module/scopes
-         picolink/module/parsed
          picolink/module/import
-         picolink/module/export)
+         picolink/module/export
+         picolink/module/compiled
+         picolink/module/parameters)
 
 (provide (all-defined-out))
 
-(struct/cross-phase macro [trx module-ident module-scope])
+(struct/cross-phase macro [trx module-ident])
 
 (define current-debug
   (make-parameter #f))
@@ -31,7 +29,8 @@
     (println mod-path))
 
   (define mod
-    (lookup-in-program mod-path))
+    (with-scope (current-program-scope)
+      (lookup mod-path)))
 
   (unless mod
     (raise-syntax-error
@@ -52,14 +51,14 @@
     (println local-id))
 
   (define prov
-    (with-scope (parsed-module-provide-scope mod)
+    (with-scope (picolink-module-provide-scope mod)
       (lookup (datum->syntax #f src-sym))))
 
   (unless prov
     (raise-syntax-error
      #f
      (format "~a does not provide ~a"
-             (syntax-e (parsed-module-ident mod))
+             (syntax-e (picolink-module-ident mod))
              (syntax-e local-id))
      lctx
      local-id))
@@ -87,7 +86,7 @@
 
 (define (emplace-require! lctx mod local-id src-sym)
 
-  (define mod-id (parsed-module-ident mod))
+  (define mod-id (picolink-module-ident mod))
 
   (define local-id* (syntax-local-introduce local-id))
 
@@ -100,11 +99,11 @@
       (let ([imports (lookup mod-id)])
 
         (unless imports
-          (set! imports (make-mutable-ddict))
+          (set! imports (make-alist))
           (bind! (syntax-local-introduce (strip-context mod-id))
                  imports))
 
-        (dict-set! imports (syntax-e local-id) import)))))
+        (alist-set! imports (syntax-e local-id) import)))))
 
 (define (require-module-provide! lctx mod prov src-sym local-id)
 
@@ -117,7 +116,7 @@
     (println local-id))
 
   (define binding
-    (with-scope (parsed-module-module-scope mod)
+    (with-scope (picolink-module-lexical-scope mod)
       (lookup (export-local-id prov))))
 
   (emplace-require! lctx mod local-id src-sym)
@@ -160,15 +159,15 @@
 
   (define mod (resolve-module lctx src-mod-path))
 
-  (define mod-id (parsed-module-ident mod))
+  (define mod-id (picolink-module-ident mod))
   (define mod-id* (syntax-local-introduce (strip-context mod-id)))
 
   (with-scope (current-require-scope)
     (let ([imports (lookup mod-id*)])
       (unless imports
-        (bind! mod-id* (make-mutable-ddict)))))
+        (bind! mod-id* (make-alist)))))
 
-  (define provide-scope (parsed-module-provide-scope mod))
+  (define provide-scope (picolink-module-provide-scope mod))
 
   (for ([prov-id (in-list (scope-names provide-scope))]
         #:when (not (member prov-id exceptions datum=?)))
@@ -254,7 +253,7 @@
 
   (define requires
     (for*/list ([(import-mod-id imports) (in-scope require-scope)]
-                [(_ import)               (in-dict imports)]
+                [(_ import)               (in-alist imports)]
                 #:do [(define import-id (import-local-id import))]
                 #:when (and (datum=? mod-id import-mod-id)
                             (not (member import-id exceptions
@@ -294,12 +293,12 @@
     (println prefix)
     (println exceptions))
 
-  (define module-scope (current-scope))
+  (define module-scope (current-lexical-scope))
   (define require-scope (current-require-scope))
 
   (define requires
     (for*/list ([(_ imports) (in-scope require-scope)]
-                [(_ import)  (in-dict imports)])
+                [(_ import)  (in-alist imports)])
       (import-local-id import))) 
 
   (define definitions (filter (λ (def)
