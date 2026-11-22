@@ -6,6 +6,20 @@
 (require 'compile)
 (require 'autorevert)
 (require 'seq)
+(require 'desktop)
+(require 'frameset)
+
+(setq frameset-filter-alist (copy-tree frameset-filter-alist))
+(add-to-list 'frameset-filter-alist
+             '(racket-config-window-layout . :never))
+(add-to-list 'frameset-filter-alist
+             '(racket-config-describe-window-configuration . :never))
+(add-to-list 'window-persistent-parameters '(window-side . writable))
+(add-to-list 'window-persistent-parameters '(window-slot . writable))
+(add-to-list 'window-persistent-parameters
+             '(racket-config-window-role . writable))
+
+(defconst racket-config-side-window-width 106)
 
 (defun compile-current-buffer-default-command ()
   "Run the current buffer's default compilation command without prompting."
@@ -20,17 +34,11 @@
 (global-auto-revert-mode 1)
 
 (defun racket-config-source-windows (frame)
-  "Return non-side windows to the left of FRAME's Racket panels."
-  (let* ((layout (frame-parameter frame 'racket-config-window-layout))
-         (panel (or (and (window-live-p (nth 1 layout)) (nth 1 layout))
-                    (and (window-live-p (nth 2 layout)) (nth 2 layout))))
-         (left (and panel (car (window-edges panel)))))
-    (when left
-      (seq-filter
-       (lambda (window)
-         (and (not (window-parameter window 'window-side))
-              (< (car (window-edges window)) left)))
-       (window-list frame 'no-minibuf)))))
+  "Return non-side windows on FRAME."
+  (seq-filter
+   (lambda (window)
+     (not (window-parameter window 'window-side)))
+   (window-list frame 'no-minibuf)))
 
 (defun racket-config-prevent-window-deletion (window)
   "Prevent deletion of reserved windows and the last source window."
@@ -49,11 +57,13 @@
   (let* ((layout (frame-parameter frame 'racket-config-window-layout))
          (source-windows (racket-config-source-windows frame))
          (stored-anchor (car-safe layout))
+         (selected (frame-selected-window frame))
          (anchor (or (and (memq stored-anchor source-windows) stored-anchor)
+                     (and (memq selected source-windows) selected)
                      (car source-windows)))
-         (fixed-windows (seq-filter #'window-live-p (cdr layout))))
+         (fixed-windows (seq-filter #'window-live-p (cdr-safe layout))))
     (when layout
-      (when (and anchor (not (eq stored-anchor anchor)))
+      (when (and anchor (not (eq anchor stored-anchor)))
         (set-frame-parameter
          frame 'racket-config-window-layout
          (cons anchor (cdr layout))))
@@ -64,26 +74,205 @@
          window 'no-delete-other-windows
          (or (memq window fixed-windows) (eq window anchor)))))))
 
-(add-hook 'window-state-change-functions
-          #'racket-config-refresh-window-protection)
+(defun racket-config-window-configuration-change ()
+  "Reapply side-window roles and deletion protection after layout changes."
+  (dolist (frame (frame-list))
+    (let* ((layout (frame-parameter frame 'racket-config-window-layout))
+           (compile-window (nth 1 layout))
+           (repl-window (nth 2 layout)))
+      (when (and (window-live-p compile-window)
+                 (window-live-p repl-window))
+        (let (window-configuration-change-hook)
+          (racket-config-refresh-window-protection frame)
+          (set-window-parameter compile-window 'window-side 'right)
+          (set-window-parameter compile-window 'window-slot 0)
+          (set-window-parameter compile-window 'racket-config-window-role
+                                'compilation)
+          (set-window-parameter repl-window 'window-side 'right)
+          (set-window-parameter repl-window 'window-slot 1)
+          (set-window-parameter repl-window 'racket-config-window-role 'repl))))))
+
+(add-hook 'window-configuration-change-hook
+          #'racket-config-window-configuration-change)
+
+(defun racket-config-window-with-role (frame role)
+  "Return the side window on FRAME assigned to ROLE."
+  (let ((role-window
+         (seq-find
+          (lambda (window)
+            (eq (window-parameter window 'racket-config-window-role) role))
+          (window-list frame 'no-minibuf)))
+        (slot (if (eq role 'compilation) 0 1)))
+    (or role-window
+        (seq-find
+         (lambda (window)
+           (and (eq (window-parameter window 'window-side) 'right)
+                (equal (or (window-parameter window 'window-slot) 0) slot)))
+         (window-list frame 'no-minibuf)))))
 
 (defun racket-config-install-window-layout (frame layout)
   "Register and protect LAYOUT on FRAME."
-  (set-frame-parameter frame 'racket-config-window-layout layout)
-  ;; Weak dedication lets the display action replace each panel's buffer.
-  (set-window-dedicated-p (nth 1 layout) 'racket-config-compilation)
-  (set-window-dedicated-p (nth 2 layout) 'racket-config-repl)
-  (racket-config-refresh-window-protection frame))
+  (let ((compile-window (nth 1 layout))
+        (repl-window (nth 2 layout)))
+    (set-frame-parameter frame 'racket-config-window-layout layout)
+    (set-window-parameter compile-window 'window-side 'right)
+    (set-window-parameter compile-window 'window-slot 0)
+    (set-window-parameter compile-window 'racket-config-window-role 'compilation)
+    (set-window-parameter repl-window 'window-side 'right)
+    (set-window-parameter repl-window 'window-slot 1)
+    (set-window-parameter repl-window 'racket-config-window-role 'repl)
+    ;; Weak dedication lets the display action replace each panel's buffer.
+    (set-window-dedicated-p compile-window 'racket-config-compilation)
+    (set-window-dedicated-p repl-window 'racket-config-repl)
+    (racket-config-refresh-window-protection frame)))
 
 (defun racket-config-window-layout-from-frame (frame)
-  "Recover the three principal windows from FRAME."
-  (racket-config-refresh-window-protection frame)
-  (let* ((layout (frame-parameter frame 'racket-config-window-layout))
-         (source-windows (racket-config-source-windows frame)))
-    (when (and (memq (car-safe layout) source-windows)
-               (window-live-p (nth 1 layout))
-               (window-live-p (nth 2 layout)))
-      layout)))
+  "Recover the source, compilation and REPL windows on FRAME."
+  (let* ((stored (frame-parameter frame 'racket-config-window-layout))
+         (source-windows (racket-config-source-windows frame))
+         (selected (frame-selected-window frame))
+         (source
+          (or (and (memq (car-safe stored) source-windows) (car stored))
+              (and (memq selected source-windows) selected)
+              (car source-windows)))
+         (compile-window
+          (or (and (window-live-p (nth 1 stored)) (nth 1 stored))
+              (racket-config-window-with-role frame 'compilation)))
+         (repl-window
+          (or (and (window-live-p (nth 2 stored)) (nth 2 stored))
+              (racket-config-window-with-role frame 'repl))))
+    (when (and source compile-window repl-window)
+      (let ((layout (list source compile-window repl-window)))
+        (racket-config-install-window-layout frame layout)
+        layout))))
+
+(defun racket-config-placeholder-buffer (role)
+  "Return the hidden placeholder buffer for panel ROLE."
+  (let ((buffer
+         (get-buffer-create
+          (pcase role
+            ('compilation " *racket-config-compilation-slot*")
+            ('repl " *racket-config-repl-slot*")))))
+    (with-current-buffer buffer
+      (setq-local desktop-save-buffer nil))
+    buffer))
+
+(defun racket-config-create-side-window (frame role)
+  "Create the right-side window for panel ROLE on FRAME."
+  (let* ((slot (if (eq role 'compilation) 0 1))
+         (buffer (racket-config-placeholder-buffer role))
+         (window
+          (with-selected-frame frame
+            (display-buffer
+             buffer
+             `((display-buffer-in-side-window)
+               (side . right)
+               (slot . ,slot)
+               (window-width . ,racket-config-side-window-width)
+               (dedicated . nil))))))
+    (when window
+      (set-window-parameter window 'racket-config-window-role role))
+    window))
+
+(defun racket-config-ensure-window-layout (frame)
+  "Ensure FRAME has its source area and both Racket side windows."
+  (let* ((compile-window
+          (or (racket-config-window-with-role frame 'compilation)
+              (racket-config-create-side-window frame 'compilation)))
+         (repl-window
+          (or (racket-config-window-with-role frame 'repl)
+              (racket-config-create-side-window frame 'repl)))
+         (source-windows (racket-config-source-windows frame))
+         (selected (frame-selected-window frame))
+         (source (or (and (memq selected source-windows) selected)
+                     (car source-windows))))
+    (when (and source compile-window repl-window)
+      (let ((layout (list source compile-window repl-window)))
+        (racket-config-install-window-layout frame layout)
+        layout))))
+
+(defun racket-config-reset-panel-buffers (layout)
+  "Replace restored file buffers in LAYOUT's panels with placeholders."
+  (set-window-buffer (nth 1 layout)
+                     (racket-config-placeholder-buffer 'compilation))
+  (set-window-buffer (nth 2 layout)
+                     (racket-config-placeholder-buffer 'repl)))
+
+(defun racket-config-desktop-prepare-side-windows ()
+  "Create placeholder buffers before Desktop restores the frameset."
+  (racket-config-placeholder-buffer 'compilation)
+  (racket-config-placeholder-buffer 'repl))
+
+(add-hook 'desktop-delay-hook
+          #'racket-config-desktop-prepare-side-windows)
+
+(defvar racket-config--desktop-saving nil)
+
+(defun racket-config-desktop-save-frameset-around (orig-fun &rest args)
+  "Substitute persistent placeholders while Desktop captures the frameset."
+  (if (or racket-config--desktop-saving
+          (not desktop-restore-frames))
+      (apply orig-fun args)
+    (let ((racket-config--desktop-saving t)
+          saved-windows)
+      (unwind-protect
+          (progn
+            (racket-config-desktop-prepare-side-windows)
+            (dolist (frame (frame-list))
+              (let ((layout (racket-config-window-layout-from-frame frame)))
+                (when layout
+                  (dolist (spec `((,(nth 1 layout) . compilation)
+                                  (,(nth 2 layout) . repl)))
+                    (let* ((window (car spec))
+                           (placeholder
+                            (racket-config-placeholder-buffer (cdr spec)))
+                           (buffer (window-buffer window)))
+                      (unless (eq buffer placeholder)
+                        (push (list window buffer
+                                    (window-point window)
+                                    (window-start window)
+                                    (window-dedicated-p window))
+                              saved-windows)
+                        (set-window-dedicated-p window nil)
+                        (set-window-buffer window placeholder))))))
+            (apply orig-fun args))
+        (dolist (entry saved-windows)
+          (pcase-let ((`(,window ,buffer ,point ,start ,dedicated) entry))
+            (when (and (window-live-p window) (buffer-live-p buffer))
+              (set-window-dedicated-p window nil)
+              (set-window-buffer window buffer)
+              (set-window-point window point)
+              (set-window-start window start t)
+              (set-window-dedicated-p window dedicated)))))))))
+
+(unless (advice-member-p
+         #'racket-config-desktop-save-frameset-around 'desktop-save-frameset)
+  (advice-add 'desktop-save-frameset :around
+              #'racket-config-desktop-save-frameset-around))
+
+(defun racket-config-frame-has-racket-buffer-p (frame)
+  "Return non-nil when FRAME displays a Racket source or REPL buffer."
+  (seq-some
+   (lambda (window)
+     (with-current-buffer (window-buffer window)
+       (derived-mode-p 'racket-mode 'racket-hash-lang-mode 'racket-repl-mode)))
+   (window-list frame 'no-minibuf)))
+
+(defun racket-config-restore-desktop-layouts ()
+  "Reconstruct Racket side-window state after Desktop restores frames."
+  (add-hook 'desktop-delay-hook
+            #'racket-config-desktop-prepare-side-windows)
+  (dolist (frame (frame-list))
+    (when (or (racket-config-window-with-role frame 'compilation)
+              (racket-config-window-with-role frame 'repl)
+              (racket-config-frame-has-racket-buffer-p frame))
+      (let ((layout (racket-config-ensure-window-layout frame)))
+        (when layout
+          (racket-config-reset-panel-buffers layout)
+          (racket-config-install-window-layout frame layout))))))
+
+(add-hook 'desktop-after-read-hook
+          #'racket-config-restore-desktop-layouts)
 
 (defun racket-config-display-describe-buffer (buffer frame layout)
   "Display BUFFER in the REPL window, temporarily removing the compile window."
@@ -106,18 +295,20 @@
 (defun racket-config-display-buffer (buffer _alist)
   "Display Racket-related BUFFER in its reserved window."
   (let* ((frame (selected-frame))
-         (layout (frame-parameter frame 'racket-config-window-layout))
+         (layout (racket-config-window-layout-from-frame frame))
          (name (buffer-name buffer)))
     (cond
      ((string-prefix-p "*Racket Describe" name)
-      (racket-config-display-describe-buffer buffer frame layout))
+      (and layout
+           (racket-config-display-describe-buffer buffer frame layout)))
      ((or (string-prefix-p "*compilation" name)
           (string-prefix-p "*Racket REPL" name))
-      (let ((window (nth (if (string-prefix-p "*compilation" name) 1 2)
-                         layout)))
-        (when (window-live-p window)
-          (set-window-buffer window buffer)
-          window))))))
+      (when layout
+        (let ((window (nth (if (string-prefix-p "*compilation" name) 1 2)
+                           layout)))
+          (when (window-live-p window)
+            (set-window-buffer window buffer)
+            window)))))))
 
 (add-to-list
  'display-buffer-alist
@@ -150,27 +341,16 @@
   (advice-add 'quit-window :around #'racket-config-quit-window-around))
 
 (defun racket-config-setup-windows ()
-  "Set up source, compilation and REPL windows once per frame."
+  "Set up the source area and two right-side Racket panel windows."
   (let* ((frame (selected-frame))
-         (layout (frame-parameter frame 'racket-config-window-layout)))
-    (unless (frame-parameter
-             frame 'racket-config-describe-window-configuration)
-      (if (and (consp layout)
-               (window-live-p (nth 1 layout))
-               (window-live-p (nth 2 layout))
-               (racket-config-source-windows frame))
-          (racket-config-refresh-window-protection frame)
-        (let* ((source (selected-window))
-               (compile-window (split-window-right nil source))
-               (repl-window (split-window-below nil compile-window)))
-          (set-window-buffer
-           compile-window
-           (get-buffer-create " *racket-config-compilation-slot*"))
-          (set-window-buffer
-           repl-window
-           (get-buffer-create " *racket-config-repl-slot*"))
-          (racket-config-install-window-layout
-           frame (list source compile-window repl-window)))))))
+         (describe-configuration
+          (frame-parameter
+           frame 'racket-config-describe-window-configuration)))
+    (racket-config-desktop-prepare-side-windows)
+    (unless (or (window-configuration-p describe-configuration)
+                (desktop-restoring-frameset-p))
+      (unless (racket-config-window-layout-from-frame frame)
+        (racket-config-ensure-window-layout frame)))))
 
 (defun racket-config-run (&optional prefix)
   "Fix racket-mode's main submodule handling in compiled modules."
