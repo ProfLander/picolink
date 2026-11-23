@@ -16,7 +16,8 @@
 
          picolink2/compiler/artifact
          picolink2/import
-         picolink2/r-lua)
+         picolink2/gaol
+         picolink2/gaol/passes/s-lua)
 
 (provide #%module-begin
          #%top-interaction
@@ -27,7 +28,8 @@
          for-space
          print
 
-         (all-from-out picolink2/r-lua))
+         (all-from-out picolink2/gaol)
+         (all-from-out picolink2/gaol/passes/s-lua))
 
 (define-for-syntax (imports-ident lctx module-path)
   (format-id lctx "~a:#%imports" module-path))
@@ -210,7 +212,7 @@
             (require racket/file
 
                      picolink2/compiler
-                     picolink2/r-lua
+                     picolink2/gaol/passes/s-lua
                      picolink2/lua)
 
             (define-values (#%thread #%stdout #%stdin #%stderr)

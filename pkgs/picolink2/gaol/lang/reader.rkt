@@ -1,2 +1,2 @@
 #lang s-exp syntax/module-reader
-picolink2/r-lua/lang
+picolink2/gaol/lang

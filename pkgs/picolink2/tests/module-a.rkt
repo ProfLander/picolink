@@ -1,4 +1,4 @@
-#lang reader "../r-lua/reader.rkt"
+#lang picolink2/gaol
 
 (provide (all-defined-out))
 
