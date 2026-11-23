@@ -10,12 +10,12 @@
 
 (define-syntax define-ir-forms
   (syntax-parser
-    [(_ name:id ...)
+    [(_ name:id literal:id ...)
      (syntax/loc this-syntax
        (begin
-         (define-syntax (name stx)
-           (raise-syntax-error 'name
-                               "may not be used outside gaol"
+         (define-syntax (literal stx)
+           (raise-syntax-error 'literal
+                               (format "may not be used outside ~a" 'name)
                                stx))
          ...))]))
 
@@ -32,7 +32,8 @@
 
        (syntax/loc this-syntax
          (begin
-           (define-ir-forms literal ...)
+           (define-ir-forms name
+             literal ...)
 
            (begin-for-syntax
              (define-literal-set name-ir-literals
