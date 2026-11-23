@@ -18,29 +18,29 @@
    "9"  "_nine_"))
 
 (define reserved-symbol->lua-name
-  (hash
-   "="  "_eq_"
-   "~"  "_tilde_"
-   ":"  "_colon_"
-   "::" "_2colon_"
-   "+"  "_plus_"
-   "-"  "_"
-   "*"  "_star_"
-   "/"  "_slash_"
-   "^"  "_caret_"
-   "%"  "_percent_"
-   "#"  "_hash_"
-   "."  "_dot_"
-   ".." "_2dot_"
-   "<"  "_lt_"
-   "<=" "_le_"
-   ">"  "_gt_"
-   ">=" "_ge_"
-   "==" "_2eq_"
-   "~=" "_ne_"
-   "?"  "_question_"
-   "!"  "_exclamation_"
-   "λ"  "_lambda_"))
+  '(("_"  . "_sub_")
+    ("="  . "_eq_")
+    ("~"  . "_not_")
+    (":"  . "_in_")
+    ("::" . "_of_")
+    ("+"  . "_add_")
+    ("-"  . "_")
+    ("*"  . "_mul_")
+    ("/"  . "_div_")
+    ("^"  . "_pow_")
+    ("%"  . "_mod_")
+    ("#"  . "_hash_")
+    ("."  . "_dot_")
+    (".." . "_cat_")
+    ("<"  . "_lt_")
+    ("<=" . "_le_")
+    (">"  . "_gt_")
+    (">=" . "_ge_")
+    ("==" . "_eql_")
+    ("~=" . "_neq_")
+    ("?"  . "_is_")
+    ("!"  . "_mut_")
+    ("λ"  . "_lam_")))
 
 (define reserved-identifier->lua-name
   (hash
@@ -75,8 +75,9 @@
                      acc))]
 
          [name (for/fold ([acc name])
-                         ([(from to) (in-hash
-                                      reserved-symbol->lua-name)])
+                         ([pair (in-list reserved-symbol->lua-name)]
+                          #:do [(define from (car pair))
+                                (define to   (cdr pair))])
                  (string-replace acc from to))]
          
          [name (for/fold ([acc name])
@@ -84,5 +85,7 @@
                                       reserved-identifier->lua-name)])
                  (if (equal? acc from)
                      to
-                     acc))])
+                     acc))]
+
+         [name (string-replace name "__" "_")])
     name))
