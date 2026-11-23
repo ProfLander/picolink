@@ -1,5 +1,7 @@
 #lang racket/base
 
+; library-local exceptions
+
 (require racket/string)
 
 (provide (all-defined-out))

@@ -1,5 +1,7 @@
 #lang racket/base
 
+; compiler utilities
+
 (require picolink2/compiler/artifact
          picolink2/compiler/directory
          picolink2/compiler/link

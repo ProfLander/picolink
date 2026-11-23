@@ -1,5 +1,7 @@
 #lang racket/base
 
+; module path utilities
+
 (require racket/path)
 
 (provide (all-defined-out))
