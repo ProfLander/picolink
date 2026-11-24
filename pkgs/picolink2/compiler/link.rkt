@@ -42,8 +42,6 @@
                      definitions
                      module-body)
 
-  (printf "linking ~a...\n" module-path)
-
   (let ([linker (current-linker)]
         [space  (current-link-space)])
 

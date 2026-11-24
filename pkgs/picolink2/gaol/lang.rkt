@@ -118,8 +118,6 @@
 
      (define module-path (syntax-module-path this-syntax))
 
-     (printf "compiling ~a...\n" module-path)
-
      (define-values (idents definitions forms)
        (parse-module-body (attribute body)))
 
