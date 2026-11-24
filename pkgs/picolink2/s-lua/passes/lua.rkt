@@ -5,12 +5,12 @@
 
                      syntax/parse
 
+                     picolink2/s-lua
                      picolink2/s-lua/name)
 
          picolink2/s-lua/ir)
 
-(provide (for-syntax in-s-lua
-                     rewrite-name)
+(provide (for-syntax (all-from-out picolink2/s-lua))
 
          s-lua
 
@@ -69,11 +69,6 @@
 
 ; utilities
 
-(define-for-syntax in-s-lua
-  (let ([intro (make-interned-syntax-introducer 's-lua)])
-    (λ (stx)
-      (intro stx 'add))))
-
 (define-syntax s-lua
   (syntax-parser
     [(_ body ...)
@@ -88,9 +83,6 @@
      (with-syntax ([name* (in-s-lua #'name)])
        (syntax/loc this-syntax
          (define-syntax name* transformer)))]))
-
-(define-for-syntax (local-expand-s-lua stx [ctx #f])
-  (local-expand stx 'expression null ctx))
 
 (define-for-syntax (%normalize stx)
   (syntax-parse stx
