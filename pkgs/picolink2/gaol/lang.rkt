@@ -57,44 +57,43 @@
 
     [(define ident form)
 
-     (with-syntax ([ident (in-gaol #'ident)])
+     #:with ident* (in-gaol #'ident)
 
-       (values (cons #'ident idents)
+     (values (cons #'ident* idents)
 
-               (cons #'ident definitions)
+             (cons #'ident* definitions)
 
-               (cons (syntax/loc this-syntax
-                       (define ident
-                         (gaol (define ident form))))
-                     forms)))]
+             (cons (syntax/loc this-syntax
+                     (define ident*
+                       (gaol (define ident* form))))
+                   forms))]
 
     [ident:id
 
-     (with-syntax ([temp (in-gaol (generate-temporary))])
+     #:with temp (in-gaol (generate-temporary))
 
-       (values (cons #'temp idents)
+     (values (cons #'temp idents)
 
-               definitions
+             definitions
 
-               (cons (syntax/loc this-syntax
-                       (begin
-                         (void (gaol ident))
-                         (define temp
-                           (gaol (print ident)))))
-                     forms)))]
+             (cons (syntax/loc this-syntax
+                     (begin
+                       (void (gaol ident))
+                       (define temp
+                         (gaol (print ident)))))
+
+                   forms))]
 
     [form
+     #:with ident (in-gaol (generate-temporary))
 
-     (with-syntax ([ident (in-gaol
-                           (generate-temporary))])
+     (values (cons #'ident idents)
 
-       (values (cons #'ident idents)
+             definitions
 
-               definitions
-
-               (cons (syntax/loc this-syntax
-                       (define ident (gaol (print form))))
-                     forms)))]))
+             (cons (syntax/loc this-syntax
+                     (define ident (gaol (print form))))
+                   forms))]))
 
 (define-for-syntax (parse-module-body forms)
   

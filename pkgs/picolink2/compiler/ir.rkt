@@ -3,12 +3,17 @@
 ; IR definition utilities
 
 (require (for-syntax racket/base
+                     racket/function
                      racket/syntax
                      syntax/parse
                      racket/require-transform
                      racket/provide-transform))
 
 (provide (all-defined-out))
+
+(define-for-syntax (in-space space stx)
+  (let ([intro (make-interned-syntax-introducer space)])
+    (intro stx 'add)))
 
 (define-syntax define-ir-forms
   (syntax-parser
@@ -42,6 +47,22 @@
                                                   "define-~a-syntax"
                                                   #'name)]
 
+                   [define-name-form (format-id #'name
+                                                  "define-~a-form"
+                                                  #'name)]
+
+                   [define-name-forms (format-id #'name
+                                                 "define-~a-forms"
+                                                 #'name)]
+
+                   [define-name-pass-form (format-id #'name
+                                                     "define-~a-pass-form"
+                                                     #'name)]
+
+                   [define-name-pass (format-id #'name
+                                                "define-~a-pass"
+                                                #'name)]
+
                    [for-name (format-id #'name "for-~a" #'name)])
 
        (syntax/loc this-syntax
@@ -59,9 +80,7 @@
                ...)
 
              (define in-name
-               (let ([intro (make-interned-syntax-introducer 'name)])
-                 (λ (stx)
-                   (intro stx 'add))))
+               (curry in-space 'name))
 
              (define (local-expand-name stx [ctx #f])
                (local-expand stx 'expression null ctx)))
@@ -76,10 +95,87 @@
 
            (define-syntax define-name-syntax
              (syntax-parser
-               [(_ name transformer)
-                (with-syntax ([name* (in-name #'name)])
+               [(_ ident transformer)
+                (with-syntax ([ident* (in-name #'ident)])
                   (syntax/loc this-syntax
-                    (define-syntax name* transformer)))]))
+                    (define-syntax ident* transformer)))]
+
+               [(_ (ident arg (... ...)) body (... ...))
+                (with-syntax ([ident* (in-name #'ident)])
+                  (syntax/loc this-syntax
+                    (define-syntax (ident* arg (... ...))
+                      body (... ...))))]))
+
+           (define-syntax define-name-pass-form
+             (syntax-parser
+               #:datum-literals [->]
+               [(_ (ident -> space)
+                   [pat
+                    body (... ...)
+                    tail]
+                   (... ...))
+
+                (syntax/loc this-syntax
+                  (define-name-syntax ident
+                    (syntax-parser
+                      [pat body (... ...) (in-space 'space tail)]
+                      (... ...))))]))
+
+           (define-syntax define-name-pass
+             (syntax-parser
+               [(_ space
+                   (~and %clause
+                         (~or
+                          (~and [(ident pat (... ...) . pat-tail)
+                                 form (... ...)]
+                                (~parse clause
+                                        (syntax/loc #'%clause
+                                          [(_ pat (... ...) . pat-tail)
+                                           form (... ...)])))
+
+                          (~and [(ident pat (... ...))
+                                 form (... ...)]
+                                (~parse clause (syntax/loc #'%clause
+                                                 [(_ pat (... ...))
+                                                  form (... ...)])))))
+                   (... ...))
+
+                (syntax/loc this-syntax
+                  (begin
+                    (define-name-pass-form (ident -> space)
+                      clause)
+                    (... ...)))]))
+
+           (define-syntax define-name-form
+             (syntax-parser
+               [(_ ident clause (... ...))
+
+                (syntax/loc this-syntax
+                  (define-name-pass-form (ident -> name)
+                    clause (... ...)))]))
+
+           (define-syntax define-name-forms
+             (syntax-parser
+               [(_ (~and %clause
+                         (~or
+                          (~and [(ident pat (... ...) . pat-tail)
+                                 form (... ...)]
+                                (~parse clause
+                                        (syntax/loc #'%clause
+                                          [(_ pat (... ...) . pat-tail)
+                                           form (... ...)])))
+
+                          (~and [(ident pat (... ...))
+                                 form (... ...)]
+                                (~parse clause (syntax/loc #'%clause
+                                                 [(_ pat (... ...))
+                                                  form (... ...)])))))
+                   (... ...))
+                (syntax/loc this-syntax
+                  (begin
+                    (define-name-form ident
+                      clause)
+                    (... ...)))]))
 
            (begin-for-syntax
 
