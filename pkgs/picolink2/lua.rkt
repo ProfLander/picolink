@@ -12,6 +12,9 @@
 
 (provide (all-defined-out))
 
+(define current-lua-compile-bytecode
+  (make-parameter #f))
+
 (define (lua-normalize-module-path mod-path)
 
   (let* ([mod-path
@@ -48,7 +51,9 @@
   (define path (path-replace-extension (symbol->string module-path)
                                        ".lua"))
 
-  (set-compile-artifact/string! path linked))
+  (list (cons path (if (current-lua-compile-bytecode)
+                       (artifact/bytes linked)
+                       (artifact/string linked)))))
 
 (define (lua-link module-path
                   imports
@@ -57,7 +62,8 @@
                   definitions
                   module-body)
 
-  (define lua-module-path (format "local _NAME = \"~a\"" module-path))
+  (define lua-module-path
+    (format "local _NAME = \"~a\"" module-path))
   
   (define lua-imports
     (let ([import-decls
@@ -131,12 +137,45 @@
 
           null)))
 
-  (string-join (append (list lua-module-path)
-                       lua-imports
-                       lua-definition-decls
-                       (list (string-join module-body "\n"))
-                       lua-exports)
-               "\n"))
+  (let ([source (string-join (append (list lua-module-path)
+                                     lua-imports
+                                     lua-definition-decls
+                                     (list (string-join module-body "\n"))
+                                     lua-exports)
+                             "\n")])
+
+    (if (current-lua-compile-bytecode)
+        (lua->bytecode module-path source)
+        source)))
+
+(define (lua->bytecode module-path source)
+
+  (define-values (sp stdout stdin stderr)
+    (subprocess #f #f #f
+                (find-executable-path "luajit")
+                "-b"
+                "-s"
+                "-X"
+                "-d"
+                "-n" (symbol->string module-path)
+                "-e" source
+                "-"))
+
+  (subprocess-wait sp)
+
+  (define (close-ports)
+    (close-input-port stdout)
+    (close-output-port stdin)
+    (close-input-port stderr))
+
+  (case (subprocess-status sp)
+
+    [(0) (begin0 (port->bytes stdout)
+           (close-ports))]
+
+    [else (let ([msg (port->bytes stderr)])
+            (close-ports)
+            (error msg))]))
 
 (define (lua-run/file _linked module-path)
 

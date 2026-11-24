@@ -5,65 +5,44 @@
                      racket/syntax
                      syntax/parse)
 
+         (only-in picolink2/gaol/ir
+                  define-gaol-syntax
+                  in-gaol
+                  local-expand-gaol
+                  for-gaol)
+
+         (only-in picolink2/s-lua/ir
+                  in-s-lua)
+
          picolink2/s-lua/passes/lua)
 
-(provide (for-syntax in-r-lua)
-         (all-from-out racket/base)
-         (for-space r-lua
+(provide (all-from-out racket/base)
 
-                    #%datum
-                    #%define-values
-                    #%lambda
-                    #%app)
-
-         r-lua
-         define-r-lua-syntax
+         (for-gaol #%datum
+                   #%define-values
+                   #%lambda
+                   #%app)
 
          (all-from-out picolink2/s-lua/passes/lua))
 
-; utilities
+; gaol IR -> s-lua IR
 
-(define-for-syntax in-r-lua
-  (let ([intro (make-interned-syntax-introducer 'r-lua)])
-    (λ (stx)
-      (intro stx 'add))))
-
-(define-syntax r-lua
-  (syntax-parser
-    [(_ body ...)
-     (in-r-lua
-      (syntax/loc this-syntax
-        (begin
-          body ...)))]))
-
-(define-syntax define-r-lua-syntax
-  (syntax-parser
-    [(_ name transformer)
-     (with-syntax ([name* (in-r-lua #'name)])
-       (syntax/loc this-syntax
-         (define-syntax name* transformer)))]))
-
-; r-lua IR -> s-lua IR
-
-(define-for-syntax (local-expand-r-lua stx [ctx #f])
-  (local-expand stx 'expression null ctx))
-
-(define-r-lua-syntax #%datum
+(define-gaol-syntax #%datum
   (syntax-parser
     [(_ . d:expr)
      (in-s-lua
       (syntax/loc this-syntax
         (#%datum . d)))]))
 
-(define-r-lua-syntax #%define-values
+(define-gaol-syntax #%define-values
   (syntax-parser
     [(_ (ident:id ...) e:expr)
-     (with-syntax* ([e (local-expand-r-lua #'e)])
+     (with-syntax* ([e (local-expand-gaol #'e)])
        (in-s-lua
         (syntax/loc this-syntax
           (#%assign [ident ...] [e]))))]))
 
-(define-r-lua-syntax #%let-values
+(define-gaol-syntax #%let-values
   (syntax-parser
     [(_ ([(arg:id ...) expr:expr] ...) body:expr ...)
 
@@ -71,7 +50,7 @@
      (syntax-local-bind-syntaxes (apply append (attribute arg)) #f ctx)
 
      (with-syntax ([(body ...)
-                    (map (curryr local-expand-r-lua ctx)
+                    (map (curryr local-expand-gaol ctx)
                          (attribute body))])
 
        (in-s-lua
@@ -80,7 +59,7 @@
            (#%block
             (#%call error (quote "unimplemented")))))))]))
 
-(define-r-lua-syntax #%lambda
+(define-gaol-syntax #%lambda
   (syntax-parser
     [(_ (arg:id ...) body ...)
 
@@ -88,7 +67,7 @@
      (syntax-local-bind-syntaxes (attribute arg) #f ctx)
 
      (with-syntax ([(body ... ret)
-                    (map (curryr local-expand-r-lua ctx)
+                    (map (curryr local-expand-gaol ctx)
                          (attribute body))])
 
        (in-s-lua
@@ -96,10 +75,10 @@
           (#%function (arg ...)
                       (#%block body ... (#%return ret))))))]))
 
-(define-r-lua-syntax #%app
+(define-gaol-syntax #%app
   (syntax-parser
     [(_ arg ...)
-     (with-syntax ([(arg ...) (map local-expand-r-lua (attribute arg))])
+     (with-syntax ([(arg ...) (map local-expand-gaol (attribute arg))])
        (in-s-lua
         (syntax/loc this-syntax
           (#%call arg ...))))]))

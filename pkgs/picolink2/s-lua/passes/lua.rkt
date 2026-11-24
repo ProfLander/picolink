@@ -5,18 +5,19 @@
 
                      syntax/parse
 
-                     picolink2/s-lua
                      picolink2/s-lua/name)
 
-         picolink2/s-lua/ir)
+         (only-in picolink2/s-lua/ir
+                  s-lua
+                  define-s-lua-syntax
+                  s-lua-ir-literals
+                  s-lua-ir-literal
+                  local-expand-s-lua
+                  for-s-lua))
 
-(provide (for-syntax (all-from-out picolink2/s-lua))
+(provide s-lua
 
-         s-lua
-
-         (for-space s-lua
-
-                    #%datum
+         (for-s-lua #%datum
 
                     #%chunk
                     #%block
@@ -68,21 +69,6 @@
                     #%length))
 
 ; utilities
-
-(define-syntax s-lua
-  (syntax-parser
-    [(_ body ...)
-     (in-s-lua
-      (syntax/loc this-syntax
-        (begin
-          body ...)))]))
-
-(define-syntax define-s-lua-syntax
-  (syntax-parser
-    [(_ name transformer)
-     (with-syntax ([name* (in-s-lua #'name)])
-       (syntax/loc this-syntax
-         (define-syntax name* transformer)))]))
 
 (define-for-syntax (%normalize stx)
   (syntax-parse stx

@@ -1,13 +1,13 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     racket/path
                      racket/syntax
+                     racket/require-transform
 
                      syntax/parse
 
                      picolink2/lua
-                     picolink2/module-path)
+                     picolink2/compiler/module-path)
 
          (only-in racket/base
                   [#%module-begin #%base-module-begin]
@@ -15,8 +15,13 @@
                   [provide base-provide])
 
          picolink2/compiler/artifact
-         picolink2/import
          picolink2/gaol
+
+         (only-in picolink2/gaol/ir
+                  in-gaol
+                  gaol
+                  for-gaol)
+
          picolink2/gaol/passes/s-lua)
 
 (provide #%module-begin
@@ -25,35 +30,16 @@
          require
          provide
          all-defined-out
-         for-space
          print
 
          (all-from-out picolink2/gaol)
          (all-from-out picolink2/gaol/passes/s-lua))
 
-(define-for-syntax (imports-ident lctx module-path)
-  (format-id lctx "~a:#%imports" module-path))
-
-(define-for-syntax (sources-ident lctx module-path)
-  (format-id lctx "~a:#%sources" module-path))
-
-(define-for-syntax (module-body-ident lctx module-path)
-  (format-id lctx "~a:#%module-body" module-path))
-
-(define-for-syntax (thread-ident lctx)
-  (datum->syntax lctx '#%thread))
-
-(define-for-syntax (stdout-ident lctx)
-  (datum->syntax lctx '#%stdout))
-
-(define-for-syntax (stdin-ident lctx)
-  (datum->syntax lctx '#%stdin))
-
-(define-for-syntax (stderr-ident lctx)
-  (datum->syntax lctx '#%stderr))
-
 (define-for-syntax (parse-module-form idents definitions forms form)
   (syntax-parse form
+    #:literals       [require provide]
+    #:datum-literals [define]
+
     [((~datum racket) body ...)
 
      (values idents
@@ -63,23 +49,15 @@
                      (begin body ...))
                    forms))]
 
-    [((~or (~literal require)
-           (~literal provide))
-      _ ...)
+    [((~or require provide) _ ...)
 
      (values idents
              definitions
              (cons this-syntax forms))]
 
-    [((~literal provide) _ ...)
+    [(define ident form)
 
-     (values idents
-             definitions
-             (cons this-syntax forms))]
-
-    [((~datum define) ident form)
-
-     (with-syntax ([ident (in-r-lua #'ident)])
+     (with-syntax ([ident (in-gaol #'ident)])
 
        (values (cons #'ident idents)
 
@@ -87,12 +65,12 @@
 
                (cons (syntax/loc this-syntax
                        (define ident
-                         (r-lua (define ident form))))
+                         (gaol (define ident form))))
                      forms)))]
 
     [ident:id
 
-     (with-syntax ([temp (in-r-lua (generate-temporary))])
+     (with-syntax ([temp (in-gaol (generate-temporary))])
 
        (values (cons #'temp idents)
 
@@ -100,14 +78,14 @@
 
                (cons (syntax/loc this-syntax
                        (begin
-                         (void (r-lua ident))
+                         (void (gaol ident))
                          (define temp
-                           (r-lua (print ident)))))
+                           (gaol (print ident)))))
                      forms)))]
 
     [form
 
-     (with-syntax ([ident (in-r-lua
+     (with-syntax ([ident (in-gaol
                            (generate-temporary))])
 
        (values (cons #'ident idents)
@@ -115,7 +93,7 @@
                definitions
 
                (cons (syntax/loc this-syntax
-                       (define ident (r-lua (print form))))
+                       (define ident (gaol (print form))))
                      forms)))]))
 
 (define-for-syntax (parse-module-body forms)
@@ -138,72 +116,134 @@
   (syntax-parser
     [(_ body ...)
 
-     (define source-path (syntax-source this-syntax))
      (define module-path (syntax-module-path this-syntax))
 
-     (printf "building ~a\n"
-             (find-relative-path (current-directory) source-path))
+     (printf "compiling ~a...\n" module-path)
 
      (define-values (idents definitions forms)
        (parse-module-body (attribute body)))
 
+     (define requires
+       (for/fold ([acc null])
+                 ([body (attribute body)]
+
+                  #:do [(define result
+                          (syntax-parse body
+                            #:datum-literals [require]
+                            [(require req-spec ...)
+                             (attribute req-spec)]
+                            [_ #f]))]
+
+                  #:when result)
+
+         (append acc result)))
+
+     (define-values (imports sources)
+       (let-values ([(imports sources)
+                     (expand-import #`(combine-in #,@requires))])
+
+         (values (for/fold ([acc (hash)])
+                           ([import (in-list imports)]
+                            #:when (equal? (cons 0 'gaol)
+                                           (import-mode import)))
+
+                   (let* ([src-mod-path (syntax->datum
+                                         (import-src-mod-path import))]
+
+                          [src-mod-path (lua-normalize-module-path
+                                         src-mod-path)]
+
+                          [src-sym (import-src-sym import)])
+
+                     (hash-update acc src-mod-path
+
+                                  (λ (imports)
+                                    (append imports (list src-sym)))
+
+                                  (λ ()
+                                    (list src-sym)))))
+
+                 (for/list ([source (in-list sources)])
+                   
+                   (let ([mod-path-stx
+                          (syntax-e
+                           (import-source-mod-path-stx source))])
+
+                     (lua-normalize-module-path mod-path-stx))))))
+
      (with-syntax ([module-path module-path]
 
-                   [(ident ...)      (map in-r-lua idents)]
-                   [(definition ...) (map in-r-lua definitions)]
+                   [(ident ...)      (map in-gaol idents)]
+                   [(definition ...) (map in-gaol definitions)]
                    [(form ...)       forms]
 
-                   [#%imports     (imports-ident     this-syntax
-                                                     module-path)]
+                   [#%imports imports]
+                   [#%sources sources]
 
-                   [#%sources     (sources-ident     this-syntax
-                                                     module-path)]
-
-                   [#%module-body (module-body-ident this-syntax
-                                                     module-path)]
-
-                   [main          (datum->syntax     this-syntax 'main)]
-                   [#%thread      (thread-ident      this-syntax)]
-                   [#%stdout      (stdout-ident      this-syntax)]
-                   [#%stdin       (stdin-ident       this-syntax)]
-                   [#%stderr      (stderr-ident      this-syntax)])
+                   [#%module-body (format-id this-syntax
+                                             "~a:#%module-body"
+                                             module-path)])
 
        (syntax/loc this-syntax
          (#%base-module-begin
+
           form ...
 
-          (define #%imports     (make-hash))
-          (define #%sources     (box null))
           (define #%definitions (list 'definition ...))
           (define #%module-body (list ident ...))
 
-          (base-provide #%imports
-                        #%sources
-                        #%definitions
+          (base-provide #%definitions
                         #%module-body)
 
           (module* link racket/base
-            (require (only-in (submod "..")
-                              [#%imports     #%imports]
-                              [#%sources     #%sources]
-                              [#%definitions #%definitions]
-                              [#%module-body #%module-body])
+            (require (for-syntax
+                      (only-in (submod "..")
+                               [#%definitions #%definitions]
+                               [#%module-body #%module-body])
 
-                     syntax/location
-                     
-                     picolink2/compiler/link
-                     picolink2/lua)
+                      (for-space gaol
+                       (only-in (submod "..")
+                                [definition definition] ...))
 
-            (define #%linked
-              (parameterize ([current-linker     lua-link/file]
-                             [current-link-space 'r-lua])
+                      racket/base
+                      syntax/parse
+                      syntax/location
 
-                (link-module (quote-module-path "..")
-                             'module-path
-                             #%imports
-                             (unbox #%sources)
-                             #%definitions
-                             #%module-body)))
+                      picolink2/compiler/link
+                      picolink2/lua))
+
+            (define-syntax link
+              (syntax-parser
+                [(_)
+
+                 (parameterize ([current-linker     lua-link/file]
+                                [current-link-space 'gaol])
+
+                   (let* ([imports     #%imports]
+                          [sources     '#%sources]
+                          
+                          [exports     (assoc (cons 0 'gaol)
+                                              (syntax-local-module-exports
+                                               (quote-module-path "..")))]
+
+                          [exports     (if exports
+                                           (cdr exports)
+                                           null)]
+
+                          [definitions #%definitions]
+                          [module-body #%module-body])
+
+                     (with-syntax ([((path . linked) (... ...))
+                                    (link-module 'module-path
+                                                 imports
+                                                 sources
+                                                 exports
+                                                 definitions
+                                                 module-body)])
+
+                       #'(list (cons path linked) (... ...)))))]))
+
+            (define #%linked (link))
 
             (base-provide #%linked))
 
@@ -221,8 +261,7 @@
                              [current-runner          lua-run/file])
 
                 (let* ([linked (link)])
-                  
-                  (write-compile-artifacts!)
+                  (write-compile-artifacts! linked)
                   (printf "\nrunning ~a...\n\n" 'module-path)
                   (run linked 'module-path))))
 
@@ -230,7 +269,7 @@
               (syntax-parser
                 [(_ . input)
 
-                 (let* ([input #'(r-lua (print input))]
+                 (let* ([input #'(gaol (print input))]
                         [input (local-expand input 'expression null)])
 
                    (quasisyntax/loc this-syntax
@@ -250,8 +289,7 @@
                 (combine-in spec ...))]
 
              [form (syntax/loc this-syntax
-                     (for-space r-lua
-                                (capture-imports form)))]))])
+                     (for-gaol form))]))])
 
        (syntax/loc this-syntax
          (base-require spec ...)))]))
@@ -268,7 +306,7 @@
                 (combine-out spec ...))]
 
              [form (syntax/loc this-syntax
-                     (for-space r-lua form))]))])
+                     (for-gaol form))]))])
 
        #'(base-provide spec ...))]))
 
@@ -278,5 +316,5 @@
      #'form]
 
     [(_ . form)
-     #'(r-lua form)]))
+     #'(gaol form)]))
 
